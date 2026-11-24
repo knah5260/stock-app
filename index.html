@@ -137,7 +137,12 @@ h2{margin:0;font-size:15px;font-weight:600}
     <div class="col"><span class="lbl">台股總資產</span><span class="big" id="ov-mv">—</span></div>
     <div class="grid2">
       <div class="mini col"><span class="lbl">今日損益</span><span style="font-size:20px;font-weight:700" id="ov-today">—</span><span style="font-size:12px" id="ov-todayr"></span></div>
-      <div class="mini col"><span class="lbl">區間累計損益</span><span style="font-size:20px;font-weight:700" id="ov-range">—</span><span style="font-size:12px" id="ov-rangem"></span><span style="font-size:12px" id="ov-ranger"></span></div>
+      <div class="mini col"><span class="lbl">區間累計損益</span><span style="font-size:20px;font-weight:700" id="ov-range">—</span><span style="font-size:12px" class="zero" id="ov-rangeh"></span></div>
+    </div>
+    <div class="grid3" style="border-top:1px solid var(--line);padding-top:12px">
+      <div class="col" style="gap:2px"><span class="lbl">庫存報酬</span><span style="font-size:17px;font-weight:700" id="ov-ret-h">—</span><span style="font-size:11px;color:var(--dim)">目前持股</span></div>
+      <div class="col" style="gap:2px"><span class="lbl">投入報酬</span><span style="font-size:17px;font-weight:700" id="ov-ret-m">—</span><span style="font-size:11px;color:var(--dim)">區間・實際本金</span></div>
+      <div class="col" style="gap:2px"><span class="lbl">淨值報酬</span><span style="font-size:17px;font-weight:700" id="ov-ret-t">—</span><span style="font-size:11px;color:var(--dim)">區間・操作績效</span></div>
     </div>
   </div>
   <div id="ov-rangebox"></div>
@@ -474,9 +479,14 @@ async function loadOverview() {
     setNum('#ov-today', d.todayPl, true);
     $('#ov-todayr').textContent = arrowPct(d.todayR); $('#ov-todayr').className = cls(d.todayR);
     setNum('#ov-range', d.rangePl, true);
-    { const base = (d.mv || 0) - (d.rangePl || 0), mr = base > 0 && d.mv > 0 ? d.rangePl / base : null;
-      $('#ov-rangem').textContent = '投入報酬 ' + (mr === null ? '—' : arrowPct(mr)); $('#ov-rangem').className = mr === null ? 'zero' : cls(mr); }
-    $('#ov-ranger').textContent = '淨值報酬 ' + arrowPct(d.rangeR); $('#ov-ranger').className = cls(d.rangeR);
+    const setRet = (id, v) => { $(id).textContent = v === null || v === undefined || isNaN(v) ? '—' : pct(v); $(id).className = v === null || v === undefined || isNaN(v) ? 'zero' : cls(v); };
+    { const base = (d.mv || 0) - (d.rangePl || 0); setRet('#ov-ret-m', base > 0 && d.mv > 0 ? d.rangePl / base : null); }
+    setRet('#ov-ret-t', d.rangeR);
+    $('#ov-rangeh').textContent = md(ovRange.from) + ' – ' + md(ovRange.to);
+    call('appHoldings').then(h => {
+      const cost = h.reduce((a, x) => a + (x.cost || 0), 0), pl = h.reduce((a, x) => a + (x.pl || 0), 0);
+      setRet('#ov-ret-h', cost > 0 ? pl / cost : null);
+    }).catch(() => {});
     [['#ov-r1', d.rangeR], ['#ov-r2', d.tx], ['#ov-r3', d.e50]].forEach(([id, v]) => { $(id).textContent = pct(v); $(id).className = cls(v); });
     renderOvChart();
   } catch (e) { toast('讀取失敗：' + errMsg(e)); }
@@ -540,9 +550,9 @@ async function loadHoldings() {
       if (!hAll.length) { body.innerHTML = '<div class="empty">目前沒有持股</div>'; return; }
       const h = hAll.filter(x => qMatch(x.name, qs.ho));
       if (!h.length) { body.innerHTML = noHit(qs.ho, '持股'); return; }
-      const mv = h.reduce((s, x) => s + (x.mv || 0), 0), pl = h.reduce((s, x) => s + (x.pl || 0), 0);
+      const mv = h.reduce((s, x) => s + (x.mv || 0), 0), pl = h.reduce((s, x) => s + (x.pl || 0), 0), cost = h.reduce((s, x) => s + (x.cost || 0), 0);
       body.innerHTML = '<div class="card grid2"><div class="col"><span class="lbl">持股市值</span><span style="font-size:22px;font-weight:700">' + fmt(mv) +
-        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span></div></div>' +
+        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' +
         h.map(x => '<div class="card col" style="gap:12px"><div class="row" style="align-items:flex-start"><div class="col" style="gap:2px"><span style="font-size:17px;font-weight:700">' + esc(shortName(x.name)) +
           '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + arrowPct(x.r).replace(/(\.\d)\d%/, '$1%') + '</span></div></div><div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
