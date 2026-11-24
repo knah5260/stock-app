@@ -104,8 +104,8 @@ h2{margin:0;font-size:15px;font-weight:600}
 .tabbar button{position:relative;z-index:1;flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:#C9CED6;transition:color .25s,transform .35s cubic-bezier(.34,1.5,.5,1)}
 .tabbar button.on{color:#6CB8FF;font-weight:700}
 /* 提示與彈窗 */
-.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-120%);background:#2C313B;border:1px solid #3A3F49;color:var(--tx);padding:10px 16px;border-radius:14px;font-size:14px;z-index:50;transition:transform .35s cubic-bezier(.34,1.4,.5,1);max-width:90%;text-align:center}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-120%);background:#2C313B;border:1px solid #3A3F49;color:var(--tx);padding:10px 16px;border-radius:14px;font-size:14px;z-index:50;transition:transform .35s cubic-bezier(.34,1.4,.5,1),opacity .25s;max-width:90%;text-align:center;opacity:0;pointer-events:none}
+.toast.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
 .sheet{position:absolute;inset:0;justify-content:center;background:rgba(0,0,0,.55);z-index:40;display:none;align-items:flex-end}
 .sheet.show{display:flex}
 .sheet .panel{width:100%;max-width:600px;background:#15181D;border-radius:22px 22px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:85%;overflow-y:auto}
