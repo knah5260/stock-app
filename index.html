@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="證券資產">
-<meta name="theme-color" content="#0E1014">
+<meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
 <title>我的證券資產</title>
 <style>
-:root{--bg:#0E1014;--card:#171A20;--card2:#1F232B;--line:#262A32;--bd:#23272F;--tx:#F2F3F5;--mut:#A3A9B2;--dim:#6B717B;--acc:#F59A4A;--up:#FF6B6B;--dn:#4ADE95}
+:root{--bg:#000000;--card:#171A20;--card2:#1F232B;--line:#262A32;--bd:#23272F;--tx:#F2F3F5;--mut:#A3A9B2;--dim:#6B717B;--acc:#F59A4A;--up:#FF6B6B;--dn:#4ADE95}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Noto Sans TC",sans-serif;font-variant-numeric:tabular-nums}
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
@@ -228,49 +228,6 @@ h2{margin:0;font-size:15px;font-weight:600}
 </div>
 
 <script>
-// iOS 主畫面 App 的已知問題：鍵盤打開過一次之後，畫面高度會縮短，
-// 底部出現黑色區塊、導航列跑高。偵測到時把畫面重新排版一次，讓 iOS 重新計算高度。
-(function () {
-  const app = document.getElementById('app');
-  function fullH() {
-    if (!window.navigator.standalone) return 0;
-    const sw = screen.width, sh = screen.height;
-    const landscape = window.innerWidth > window.innerHeight;
-    const fw = landscape ? Math.max(sw, sh) : Math.min(sw, sh);
-    if (Math.abs(window.innerWidth - fw) > 2) return 0;   // iPad 分割畫面時不處理
-    return landscape ? Math.min(sw, sh) : Math.max(sw, sh);
-  }
-  let maxVH = Math.max(window.innerHeight, fullH());
-  let busy = false;
-  function stuck() {
-    const ae = document.activeElement;
-    if (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return false;  // 鍵盤開著時不動
-    return maxVH - window.innerHeight > 4;
-  }
-  function heal(tries) {
-    if (busy || !stuck()) return;
-    busy = true;
-    const v = document.querySelector('.view.on'), top = v ? v.scrollTop : 0;
-    app.style.display = 'none';
-    void app.offsetHeight;
-    app.style.display = '';
-    if (v) v.scrollTop = top;
-    busy = false;
-    if (tries > 0) setTimeout(() => { if (stuck()) heal(tries - 1); }, 250);
-  }
-  const later = ms => setTimeout(() => heal(2), ms);
-  window.addEventListener('resize', () => {
-    const fh = fullH();
-    if (fh) maxVH = Math.max(fh, window.innerHeight);
-    else maxVH = window.innerHeight;
-    later(150);
-  });
-  document.addEventListener('focusout', () => later(160));
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) later(200); });
-  window.addEventListener('pageshow', () => later(200));
-  window.addEventListener('orientationchange', () => setTimeout(() => { maxVH = Math.max(window.innerHeight, fullH()); heal(2); }, 400));
-  later(300); later(1200);
-})();
 // ---------- 共用 ----------
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
