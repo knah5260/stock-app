@@ -134,7 +134,7 @@ h2{margin:0;font-size:15px;font-weight:600}
     </button>
   </div>
   <div class="card col" style="gap:14px">
-    <div class="col"><span class="lbl">總資產（台幣）</span><span class="big" id="ov-mv">—</span></div>
+    <div class="col"><span class="lbl">台股總資產</span><span class="big" id="ov-mv">—</span></div>
     <div class="grid2">
       <div class="mini col"><span class="lbl">今日損益</span><span style="font-size:20px;font-weight:700" id="ov-today">—</span><span style="font-size:12px" id="ov-todayr"></span></div>
       <div class="mini col"><span class="lbl">區間累計損益</span><span style="font-size:20px;font-weight:700" id="ov-range">—</span><span style="font-size:12px" id="ov-ranger"></span></div>
@@ -474,7 +474,7 @@ async function loadOverview() {
     setNum('#ov-today', d.todayPl, true);
     $('#ov-todayr').textContent = arrowPct(d.todayR); $('#ov-todayr').className = cls(d.todayR);
     setNum('#ov-range', d.rangePl, true);
-    $('#ov-ranger').textContent = arrowPct(d.rangeR); $('#ov-ranger').className = cls(d.rangeR);
+    $('#ov-ranger').textContent = '淨值報酬 ' + arrowPct(d.rangeR); $('#ov-ranger').className = cls(d.rangeR);
     [['#ov-r1', d.rangeR], ['#ov-r2', d.tx], ['#ov-r3', d.e50]].forEach(([id, v]) => { $(id).textContent = pct(v); $(id).className = cls(v); });
     renderOvChart();
   } catch (e) { toast('讀取失敗：' + errMsg(e)); }
