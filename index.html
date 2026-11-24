@@ -254,6 +254,9 @@ h2{margin:0;font-size:15px;font-weight:600}
 .tag{font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px;background:#1E2E4A;color:#9CC4FF;margin-left:6px;vertical-align:middle}
 .tag.s{background:#173A2A;color:#9CF0C4}
 .tag.a{background:#2C313B;color:#C9CED6}
+.imtb{border-collapse:collapse;font-size:12px;white-space:nowrap}
+.imtb th,.imtb td{border:1px solid var(--line);padding:4px 6px;text-align:left}
+.imtb th{color:var(--mut);font-weight:600}
 .selrow select{flex:1;min-width:0;text-align:right;background:transparent;border:0;color:var(--tx);font-size:16px;-webkit-appearance:none;appearance:none;direction:rtl}
 .acc{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
 .acc:last-child{border-bottom:0}
@@ -276,7 +279,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="row">
     <div class="row" style="gap:12px;justify-content:flex-start;min-width:0;align-items:flex-start">
       <button class="avatar" id="ov-avatar" aria-label="開啟選單"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="dot" id="ov-dot"></span></button>
-      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button></div>
+      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button><button class="pill" id="ov-due"></button><button class="pill" id="ov-st"></button></div>
     </div>
     <span class="row" style="gap:8px;align-self:flex-start"><button class="iconbtn" id="btn-priv" aria-label="隱藏金額"></button>
     <button class="iconbtn" id="btn-refresh" aria-label="重新抓收盤價並更新">
@@ -359,8 +362,8 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="tr-crseg">
     <button class="on" data-k="cash">現股</button><button data-k="mt">融資</button><button data-k="ss">融券</button>
   </div>
-  <div class="seg" style="grid-template-columns:repeat(4,minmax(0,1fr));display:none" id="tr-spseg">
-    <button class="on" data-k="split">分割</button><button data-k="rsplit">減資</button><button data-k="repay">融資現償</button><button data-k="call">追繳</button>
+  <div class="seg" style="grid-template-columns:repeat(5,minmax(0,1fr));display:none" id="tr-spseg">
+    <button class="on" data-k="split">分割</button><button data-k="rsplit">減資</button><button data-k="cap">增資</button><button data-k="repay">現償</button><button data-k="call">追繳</button>
   </div>
   <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr));display:none" id="tr-divseg">
     <button class="on" data-k="cash">現金股利</button><button data-k="stock">股票股利</button>
@@ -426,6 +429,7 @@ h2{margin:0;font-size:15px;font-weight:600}
     <button class="di" data-pg="divinc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg>股利與所得</button>
     <button class="di" data-pg="dca"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>定期定額</button>
     <button class="di" data-pg="batch"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>批次新增紀錄</button>
+    <button class="di" data-pg="import"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>匯入券商對帳單</button>
     <button class="di" id="dr-export"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>匯出交易紀錄（CSV）</button>
     <button class="di" data-pg="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
     <div class="foot" id="dr-foot">版本 2.0</div>
@@ -452,7 +456,7 @@ h2{margin:0;font-size:15px;font-weight:600}
     <label class="srow"><span>整股最低手續費</span><input class="inp" type="number" inputmode="numeric" id="st-min" min="0"></label>
     <label class="srow"><span>零股最低手續費</span><input class="inp" type="number" inputmode="numeric" id="st-minodd" min="0"></label>
   </div>
-  <span class="note" style="padding:0 4px">手續費＝成交金額 × 0.1425% × 折數，無條件捨去，不足最低手續費以最低計。未滿 1,000 股（零股）套用零股最低手續費。交易稅（股票 0.3%、ETF 0.1%、當沖 0.15%）依法規固定，不需設定。<br>儲存後，試算表裡所有紀錄的手續費都會依新設定重新計算。</span>
+  <span class="note" style="padding:0 4px">手續費＝成交金額 × 0.1425% × 折數，無條件捨去，不足最低手續費以最低計。未滿 1,000 股（零股）套用零股最低手續費。交易稅（股票 0.3%、ETF 0.1%、現股當沖 0.15%、債券 ETF 免徵）依法規固定，不需設定。<br>儲存後，試算表裡所有紀錄的手續費都會依新設定重新計算。</span>
   <button class="primary" id="st-savefee">儲存手續費設定</button>
 
   <span class="sec">信用交易（融資融券）</span>
@@ -465,6 +469,12 @@ h2{margin:0;font-size:15px;font-weight:600}
   </div>
   <span class="note" style="padding:0 4px">依你的券商設定填寫。一般上市股票融資 6 成、融券保證金 9 成；借券費多為 0.08%。</span>
   <button class="primary" id="st-savecr" style="background:#2C313B;color:var(--tx)">儲存信用交易設定</button>
+
+  <span class="sec">股利</span>
+  <div class="card" style="padding:2px 16px">
+    <div class="srow"><span style="color:var(--tx)">計算二代健保補充保費</span><label class="sw"><input type="checkbox" id="st-nhi"><span></span></label></div>
+  </div>
+  <span class="note" style="padding:0 4px">單筆現金股利達 2 萬元時，券商會先扣 2.11% 補充保費（上限 1,000 萬元）。如果你符合免扣取資格（例如低收入戶），或實際入帳沒被扣，可以關閉；所有股利紀錄會重新計算。</span>
 
   <span class="sec">除權息</span>
   <div class="card" style="padding:2px 16px">
@@ -512,6 +522,27 @@ h2{margin:0;font-size:15px;font-weight:600}
   <span class="sec">我的定期定額</span>
   <div id="dc-list" class="list"></div>
   <span class="note" style="padding:0 4px">設定好扣款日和金額後，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存進 LOG。</span>
+</section>
+
+<!-- 匯入對帳單（畫面先做，解析規則之後再加）-->
+<section class="page" id="pg-import" aria-label="匯入券商對帳單">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>匯入券商對帳單</h1></div>
+  <div class="card" style="border-color:#5A4520;background:#2A2110;color:#F5C04A;font-size:14px">這個功能還在準備中：可以先選擇券商和檔案看看內容，但還不會解析或寫入紀錄。</div>
+  <div class="form">
+    <label class="selrow"><span>券商</span><select id="im-broker">
+      <option value="">請選擇</option><option>元大證券</option><option>凱基證券</option><option>富邦證券</option><option>國泰證券</option><option>永豐金證券</option><option>群益金鼎證券</option><option>玉山證券</option><option>台新證券</option><option>兆豐證券</option><option>元富證券</option><option>統一證券</option><option>中國信託證券</option><option>其他</option>
+    </select></label>
+    <label class="selrow" id="im-acctrow" style="display:none"><span>寫入帳戶</span><select id="im-acct"></select></label>
+  </div>
+  <label class="card col" for="im-file" style="gap:6px;align-items:center;justify-content:center;min-height:120px;border-style:dashed;cursor:pointer;text-align:center">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--acc)"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
+    <span style="font-weight:600" id="im-fname">選擇對帳單檔案</span>
+    <span class="lbl" id="im-finfo">支援 CSV、Excel（.xls、.xlsx）、PDF</span>
+    <input type="file" id="im-file" accept=".csv,.txt,.xls,.xlsx,.pdf,text/csv,application/pdf" style="display:none">
+  </label>
+  <span class="sec">預覽</span>
+  <div class="card" id="im-preview"><span class="lbl">選好檔案後會在這裡顯示內容。之後會改成自動辨識成交日期、股票、買賣、股數和價格，讓你核對後再匯入。</span></div>
+  <button class="primary" id="im-go" disabled>匯入（尚未開放）</button>
 </section>
 
 <!-- 批次新增 -->
@@ -785,7 +816,9 @@ async function loadOverview() {
       const cost = h.reduce((a, x) => a + (x.cost || 0), 0), pl = h.reduce((a, x) => a + (x.pl || 0), 0);
       setRet('#ov-ret-h', cost > 0 ? pl / cost : null);
       setMaintPill(h);
+      setDuePill(h);
     }).catch(() => {});
+    { const p = $('#ov-st'); const bad = d.status && d.status !== '完整'; p.textContent = '部分收盤價未抓到，下次更新會補'; p.classList.toggle('on', !!bad); }
     renderCmp();
     renderRisk();
     checkCA();
@@ -914,20 +947,22 @@ async function loadHoldings() {
       if (!h.length) { body.innerHTML = noHit(qs.ho, '持股'); return; }
       const mv = h.reduce((s, x) => s + (x.mv || 0), 0), pl = h.reduce((s, x) => s + (x.pl || 0), 0), cost = h.reduce((s, x) => s + (x.cost || 0), 0);
       const alloc = qs.ho ? '' : allocCard(hAll);
+      const noPx = h.filter(x => !x.price);
+      const pxNote = noPx.length ? '<div class="card" style="border-color:#5A4520;background:#2A2110;color:#F5C04A;font-size:14px">' + esc(noPx.map(x => shortName(x.name)).join('、')) + ' 目前抓不到現價，市值暫以 0 計算。通常是剛上市、停牌或資料來源暫時異常，稍後重新整理即可。</div>' : '';
       const mts = maintByAcct(hAll);
       const mtCard = mts.length ? '<div class="card col" style="gap:8px"><span class="lbl">整戶擔保維持率（融資＋融券）</span>' + mts.map(o => '<div class="row"><span>' + (ACCT === '*' ? esc(acctName(o.acct)) : '目前') + '</span><span style="font-size:20px;font-weight:700;' + maintCls(o.r) + '">' + Math.round(o.r * 100) + '%</span></div>').join('') +
         '<span class="note">＝（融資股票市值＋融券擔保品＋融券保證金）÷（融資金額＋融券股票市值）。低於 130% 券商會追繳，補回 166% 以上才解除。</span></div>' : '';
       body.innerHTML = '<div class="card grid2"><div class="col"><span class="lbl">持股市值</span><span style="font-size:22px;font-weight:700">' + fmt(mv) +
-        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' + mtCard + alloc +
+        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' + pxNote + mtCard + alloc +
         h.map(x => '<div class="card col hc" style="gap:12px"><div class="row" style="align-items:flex-start"><div class="col" style="gap:2px"><span style="font-size:17px;font-weight:700">' + esc(shortName(x.name)) +
           (x.short ? '<span class="tag s">融券</span>' : x.mt > 0 ? '<span class="tag">融資</span>' : '') + (ACCT === '*' && x.acctName ? '<span class="tag a">' + esc(x.acctName) + '</span>' : '') +
           '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股' + (x.mt > 0 && !x.short && x.mt < x.units ? '（融資 ' + fmt(x.mt) + '）' : '') + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + arrowPct(x.r).replace(/(\.\d)\d%/, '$1%') + '</span></div></div><div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
-          '<div class="col" style="gap:2px"><span class="lbl">現價</span><span style="font-weight:600">' + (x.price === null ? '—' : x.price.toLocaleString('en-US')) + '</span></div>' +
+          '<div class="col" style="gap:2px"><span class="lbl">現價</span>' + (x.price ? '<span style="font-weight:600">' + x.price.toLocaleString('en-US') + '</span>' : '<span style="font-weight:600;color:#F5C04A">抓不到</span>') + '</div>' +
           '<div class="col" style="gap:2px"><span class="lbl">成本均價</span><span style="font-weight:600">' + (x.avg === null ? '—' : x.avg.toFixed(2)) + '</span></div>' +
           '<div class="col" style="gap:2px"><span class="lbl">市值</span><span style="font-weight:600">' + fmt(x.mv) + '</span></div></div>' +
           (x.short ? '<div class="grid3" style="padding-top:2px"><div class="col" style="gap:2px"><span class="lbl">擔保品</span><span style="font-weight:600">' + fmt(x.collat) + '</span></div><div class="col" style="gap:2px"><span class="lbl">保證金</span><span style="font-weight:600">' + fmt(x.margin) + '</span></div><div class="col" style="gap:2px"><span class="lbl">個股維持率</span><span style="font-weight:600">' + (x.mv ? Math.round((x.collat + x.margin) / Math.abs(x.price * x.units) * 100) + '%' : '—') + '</span></div></div>' :
-           x.mt > 0 ? '<div class="grid3" style="padding-top:2px"><div class="col" style="gap:2px"><span class="lbl">融資金額</span><span style="font-weight:600">' + fmt(x.loan) + '</span></div><div class="col" style="gap:2px"><span class="lbl">自備款</span><span style="font-weight:600">' + fmt(x.self) + '</span></div><div class="col" style="gap:2px"><span class="lbl">個股維持率</span><span style="font-weight:600">' + (x.loan ? Math.round(x.price * x.mt / x.loan * 100) + '%' : '—') + '</span></div></div>' : '') +
+           x.mt > 0 ? '<div class="grid3" style="padding-top:2px"><div class="col" style="gap:2px"><span class="lbl">融資金額</span><span style="font-weight:600">' + fmt(x.loan) + '</span></div><div class="col" style="gap:2px"><span class="lbl">自備款</span><span style="font-weight:600">' + fmt(x.self) + '</span></div><div class="col" style="gap:2px"><span class="lbl">個股維持率</span><span style="font-weight:600">' + (x.loan ? Math.round(x.price * x.mt / x.loan * 100) + '%' : '—') + '</span></div></div>' + mtDueLine(x) : '') +
           '</div>').join('');
     } else if (hoTab === 'closed') {
       const r = (await call('appRealized', hoRange.from, hoRange.to)).filter(x => qMatch(x.name, qs.ho));
@@ -1053,12 +1088,12 @@ function setKind(k) {
   $('#tr-spseg').style.display = isSp ? '' : 'none';
   $('#tr-crseg').style.display = isTr ? '' : 'none';
   $('#tr-dtrow').style.display = isTr ? '' : 'none';
-  $('#tr-datelbl').textContent = isDiv ? '發放日' : ratio ? '生效日' : '日期';
+  $('#tr-datelbl').textContent = isDiv ? '發放日' : ratio ? '生效日' : isSp && spType === 'cap' ? '繳款日' : '日期';
   $('#tr-pricerow').style.display = (isDiv && divType === 'stock') || ratio || (isSp && spType === 'repay') ? 'none' : '';
   $('#tr-units').closest('label').style.display = isSp && spType === 'call' ? 'none' : '';
-  $('#tr-unitslbl').textContent = isDiv ? (divType === 'cash' ? '持有股數' : '配發股數') : ratio ? (spType === 'split' ? '1 股變成幾股' : '幾股合成 1 股') : isSp && spType === 'repay' ? '償還股數' : '股數';
+  $('#tr-unitslbl').textContent = isDiv ? (divType === 'cash' ? '持有股數' : '配發股數') : ratio ? (spType === 'split' ? '1 股變成幾股' : '幾股合成 1 股') : isSp && spType === 'repay' ? '償還股數' : isSp && spType === 'cap' ? '認購股數' : '股數';
   $('#tr-units').setAttribute('inputmode', ratio ? 'decimal' : 'numeric');
-  $('#tr-pricelbl').textContent = isDiv ? '每股現金股利' : isSp && spType === 'call' ? '補繳金額' : '成交價';
+  $('#tr-pricelbl').textContent = isDiv ? '每股現金股利' : isSp && spType === 'call' ? '補繳金額' : isSp && spType === 'cap' ? '認購價' : '成交價';
   if (isDiv && divType === 'cash') autoHeld();
   estimate();
 }
@@ -1089,7 +1124,10 @@ function estimate() {
   const amt = Math.floor(u * p);
   let rows = [], tot = '', totLbl = '淨金額', note = '預估（儲存後會顯示試算表實際計算結果）';
   const it = formRecord().item, cr = meta && meta.credit || {mp: 6, ss: 9, sf: 0.0008};
-  if (kind === 'split' && (spType === 'repay' || spType === 'call')) {
+  if (kind === 'split' && spType === 'cap') {
+    rows = [['認購金額', fmt(amt)], ['手續費', '0'], ['交易稅', '0']]; totLbl = '應繳股款'; tot = sgn(-amt);
+    note = '現金增資認購：不收手續費和交易稅，股票列入現股庫存（增資股上市後才能賣）。銀行匯費或處理費可在試算表的「金額修正」欄補記。';
+  } else if (kind === 'split' && (spType === 'repay' || spType === 'call')) {
     rows = spType === 'repay' ? [['償還股數', fmt(u)]] : [['補繳金額', fmt(p)]];
     totLbl = spType === 'repay' ? '融資現償' : '保證金追繳'; tot = spType === 'repay' ? fmt(u) + ' 股' : fmt(p);
     note = spType === 'repay' ? '現金償還融資，股票轉成現股；需付的金額以試算表計算為準' : '補繳融資或融券的保證金';
@@ -1104,7 +1142,8 @@ function estimate() {
   } else {
     const fee = amt ? Math.max(minFee, Math.floor(amt * 0.001425 * disc)) : 0;
     const etf = /^00/.test(code);
-    const tax = kind === 'sell' ? Math.floor(amt * ($('#tr-dt').checked && !etf ? 0.0015 : etf ? 0.001 : 0.003)) : 0;
+    const bond = /^00\d+B$/.test(code);
+    const tax = kind === 'sell' && !bond ? Math.floor(amt * ($('#tr-dt').checked && !etf ? 0.0015 : etf ? 0.001 : 0.003)) : 0;
     const net = kind === 'sell' ? amt - fee - tax : -(amt + fee);
     rows = [['成交金額', fmt(amt)], ['手續費', fmt(fee)], ['交易稅', fmt(tax)]];
     tot = sgn(net);
@@ -1124,7 +1163,7 @@ function estimate() {
 }
 function formRecord() {
   const CR = {buy: {cash: '買進', mt: '融資買進', ss: '融券買進'}, sell: {cash: '賣出', mt: '融資賣出', ss: '融券賣出'}};
-  const SP = {split: '股票分割', rsplit: '股票反分割', repay: '融資現償', call: '保證金追繳'};
+  const SP = {split: '股票分割', rsplit: '股票反分割', cap: '現金增資', repay: '融資現償', call: '保證金追繳'};
   const item = CR[kind] ? CR[kind][crType] : kind === 'split' ? SP[spType] : divType === 'cash' ? '現金股利' : '股票股利';
   const noPrice = ['股票股利', '股票分割', '股票反分割', '融資現償'].indexOf(item) >= 0;
   return {date: $('#tr-date').value, item: item, name: $('#tr-name').value.trim(), units: item === '保證金追繳' ? 1 : +$('#tr-units').value, price: noPrice ? 0 : +$('#tr-price').value,
@@ -1149,7 +1188,7 @@ $('#tr-save').onclick = async () => {
   const rec = formRecord();
   if (!rec.name || !/（.+）$/.test(rec.name)) return toast('請選擇股票，或輸入代號');
   if (!(rec.units > 0)) return toast(kind === 'split' ? '請輸入比例' : '請輸入股數');
-  if (['買進', '賣出', '現金股利', '融資買進', '融資賣出', '融券賣出', '融券買進', '保證金追繳'].indexOf(rec.item) >= 0 && !(rec.price > 0)) return toast(rec.item === '保證金追繳' ? '請輸入金額' : '請輸入價格');
+  if (['買進', '賣出', '現金股利', '融資買進', '融資賣出', '融券賣出', '融券買進', '保證金追繳', '現金增資'].indexOf(rec.item) >= 0 && !(rec.price > 0)) return toast(rec.item === '保證金追繳' ? '請輸入金額' : '請輸入價格');
   if (!editing && !(await confirmWarn(recWarnings(rec)))) return;
   const b = $('#tr-save'); b.disabled = true; b.textContent = '儲存中…';
   try {
@@ -1177,12 +1216,12 @@ $('#tr-cancel').onclick = () => { resetForm(); show('records'); };
 function editRecord(x) {
   editing = {row: x.row, expect: {d: x.d, item: x.item, name: x.name}, acct: x.acct || writeAcct()};
   divType = x.item === '股票股利' ? 'stock' : 'cash';
-  spType = {股票反分割: 'rsplit', 融資現償: 'repay', 保證金追繳: 'call'}[x.item] || 'split';
+  spType = {股票反分割: 'rsplit', 現金增資: 'cap', 融資現償: 'repay', 保證金追繳: 'call'}[x.item] || 'split';
   crType = /融資/.test(x.item) ? 'mt' : /融券/.test(x.item) ? 'ss' : 'cash';
   $$('#tr-crseg button').forEach(b => b.classList.toggle('on', b.dataset.k === crType));
   $$('#tr-divseg button').forEach(b => b.classList.toggle('on', b.dataset.k === divType));
   $$('#tr-spseg button').forEach(b => b.classList.toggle('on', b.dataset.k === spType));
-  setKind(/^(買進|融資買進|融券買進)$/.test(x.item) ? 'buy' : /^(賣出|融資賣出|融券賣出)$/.test(x.item) ? 'sell' : /分割|現償|追繳/.test(x.item) ? 'split' : 'div');
+  setKind(/^(買進|融資買進|融券買進)$/.test(x.item) ? 'buy' : /^(賣出|融資賣出|融券賣出)$/.test(x.item) ? 'sell' : /分割|現償|追繳|增資/.test(x.item) ? 'split' : 'div');
   renderAcctUI();
   $('#tr-title').textContent = '修改紀錄';
   $('#tr-date').value = x.d; $('#tr-name').value = x.name; $('#tr-units').value = x.units; $('#tr-price').value = x.price || ''; $('#tr-dt').checked = !!x.dayTrade;
@@ -1215,10 +1254,10 @@ function renderRecords() {
   let h = '', last = '';
   f.forEach((x, i) => {
     if (x.d !== last) { last = x.d; h += '<span class="lbl" style="font-weight:700;padding:4px 4px 0">' + md(x.d) + '</span>'; }
-    const b = /^(買進|融資買進|融券買進)$/.test(x.item) ? 'b-buy' : /^(賣出|融資賣出|融券賣出)$/.test(x.item) ? 'b-sell' : /分割|現償|追繳/.test(x.item) ? 'b-sp' : 'b-div';
-    const desc = (ACCT === '*' && x.acctName ? x.acctName + ' · ' : '') + (x.item === '保證金追繳' ? '補繳 ' + fmt(x.price) + ' 元' : x.item === '融資現償' ? '償還 ' + fmt(x.units) + ' 股' : /分割/.test(x.item) ? (x.item === '股票分割' ? '1 股 → ' + x.units + ' 股' : x.units + ' 股 → 1 股') : /股利/.test(x.item) ? (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' : '配發 ' + fmt(x.units) + ' 股') : fmt(x.units) + ' 股 @' + x.price + (x.dayTrade ? ' · 當沖' : ''));
+    const b = /^(買進|融資買進|融券買進)$/.test(x.item) ? 'b-buy' : /^(賣出|融資賣出|融券賣出)$/.test(x.item) ? 'b-sell' : /分割|現償|追繳|增資/.test(x.item) ? 'b-sp' : 'b-div';
+    const desc = (ACCT === '*' && x.acctName ? x.acctName + ' · ' : '') + (x.item === '保證金追繳' ? '補繳 ' + fmt(x.price) + ' 元' : x.item === '融資現償' ? '償還 ' + fmt(x.units) + ' 股' : x.item === '現金增資' ? '認購 ' + fmt(x.units) + ' 股 @' + x.price : /分割/.test(x.item) ? (x.item === '股票分割' ? '1 股 → ' + x.units + ' 股' : x.units + ' 股 → 1 股') : /股利/.test(x.item) ? (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' : '配發 ' + fmt(x.units) + ' 股') : fmt(x.units) + ' 股 @' + x.price + (x.dayTrade ? ' · 當沖' : ''));
     h += '<button class="item row" data-i="' + reData.indexOf(x) + '" style="text-align:left;width:100%;color:inherit;padding:10px 12px" aria-label="修改 ' + esc(shortName(x.name)) + ' ' + esc(x.item) + '">' +
-      '<span class="badge ' + b + '">' + esc(({融資買進: '資買', 融資賣出: '資賣', 融券賣出: '券賣', 融券買進: '券買', 融資現償: '現償', 保證金追繳: '追繳', 股票反分割: '減資', 股票分割: '分割', 股票股利: '配股', 現金股利: '股利'})[x.item] || x.item) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(shortName(x.name)) +
+      '<span class="badge ' + b + '">' + esc(({融資買進: '資買', 融資賣出: '資賣', 融券賣出: '券賣', 融券買進: '券買', 融資現償: '現償', 保證金追繳: '追繳', 股票反分割: '減資', 股票分割: '分割', 現金增資: '增資', 股票股利: '配股', 現金股利: '股利'})[x.item] || x.item) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(shortName(x.name)) +
       '</span><span class="lbl">' + desc + '</span></span><span style="font-size:14px;font-weight:700">' + (x.net === null ? '—' : sgn(x.net)) + '</span>' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3A9B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>';
   });
@@ -1274,7 +1313,7 @@ $('#dr-bg').onclick = closeDrawer;
 $$('#drawer .di[data-pg]').forEach(b => b.onclick = () => { closeDrawer(); openPage(b.dataset.pg); });
 $('#dr-foot').textContent = '版本 ' + APP_VER; $('#st-ver').textContent = '版本 ' + APP_VER;
 let pageCur = null;
-const pageLoaders = {settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
+const pageLoaders = {import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
 function openPage(p) {
   $$('.page').forEach(x => x.classList.toggle('on', x.id === 'pg-' + p));
   pageCur = p; $('#pg-' + p).scrollTop = 0;
@@ -1337,6 +1376,11 @@ $('#st-addacct').onclick = async () => {
   finally { b.disabled = false; b.textContent = '新增'; }
 };
 $('#st-acct').onchange = () => { stAcct = $('#st-acct').value; loadSettings(); };
+$('#st-nhi').onchange = async e => {
+  const el = e.target; el.disabled = true;
+  try { stData = await callIn(stAcct || writeAcct(), 'appSaveOptions', {nhi: el.checked}); afterWrite(); toast(el.checked ? '已開啟二代健保補充保費計算' : '已關閉二代健保補充保費計算'); }
+  catch (x) { el.checked = !el.checked; toast('儲存失敗：' + errMsg(x), 4000); } finally { el.disabled = false; }
+};
 $('#st-savecr').onclick = async () => {
   const o = {mp: +$('#st-mp').value, ss: +$('#st-ss').value, mi: +$('#st-mi').value / 100, si: +$('#st-si').value / 100, sf: +$('#st-sf').value / 100};
   const b = $('#st-savecr'); b.disabled = true;
@@ -1359,6 +1403,7 @@ async function loadSettings() {
     $('#st-min').value = stData.minFee; $('#st-minodd').value = stData.minOdd;
     $('#st-dis').textContent = stData.dismissed + ' 筆';
     $('#st-sheet').href = stData.sheetUrl;
+    $('#st-nhi').checked = stData.nhi !== false;
   } catch (e) { $('#st-fees').innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
 }
 function renderFees() {
@@ -1828,6 +1873,30 @@ function setMaintPill(hs) {
   p.classList.add('on');
 }
 $('#ov-mt').onclick = () => { show('holdings', true); };
+// 融資期限：自融資買進日起半年（可向券商申請展延）
+function mtDueOf(x) {
+  if (!x.mtDue || !(x.mt > 0)) return null;
+  const d = new Date(x.mtDue + 'T00:00:00'); d.setMonth(d.getMonth() + 6);
+  const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const days = Math.round((d - new Date(TODAY + 'T00:00:00')) / 864e5);
+  return {key: key, days: days};
+}
+function mtDueLine(x) {
+  const o = mtDueOf(x); if (!o) return '';
+  const st = o.days < 0 ? 'color:#FF8A8A' : o.days <= 30 ? 'color:#F5C04A' : '';
+  return '<span class="lbl" style="' + st + '">融資期限 ' + ymd(o.key) + (o.days < 0 ? '（已到期，請償還或向券商申請展延）' : o.days <= 30 ? '（剩 ' + o.days + ' 天，可向券商申請展延半年）' : '') + '</span>';
+}
+function setDuePill(hs) {
+  const list = hs.map(x => ({x: x, o: mtDueOf(x)})).filter(z => z.o && z.o.days <= 30);
+  const p = $('#ov-due');
+  if (!list.length) { p.classList.remove('on'); return; }
+  const over = list.some(z => z.o.days < 0);
+  p.textContent = list.length + ' 檔融資' + (over ? '已到期或' : '') + '將在 30 天內到期';
+  p.style.cssText = over ? 'border-color:#6A2A2E;background:#2A1214;color:#FF8A8A' : '';
+  p.classList.add('on');
+}
+$('#ov-due').onclick = () => { show('holdings', true); };
+$('#ov-st').onclick = () => { $('#btn-refresh') && $('#btn-refresh').click(); };
 
 // ---------- 匯出 ----------
 async function exportCSV() {
@@ -1845,6 +1914,35 @@ async function exportCSV() {
   } catch (e) { toast('匯出失敗：' + errMsg(e), 4000); }
 }
 $('#dr-export').onclick = () => { closeDrawer(); exportCSV(); };
+
+// ---------- 匯入對帳單（目前只做畫面與預覽）----------
+function loadImport() {
+  const row = $('#im-acctrow');
+  row.style.display = multi() ? '' : 'none';
+  if (multi()) $('#im-acct').innerHTML = acctOptions(writeAcct());
+}
+$('#im-file').onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  $('#im-fname').textContent = f.name;
+  $('#im-finfo').textContent = (f.size / 1024).toFixed(1) + ' KB · ' + ($('#im-broker').value || '尚未選擇券商');
+  const box = $('#im-preview');
+  if (/\.(csv|txt)$/i.test(f.name)) {
+    let txt = '';
+    try {
+      const buf = await f.arrayBuffer();
+      txt = new TextDecoder('utf-8', {fatal: true}).decode(buf);
+    } catch (x) {
+      try { txt = new TextDecoder('big5').decode(await f.arrayBuffer()); } catch (y) { txt = ''; }
+    }
+    const lines = txt.split(/\r?\n/).filter(l => l.trim()).slice(0, 12);
+    const cells = l => l.split(/,|\t/).map(c => c.replace(/^"|"$/g, '').trim());
+    box.innerHTML = lines.length ? '<span class="lbl">前 ' + lines.length + ' 行（原始內容，尚未辨識欄位）</span><div style="overflow-x:auto;margin-top:8px"><table class="imtb">' +
+      lines.map((l, i) => '<tr>' + cells(l).slice(0, 10).map(c => (i ? '<td>' : '<th>') + esc(c) + (i ? '</td>' : '</th>')).join('') + '</tr>').join('') + '</table></div>' : '<span class="lbl">讀不到內容</span>';
+  } else {
+    box.innerHTML = '<span class="lbl">' + esc(f.name) + '：Excel 和 PDF 的內容會在解析功能完成後顯示。</span>';
+  }
+};
 
 // ---------- 啟動 ----------
 const loaders = {overview: loadOverview, holdings: loadHoldings, calendar: loadCalendar, trade: () => { loaded.trade = true; loadMeta().then(estimate).catch(() => {}); }, records: loadRecords};
