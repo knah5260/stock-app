@@ -19,9 +19,10 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Noto Sans TC",sans-serif;font-variant-numeric:tabular-nums}
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
-#app{position:fixed;top:0;left:0;right:0;bottom:calc(0px - var(--gap, 0px));overflow:hidden}
+#app{position:fixed;top:0;left:0;right:0;height:var(--appH, 100%);overflow:hidden}
 .view{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(20px + env(safe-area-inset-top)) 18px 120px;display:none;flex-direction:column;gap:14px}
 .view.on{display:flex}
+@media (min-width:700px){.view{padding-left:max(28px, calc((100% - 820px) / 2));padding-right:max(28px, calc((100% - 820px) / 2));padding-bottom:140px;gap:16px}h1{font-size:30px}}
 h1{margin:0;font-size:26px;font-weight:700}
 h2{margin:0;font-size:15px;font-weight:600}
 .sub{font-size:13px;color:var(--mut)}
@@ -89,7 +90,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 .legend{display:flex;gap:12px;font-size:12px;color:var(--mut)}
 .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}
 /* 液態玻璃選單列 */
-.tabbar{position:fixed;left:16px;right:16px;bottom:calc(max(4px, calc(env(safe-area-inset-bottom) - 14px)) - var(--gap, 0px));height:64px;padding:6px;border-radius:32px;display:flex;z-index:20;
+.tabbar{position:absolute;left:max(16px, calc(50% - 250px));right:max(16px, calc(50% - 250px));bottom:max(10px, calc(env(safe-area-inset-bottom) - 14px));height:64px;padding:6px;border-radius:32px;display:flex;z-index:20;
   background:linear-gradient(180deg,rgba(58,63,74,.55),rgba(28,31,38,.62));
   -webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.05),inset 0 0 0 1px rgba(255,255,255,.10),0 14px 34px rgba(0,0,0,.55)}
@@ -105,9 +106,9 @@ h2{margin:0;font-size:15px;font-weight:600}
 /* 提示與彈窗 */
 .toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-120%);background:#2C313B;border:1px solid #3A3F49;color:var(--tx);padding:10px 16px;border-radius:14px;font-size:14px;z-index:50;transition:transform .35s cubic-bezier(.34,1.4,.5,1);max-width:90%;text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.sheet{position:fixed;top:0;left:0;right:0;bottom:calc(0px - var(--gap, 0px));background:rgba(0,0,0,.55);z-index:40;display:none;align-items:flex-end}
+.sheet{position:absolute;inset:0;justify-content:center;background:rgba(0,0,0,.55);z-index:40;display:none;align-items:flex-end}
 .sheet.show{display:flex}
-.sheet .panel{width:100%;background:#15181D;border-radius:22px 22px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:85%;overflow-y:auto}
+.sheet .panel{width:100%;max-width:600px;background:#15181D;border-radius:22px 22px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:85%;overflow-y:auto}
 .loading{opacity:.55;pointer-events:none}
 .skel{height:80px;border-radius:16px;background:linear-gradient(90deg,#171A20,#1F232B,#171A20);background-size:200% 100%;animation:sk 1.2s infinite}
 @keyframes sk{to{background-position:-200% 0}}
@@ -227,25 +228,29 @@ h2{margin:0;font-size:15px;font-weight:600}
 </div>
 
 <script>
-// iPhone 主畫面模式：補上 iOS 少算的底部高度，讓畫面延伸到螢幕最底
+// 主畫面（全螢幕）模式：iOS 有時回報的畫面高度少了一截，
+// 這裡直接用螢幕實際尺寸決定 App 高度（iPhone、iPad 都適用）
 (function () {
-  function fixGap() {
-    let g = 0;
-    const portrait = window.innerHeight >= window.innerWidth;
-    if (window.navigator.standalone && portrait) {
-      const h = Math.min(window.innerHeight, document.documentElement.clientHeight || window.innerHeight);
-      g = Math.round(screen.height - h);
-      if (g < 0 || g > 120) g = 0;
+  function size() {
+    const de = document.documentElement;
+    let h = window.innerHeight;
+    if (window.navigator.standalone) {
+      const sw = screen.width, sh = screen.height;
+      const landscape = window.innerWidth > window.innerHeight;
+      const fullW = landscape ? Math.max(sw, sh) : Math.min(sw, sh);
+      const fullH = landscape ? Math.min(sw, sh) : Math.max(sw, sh);
+      // 只有 App 佔滿整個螢幕時才用螢幕高度（iPad 分割畫面時用視窗高度）
+      if (Math.abs(window.innerWidth - fullW) <= 2 && fullH >= h) h = fullH;
     }
-    document.documentElement.style.setProperty('--gap', g + 'px');
+    de.style.setProperty('--appH', h + 'px');
   }
-  fixGap();
-  [50, 300, 800, 1500, 3000].forEach(t => setTimeout(fixGap, t));
-  window.addEventListener('load', fixGap);
-  window.addEventListener('pageshow', fixGap);
-  window.addEventListener('resize', fixGap);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(fixGap, 100); });
-  window.addEventListener('orientationchange', () => setTimeout(fixGap, 300));
+  size();
+  [50, 300, 1000, 2500].forEach(t => setTimeout(size, t));
+  window.addEventListener('load', size);
+  window.addEventListener('pageshow', size);
+  window.addEventListener('resize', size);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(size, 100); });
+  window.addEventListener('orientationchange', () => setTimeout(size, 300));
 })();
 // ---------- 共用 ----------
 const $ = (s, el) => (el || document).querySelector(s);
