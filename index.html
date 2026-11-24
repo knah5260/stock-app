@@ -24,6 +24,8 @@ button{cursor:pointer}
 .view.on{display:flex}
 /* iPad：寬度 700 以上且高度 600 以上（iPhone 橫放高度不到 600，不會套用） */
 @media (min-width:700px) and (min-height:600px){
+  #ov-heat .hm{grid-template-columns:repeat(12,minmax(0,1fr))}
+  .rk{max-width:720px}
   .view{padding:calc(28px + env(safe-area-inset-top)) 32px 150px;gap:18px}
   h1{font-size:30px}
   .chart{height:300px}
@@ -38,6 +40,7 @@ button{cursor:pointer}
   #v-overview > :nth-child(1){grid-column:1/-1}
   #v-overview > :nth-child(2), #v-overview > :nth-child(3), #v-overview > :nth-child(5){grid-column:1}
   #v-overview > :nth-child(4){grid-column:2;grid-row:2 / span 3;align-self:stretch}
+  #v-overview > :nth-child(n+6){grid-column:1/-1}
   #v-overview > :nth-child(4) .chart{flex:1;height:auto;min-height:300px}
   #v-calendar.on{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(320px,1fr);grid-auto-flow:row dense;align-content:start;gap:18px 22px}
   #v-calendar > h1{grid-column:1/-1}
@@ -70,6 +73,23 @@ h2{margin:0;font-size:15px;font-weight:600}
 .dates span.arrow{color:var(--dim)}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rk{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:10px 8px;align-items:baseline}
+.rk .h{font-size:12px;color:var(--mut);text-align:right}.rk .v{font-size:16px;font-weight:700;text-align:right}.rk .l{font-size:13px;color:var(--mut)}
+.hm-y{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 6px}
+.hm-y b{font-size:15px}
+.hm{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.hm div{border-radius:8px;padding:6px 2px 7px;text-align:center;background:var(--card2);min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.hm div i{font-style:normal;font-size:10px;color:rgba(242,243,245,.65)}
+.hm div span{font-size:12px;font-weight:700;color:#fff}
+.hm div.na span{color:var(--dim);font-weight:400}
+.al{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.al svg{flex:0 0 auto}
+.al ul{list-style:none;margin:0;padding:0;flex:1 1 180px;max-width:460px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.al li{display:flex;align-items:center;gap:8px;font-size:14px}
+.al li i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.al li .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al li .p{font-weight:700;min-width:48px;text-align:right}
+.al li .m{color:var(--mut);font-size:12px;min-width:64px;text-align:right}
 .mini{background:var(--card2);border-radius:14px;padding:12px}
 .item{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px 14px}
 .list{display:flex;flex-direction:column;gap:10px}
@@ -186,6 +206,16 @@ h2{margin:0;font-size:15px;font-weight:600}
       <div class="col" style="gap:2px"><span class="lbl">0050</span><span style="font-size:17px;font-weight:700" id="ov-r3">—</span></div>
     </div>
     <span class="lbl" id="ov-cmpnote" style="line-height:1.5"></span>
+  </div>
+  <div class="card col" style="gap:12px">
+    <h2>風險指標（區間）</h2>
+    <div class="rk" id="ov-risk"></div>
+    <span class="lbl" id="ov-risknote" style="line-height:1.5"></span>
+  </div>
+  <div class="card col" style="gap:4px">
+    <h2>每月報酬（淨值報酬・全部期間）</h2>
+    <div id="ov-heat"><div class="skel"></div></div>
+    <span class="lbl" style="line-height:1.5;margin-top:6px">紅色為上漲、綠色為下跌，顏色越深代表幅度越大。右上角是全年報酬。</span>
   </div>
 </section>
 
@@ -522,7 +552,9 @@ async function loadOverview() {
       setRet('#ov-ret-h', cost > 0 ? pl / cost : null);
     }).catch(() => {});
     renderCmp();
+    renderRisk();
     renderOvChart();
+    loadHeat();
   } catch (e) { toast('讀取失敗：' + errMsg(e)); }
   finally { $('#v-overview').classList.remove('loading'); }
 }
@@ -531,6 +563,58 @@ function renderCmp() {
   const set = (id, v) => { $(id).textContent = v === null || v === undefined || isNaN(v) ? '—' : pct(v); $(id).className = v === null || v === undefined || isNaN(v) ? 'zero' : cls(v); };
   set('#ov-r1', d.rangeR); set('#ov-r2', d.tx); set('#ov-r3', d.e50);
   $('#ov-cmpnote').textContent = '把帳戶當成一檔基金，只比每天的漲跌幅，不受加碼、減碼時機影響。加權指數、0050 為股價報酬，未含股利。';
+}
+function riskOf(vals, dates) {
+  const v = [1]; const ds = [null];
+  vals.forEach((x, i) => { if (x !== null && x !== undefined && !isNaN(x)) { v.push(1 + x); ds.push(dates[i]); } });
+  if (v.length < 6) return null;
+  let peak = v[0], pk = 0, mdd = 0, a = 0, b = 0;
+  v.forEach((x, i) => { if (x > peak) { peak = x; pk = i; } const dd = x / peak - 1; if (dd < mdd) { mdd = dd; a = pk; b = i; } });
+  const rs = []; for (let i = 1; i < v.length; i++) rs.push(v[i] / v[i - 1] - 1);
+  const m = rs.reduce((s, x) => s + x, 0) / rs.length;
+  const sd = Math.sqrt(rs.reduce((s, x) => s + (x - m) * (x - m), 0) / (rs.length - 1));
+  return {mdd, vol: sd * Math.sqrt(252), from: ds[a] || dates[0], to: ds[b], cur: v[v.length - 1] / peak - 1};
+}
+function renderRisk() {
+  const d = ovData; if (!d || d.empty) return;
+  const s = d.series, xs = s.map(x => x.d);
+  const R = [riskOf(s.map(x => x.r), xs), riskOf(s.map(x => x.tx), xs), riskOf(s.map(x => x.e50), xs)];
+  const cell = (r, k, c) => '<span class="v ' + (r && c ? c(r[k]) : '') + '">' + (r ? pct(r[k], 1).replace('+', '') : '—') + '</span>';
+  $('#ov-risk').innerHTML = '<span></span><span class="h">我的</span><span class="h">加權指數</span><span class="h">0050</span>' +
+    '<span class="l">最大回撤</span>' + R.map(r => cell(r, 'mdd', v => v < 0 ? 'dn' : 'zero')).join('') +
+    '<span class="l">距區間高點</span>' + R.map(r => cell(r, 'cur', v => v < 0 ? 'dn' : 'zero')).join('') +
+    '<span class="l">年化波動度</span>' + R.map(r => cell(r, 'vol')).join('');
+  const me = R[0];
+  $('#ov-risknote').textContent = (me && me.mdd < 0 ? '我的最大回撤發生在 ' + md(me.from) + ' 高點 → ' + md(me.to) + ' 低點。' : '') +
+    '最大回撤＝從高點最多跌掉多少；波動度越高代表淨值起伏越大。區間太短時數字參考性較低。';
+}
+let heatLoading = false;
+async function loadHeat() {
+  if (heatLoading) return; heatLoading = true;
+  try { renderHeat(await call('appOverview', '1900-01-01', '9999-12-31')); }
+  catch (e) { $('#ov-heat').innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
+  finally { heatLoading = false; }
+}
+function renderHeat(d) {
+  if (!d || d.empty || !d.series.length) { $('#ov-heat').innerHTML = '<div class="empty">還沒有資料</div>'; return; }
+  const end = {}; d.series.forEach(x => { if (x.r !== null && x.r !== undefined) end[x.d.slice(0, 7)] = 1 + x.r; });
+  const keys = Object.keys(end).sort(); if (!keys.length) { $('#ov-heat').innerHTML = '<div class="empty">還沒有資料</div>'; return; }
+  const mr = {}; let prev = 1; keys.forEach(k => { mr[k] = end[k] / prev - 1; prev = end[k]; });
+  const y0 = +keys[0].slice(0, 4), y1 = +keys[keys.length - 1].slice(0, 4);
+  const col = r => { const a = 0.14 + 0.66 * Math.min(Math.abs(r) / 0.08, 1); return r >= 0 ? 'rgba(255,107,107,' + a.toFixed(2) + ')' : 'rgba(74,222,149,' + a.toFixed(2) + ')'; };
+  let html = '', prevYE = 1;
+  for (let y = y0; y <= y1; y++) {
+    let ye = null; for (let m = 12; m >= 1; m--) { const k = y + '-' + String(m).padStart(2, '0'); if (end[k] !== undefined) { ye = end[k]; break; } }
+    const yr = ye === null ? null : ye / prevYE - 1; if (ye !== null) prevYE = ye;
+    let cells = '';
+    for (let m = 1; m <= 12; m++) {
+      const k = y + '-' + String(m).padStart(2, '0'), r = mr[k];
+      cells += r === undefined ? '<div class="na"><i>' + m + '月</i><span>—</span></div>'
+        : '<div style="background:' + col(r) + '"><i>' + m + '月</i><span>' + pct(r, 1) + '</span></div>';
+    }
+    html = '<div class="hm-y"><b>' + y + '</b><span class="' + (yr === null ? 'zero' : cls(yr)) + '" style="font-weight:700">' + (yr === null ? '—' : pct(yr, 1)) + '</span></div><div class="hm">' + cells + '</div>' + html;
+  }
+  $('#ov-heat').innerHTML = html;
 }
 function renderOvChart() {
   if (!ovData || ovData.empty) return;
@@ -591,8 +675,9 @@ async function loadHoldings() {
       const h = hAll.filter(x => qMatch(x.name, qs.ho));
       if (!h.length) { body.innerHTML = noHit(qs.ho, '持股'); return; }
       const mv = h.reduce((s, x) => s + (x.mv || 0), 0), pl = h.reduce((s, x) => s + (x.pl || 0), 0), cost = h.reduce((s, x) => s + (x.cost || 0), 0);
+      const alloc = qs.ho ? '' : allocCard(hAll);
       body.innerHTML = '<div class="card grid2"><div class="col"><span class="lbl">持股市值</span><span style="font-size:22px;font-weight:700">' + fmt(mv) +
-        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' +
+        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' + alloc +
         h.map(x => '<div class="card col hc" style="gap:12px"><div class="row" style="align-items:flex-start"><div class="col" style="gap:2px"><span style="font-size:17px;font-weight:700">' + esc(shortName(x.name)) +
           '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + arrowPct(x.r).replace(/(\.\d)\d%/, '$1%') + '</span></div></div><div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
@@ -628,6 +713,22 @@ async function loadHoldings() {
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + pct(x.r, 1) + '</span></div></div>').join('') : (qs.ho ? noHit(qs.ho, '持有紀錄') : '<div class="empty">這個區間沒有持有紀錄</div>'));
     }
   } catch (e) { body.innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
+}
+
+function allocCard(hs) {
+  const g = {}; hs.forEach(x => { const k = x.code || x.name; if (!g[k]) g[k] = {name: shortName(x.name), mv: 0}; g[k].mv += x.mv || 0; });
+  let a = Object.values(g).filter(x => x.mv > 0).sort((p, q) => q.mv - p.mv);
+  const tot = a.reduce((s, x) => s + x.mv, 0); if (!tot) return '';
+  const C = ['#F59A4A', '#5AA7FF', '#B48CFF', '#4FD1C5', '#F6C945', '#FF8FB1', '#8FA3BF'];
+  if (a.length > 8) { const rest = a.slice(7); a = a.slice(0, 7).concat([{name: '其他 ' + rest.length + ' 檔', mv: rest.reduce((s, x) => s + x.mv, 0), o: 1}]); }
+  a.forEach((x, i) => x.c = x.o ? '#4A4F58' : C[i % C.length]);
+  const R = 52, W = 18, L = 2 * Math.PI * R; let off = 0;
+  const arcs = a.map(x => { const len = x.mv / tot * L, gap = a.length > 1 ? Math.min(2, len / 3) : 0;
+    const el = '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke="' + x.c + '" stroke-width="' + W + '" stroke-dasharray="' + (len - gap).toFixed(2) + ' ' + (L - len + gap).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 70 70)"/>';
+    off += len; return el; }).join('');
+  return '<div class="card col" style="gap:12px"><span class="lbl">持股配置（依市值）</span><div class="al"><svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="持股配置圓餅圖">' + arcs +
+    '<text x="70" y="66" text-anchor="middle" fill="#A3A9B2" font-size="11">' + a.length + (a.some(x => x.o) ? '+' : '') + ' 檔</text><text x="70" y="84" text-anchor="middle" fill="#F2F3F5" font-size="14" font-weight="700">' + (tot / 10000).toFixed(1) + '萬</text></svg><ul>' +
+    a.map(x => '<li><i style="background:' + x.c + '"></i><span class="n">' + esc(x.name) + '</span><span class="p">' + (x.mv / tot * 100).toFixed(1) + '%</span><span class="m">' + fmt(Math.round(x.mv)) + '</span></li>').join('') + '</ul></div></div>';
 }
 
 // ---------- 日曆 ----------
