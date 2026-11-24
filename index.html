@@ -120,7 +120,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 <!-- 總覽 -->
 <section class="view on" id="v-overview" aria-label="總覽">
   <div class="row">
-    <div class="col" style="gap:2px"><h1>我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span></div>
+    <div class="col" style="gap:2px"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span></div>
     <button class="iconbtn" id="btn-refresh" aria-label="重新抓收盤價並更新">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
     </button>
@@ -744,6 +744,36 @@ function renderRecords() {
 function openSheet(html) { $('#sheet-panel').innerHTML = html; $('#sheet').classList.add('show'); }
 function closeSheet() { $('#sheet').classList.remove('show'); }
 $('#sheet').onclick = e => { if (e.target.id === 'sheet' && !askP) closeSheet(); };
+
+// ---------- 畫面尺寸檢查（點標題 3 下）----------
+(function () {
+  let n = 0, t;
+  $('#ov-title').addEventListener('click', () => {
+    n++; clearTimeout(t); t = setTimeout(() => n = 0, 800);
+    if (n < 3) return; n = 0;
+    const p = document.createElement('div');
+    p.style.cssText = 'position:fixed;left:0;right:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+    document.body.appendChild(p);
+    const cs = getComputedStyle(p), vv = window.visualViewport;
+    const r = document.getElementById('app').getBoundingClientRect();
+    const info = [
+      ['iOS', (navigator.userAgent.match(/OS ([\d_]+)/) || [, '?'])[1].replace(/_/g, '.')],
+      ['主畫面模式', String(!!navigator.standalone)],
+      ['screen', screen.width + ' × ' + screen.height],
+      ['innerWidth × innerHeight', innerWidth + ' × ' + innerHeight],
+      ['visualViewport', vv ? Math.round(vv.width) + ' × ' + Math.round(vv.height) + '（offsetTop ' + Math.round(vv.offsetTop) + '）' : '—'],
+      ['clientHeight', document.documentElement.clientHeight],
+      ['#app 高度', Math.round(r.height)],
+      ['安全區 上／下', cs.paddingTop + ' ／ ' + cs.paddingBottom],
+      ['devicePixelRatio', devicePixelRatio]
+    ];
+    p.remove();
+    openSheet('<h2>畫面尺寸檢查</h2><span class="sub">請截圖這個畫面傳給 Claude</span><div class="card est col" style="gap:8px">' +
+      info.map(x => '<div><span style="color:#D5D8DD">' + x[0] + '</span><span>' + esc(x[1]) + '</span></div>').join('') +
+      '</div><button class="primary" id="sh-ok">關閉</button>');
+    $('#sh-ok').onclick = closeSheet;
+  });
+})();
 
 // ---------- 啟動 ----------
 const loaders = {overview: loadOverview, holdings: loadHoldings, calendar: loadCalendar, trade: () => { loaded.trade = true; loadMeta().then(estimate).catch(() => {}); }, records: loadRecords};
