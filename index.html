@@ -263,7 +263,7 @@ function askToken(msg) {
   });
   return askP;
 }
-async function call(fn, ...args) {
+async function rawCall(fn, args) {
   let tok = getTok();
   if (!tok) tok = await askToken();
   for (let i = 0; i < 3; i++) {
@@ -277,6 +277,55 @@ async function call(fn, ...args) {
     throw new Error(j.error || '發生錯誤');
   }
   throw new Error('密碼不正確');
+}
+// 快取：讀過的資料先立刻顯示，背景再向試算表拿最新的；有變動才重畫。
+// 資料存在手機裡，下次打開 App 也能馬上看到上次的畫面。
+const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup)$/;
+const CK = 'zqCache1', inflight = {};
+let cache = {};
+try { cache = JSON.parse(localStorage.getItem(CK) || '{}') || {}; } catch (e) { cache = {}; }
+let saveT;
+function saveCache() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { try { localStorage.setItem(CK, JSON.stringify(cache)); } catch (e) { try { localStorage.removeItem(CK); } catch (x) {} } }, 400);
+}
+let rerenderT;
+function onFresh() {
+  clearTimeout(rerenderT);
+  rerenderT = setTimeout(() => {
+    Object.keys(loaded).forEach(k => { if (k !== tabOf(current) && k !== current) loaded[k] = false; });
+    if (loaders[current] && current !== 'trade') loaders[current]();
+  }, 150);
+}
+async function call(fn, ...args) {
+  if (!READS.test(fn)) {
+    const r = await rawCall(fn, args);
+    cache = {}; saveCache();
+    return r;
+  }
+  const key = fn + '|' + JSON.stringify(args), c = cache[key];
+  const fetchFresh = () => inflight[key] || (inflight[key] = rawCall(fn, args).then(d => {
+    delete inflight[key];
+    const changed = !c || JSON.stringify(c.d) !== JSON.stringify(d);
+    cache[key] = {d: d, t: Date.now()}; saveCache();
+    return {d: d, changed: changed};
+  }, e => { delete inflight[key]; throw e; }));
+  if (c) {
+    if (Date.now() - c.t > 20000) fetchFresh().then(x => { if (x.changed) onFresh(); }).catch(() => {});
+    return c.d;
+  }
+  return (await fetchFresh()).d;
+}
+function prefetch() {
+  const jobs = [
+    () => loaded.holdings || loadHoldings(),
+    () => call('appRealized', hoRange.from, hoRange.to),
+    () => call('appPerformance', hoRange.from, hoRange.to),
+    () => call('appRecords', hoRange.from, hoRange.to),
+    () => loaded.calendar || loadCalendar(),
+    () => loaded.records || loadRecords()
+  ];
+  (async () => { for (const j of jobs) { try { await j(); } catch (e) {} } })();
 }
 let toastT;
 function toast(msg, ms) {
@@ -476,13 +525,20 @@ async function loadHoldings() {
           '</span><span class="lbl">' + md(x.d) + ' · 批號 ' + esc(x.batch) + ' · ' + esc(x.item) + ' ' + fmt(x.units) + ' 股 @' + x.price + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:16px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + pct(x.r, 1) + '</span></div></div>').join('') : '<div class="empty">這個區間沒有已實現損益</div>');
     } else {
-      const b = await call('appPerformance', hoRange.from, hoRange.to);
+      const [b, recs] = await Promise.all([call('appPerformance', hoRange.from, hoRange.to), call('appRecords', hoRange.from, hoRange.to)]);
       const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0);
       const tp = sum('pl');
+      const tr = recs.filter(x => x.item === '買進' || x.item === '賣出');
+      const tsum = (f, k) => tr.filter(f).reduce((a, x) => a + (x[k] || 0), 0);
+      const vBuy = tsum(x => x.item === '買進', 'amt'), vSell = tsum(x => x.item === '賣出', 'amt');
+      const vCost = tsum(() => true, 'fee') + tsum(() => true, 'tax');
+      const volCard = '<div class="card col" style="gap:12px"><div class="row" style="align-items:flex-end"><div class="col"><span class="lbl">區間總交易量（買進＋賣出成交金額）</span><span style="font-size:22px;font-weight:700">' + fmt(vBuy + vSell) + '</span></div><span class="lbl">' + tr.length + ' 筆交易</span></div>' +
+        '<div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
+        [['買進', fmt(vBuy)], ['賣出', fmt(vSell)], ['手續費＋稅', fmt(vCost)]].map(([l, v]) => '<div class="col" style="gap:2px"><span class="lbl">' + l + '</span><span style="font-weight:700">' + v + '</span></div>').join('') + '</div></div>';
       body.innerHTML = '<div class="card col" style="gap:12px"><div class="col"><span class="lbl">區間總損益（已實現＋未實現＋股利）</span><span style="font-size:26px;font-weight:700" class="' + cls(tp) + '">' + sgn(tp) + '</span></div>' +
         '<div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
         [['已實現', sum('real')], ['未實現', sum('unreal')], ['現金股利', sum('div')]].map(([l, v]) => '<div class="col" style="gap:2px"><span class="lbl">' + l + '</span><span style="font-weight:700" class="' + cls(v) + '">' + sgn(v) + '</span></div>').join('') +
-        '</div></div><span class="lbl" style="padding-left:4px">區間內持有過的批次（依損益排序）</span>' +
+        '</div></div>' + volCard + '<span class="lbl" style="padding-left:4px">區間內持有過的批次（依損益排序）</span>' +
         (b.length ? b.map(x => '<div class="item row"><div class="col" style="gap:3px;min-width:0"><span style="font-size:15px;font-weight:600">' + esc(shortName(x.name)) + ' <span class="lbl" style="font-weight:400">批號 ' + esc(x.batch) + '</span></span><span class="lbl">' +
           md(x.start) + ' – ' + (x.hold ? '持有中' : md(x.end)) + ' · 投入 ' + fmt(x.inv) + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:16px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + pct(x.r, 1) + '</span></div></div>').join('') : '<div class="empty">這個區間沒有持有紀錄</div>');
@@ -736,7 +792,7 @@ $('#sheet').onclick = e => { if (e.target.id === 'sheet' && !askP) closeSheet();
 const loaders = {overview: loadOverview, holdings: loadHoldings, calendar: loadCalendar, trade: () => { loaded.trade = true; loadMeta().then(estimate).catch(() => {}); }, records: loadRecords};
 resetForm();
 moveLens('overview');
-loadOverview();
+loadOverview().finally(() => setTimeout(prefetch, 300));
 loadMeta().catch(() => {});
 window.addEventListener('resize', () => { if (current === 'overview') renderOvChart(); });
 </script>
