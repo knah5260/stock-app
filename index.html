@@ -179,14 +179,11 @@ h2{margin:0;font-size:15px;font-weight:600}
     <div class="legend" id="ov-legend"></div>
   </div>
   <div class="card col" style="gap:10px">
-    <h2>報酬率對比</h2>
-    <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))" id="ov-cmpseg">
-      <button class="on" data-k="nav">淨值報酬</button><button data-k="mw">投入報酬</button>
-    </div>
+    <h2>報酬率對比（基金單位淨值法）</h2>
     <div class="grid3">
-      <div class="col" style="border-right:1px solid #2A2E36;gap:2px"><span class="lbl">我的</span><span style="font-size:17px;font-weight:700" id="ov-r1">—</span><span style="font-size:12px" id="ov-a1"></span></div>
-      <div class="col" style="border-right:1px solid #2A2E36;gap:2px"><span class="lbl">加權指數</span><span style="font-size:17px;font-weight:700" id="ov-r2">—</span><span style="font-size:12px" id="ov-a2"></span></div>
-      <div class="col" style="gap:2px"><span class="lbl">0050</span><span style="font-size:17px;font-weight:700" id="ov-r3">—</span><span style="font-size:12px" id="ov-a3"></span></div>
+      <div class="col" style="border-right:1px solid #2A2E36;gap:2px"><span class="lbl">我的</span><span style="font-size:17px;font-weight:700" id="ov-r1">—</span></div>
+      <div class="col" style="border-right:1px solid #2A2E36;gap:2px"><span class="lbl">加權指數</span><span style="font-size:17px;font-weight:700" id="ov-r2">—</span></div>
+      <div class="col" style="gap:2px"><span class="lbl">0050</span><span style="font-size:17px;font-weight:700" id="ov-r3">—</span></div>
     </div>
     <span class="lbl" id="ov-cmpnote" style="line-height:1.5"></span>
   </div>
@@ -529,43 +526,12 @@ async function loadOverview() {
   } catch (e) { toast('讀取失敗：' + errMsg(e)); }
   finally { $('#v-overview').classList.remove('loading'); }
 }
-// 投入報酬的比較：假設同一天把同樣的錢（買進就投入、賣出就拿回）改買加權指數或 0050
-function simFlows(s, key) {
-  let units = 0, inv = 0, prev = null;
-  return s.map(x => {
-    const p = 1 + (x[key] || 0);
-    const flow = prev ? (x.mv - prev.mv) - (x.pl - prev.pl) : x.mv - x.pl;
-    units += flow / (prev ? p : 1); if (units < 0) units = 0;
-    inv += flow; prev = x;
-    const val = units * p;
-    return {cap: inv, pl: val - inv};
-  });
-}
-function mwSeries() {
-  const s = ovData.series;
-  const mine = s.map(x => ({cap: x.mv - x.pl, pl: x.pl}));
-  const r = a => a.map(y => y.cap > 0 ? y.pl / y.cap : null);
-  return {mine, tx: simFlows(s, 'tx'), e50: simFlows(s, 'e50'), r};
-}
-let ovCmp = 'nav';
 function renderCmp() {
   const d = ovData; if (!d || d.empty) return;
   const set = (id, v) => { $(id).textContent = v === null || v === undefined || isNaN(v) ? '—' : pct(v); $(id).className = v === null || v === undefined || isNaN(v) ? 'zero' : cls(v); };
-  if (ovCmp === 'nav') {
-    set('#ov-r1', d.rangeR); set('#ov-r2', d.tx); set('#ov-r3', d.e50);
-    ['#ov-a1', '#ov-a2', '#ov-a3'].forEach(id => $(id).textContent = '');
-    $('#ov-cmpnote').textContent = '把帳戶當成一檔基金，只比每天的漲跌幅，不受加碼、減碼時機影響。加權指數、0050 為股價報酬，未含股利。';
-  } else {
-    const m = mwSeries(), last = a => a[a.length - 1] || {cap: 0, pl: 0};
-    [['1', last(m.mine)], ['2', last(m.tx)], ['3', last(m.e50)]].forEach(([i, y]) => {
-      set('#ov-r' + i, y.cap > 0 ? y.pl / y.cap : null);
-      $('#ov-a' + i).textContent = sgn(Math.round(y.pl)); $('#ov-a' + i).className = cls(y.pl);
-    });
-    $('#ov-cmpnote').textContent = '假設在你每次買進、賣出的同一天，把同樣金額改買（或賣出）加權指數、0050，比較區間內實際賺賠。未含股利與手續費，為估算值。';
-  }
-  if (ovChart === 'r') renderOvChart();
+  set('#ov-r1', d.rangeR); set('#ov-r2', d.tx); set('#ov-r3', d.e50);
+  $('#ov-cmpnote').textContent = '把帳戶當成一檔基金，只比每天的漲跌幅，不受加碼、減碼時機影響。加權指數、0050 為股價報酬，未含股利。';
 }
-$$('#ov-cmpseg button').forEach(b => b.onclick = () => { $$('#ov-cmpseg button').forEach(x => x.classList.toggle('on', x === b)); ovCmp = b.dataset.k; renderCmp(); });
 function renderOvChart() {
   if (!ovData || ovData.empty) return;
   const s = ovData.series, xs = s.map(x => x.d);
@@ -573,10 +539,9 @@ function renderOvChart() {
   if (ovChart === 'mv') { series = [{v: s.map(x => x.mv), c: '#F59A4A', area: true}]; f = v => v === null ? '—' : (v / 10000).toFixed(1) + '萬'; }
   else if (ovChart === 'pl') { series = [{v: s.map(x => x.pl), c: '#FF6B6B', area: true}]; f = v => v === null ? '—' : wan(v); zero = true; }
   else {
-    if (ovCmp === 'mw') { const m = mwSeries(); series = [{v: m.r(m.mine), c: '#F59A4A', w: 2.6}, {v: m.r(m.tx), c: '#5AA7FF'}, {v: m.r(m.e50), c: '#9AA0A8'}]; }
-    else series = [{v: s.map(x => x.r), c: '#F59A4A', w: 2.6}, {v: s.map(x => x.tx), c: '#5AA7FF'}, {v: s.map(x => x.e50), c: '#9AA0A8'}];
+    series = [{v: s.map(x => x.r), c: '#F59A4A', w: 2.6}, {v: s.map(x => x.tx), c: '#5AA7FF'}, {v: s.map(x => x.e50), c: '#9AA0A8'}];
     f = v => pct(v, 1); zero = true;
-    leg = '<span><i style="background:#F59A4A"></i>我的</span><span><i style="background:#5AA7FF"></i>加權指數</span><span><i style="background:#9AA0A8"></i>0050</span><span style="color:var(--dim)">' + (ovCmp === 'mw' ? '投入報酬' : '淨值報酬') + '</span>';
+    leg = '<span><i style="background:#F59A4A"></i>我的</span><span><i style="background:#5AA7FF"></i>加權指數</span><span><i style="background:#9AA0A8"></i>0050</span><span style="color:var(--dim)">淨值報酬</span>';
   }
   $('#ov-legend').innerHTML = leg;
   drawChart($('#ov-chart'), series, xs, {f, zero});
