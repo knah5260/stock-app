@@ -19,7 +19,7 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Noto Sans TC",sans-serif;font-variant-numeric:tabular-nums}
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
-#app{position:fixed;top:0;left:0;right:0;height:var(--appH, 100%);overflow:hidden}
+#app{position:fixed;inset:0;overflow:hidden}
 .view{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(20px + env(safe-area-inset-top)) 18px 120px;display:none;flex-direction:column;gap:14px}
 .view.on{display:flex}
 @media (min-width:700px){.view{padding-left:max(28px, calc((100% - 820px) / 2));padding-right:max(28px, calc((100% - 820px) / 2));padding-bottom:140px;gap:16px}h1{font-size:30px}}
@@ -228,29 +228,48 @@ h2{margin:0;font-size:15px;font-weight:600}
 </div>
 
 <script>
-// 主畫面（全螢幕）模式：iOS 有時回報的畫面高度少了一截，
-// 這裡直接用螢幕實際尺寸決定 App 高度（iPhone、iPad 都適用）
+// iOS 主畫面 App 的已知問題：鍵盤打開過一次之後，畫面高度會縮短，
+// 底部出現黑色區塊、導航列跑高。偵測到時把畫面重新排版一次，讓 iOS 重新計算高度。
 (function () {
-  function size() {
-    const de = document.documentElement;
-    let h = window.innerHeight;
-    if (window.navigator.standalone) {
-      const sw = screen.width, sh = screen.height;
-      const landscape = window.innerWidth > window.innerHeight;
-      const fullW = landscape ? Math.max(sw, sh) : Math.min(sw, sh);
-      const fullH = landscape ? Math.min(sw, sh) : Math.max(sw, sh);
-      // 只有 App 佔滿整個螢幕時才用螢幕高度（iPad 分割畫面時用視窗高度）
-      if (Math.abs(window.innerWidth - fullW) <= 2 && fullH >= h) h = fullH;
-    }
-    de.style.setProperty('--appH', h + 'px');
+  const app = document.getElementById('app');
+  function fullH() {
+    if (!window.navigator.standalone) return 0;
+    const sw = screen.width, sh = screen.height;
+    const landscape = window.innerWidth > window.innerHeight;
+    const fw = landscape ? Math.max(sw, sh) : Math.min(sw, sh);
+    if (Math.abs(window.innerWidth - fw) > 2) return 0;   // iPad 分割畫面時不處理
+    return landscape ? Math.min(sw, sh) : Math.max(sw, sh);
   }
-  size();
-  [50, 300, 1000, 2500].forEach(t => setTimeout(size, t));
-  window.addEventListener('load', size);
-  window.addEventListener('pageshow', size);
-  window.addEventListener('resize', size);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(size, 100); });
-  window.addEventListener('orientationchange', () => setTimeout(size, 300));
+  let maxVH = Math.max(window.innerHeight, fullH());
+  let busy = false;
+  function stuck() {
+    const ae = document.activeElement;
+    if (ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)) return false;  // 鍵盤開著時不動
+    return maxVH - window.innerHeight > 4;
+  }
+  function heal(tries) {
+    if (busy || !stuck()) return;
+    busy = true;
+    const v = document.querySelector('.view.on'), top = v ? v.scrollTop : 0;
+    app.style.display = 'none';
+    void app.offsetHeight;
+    app.style.display = '';
+    if (v) v.scrollTop = top;
+    busy = false;
+    if (tries > 0) setTimeout(() => { if (stuck()) heal(tries - 1); }, 250);
+  }
+  const later = ms => setTimeout(() => heal(2), ms);
+  window.addEventListener('resize', () => {
+    const fh = fullH();
+    if (fh) maxVH = Math.max(fh, window.innerHeight);
+    else maxVH = window.innerHeight;
+    later(150);
+  });
+  document.addEventListener('focusout', () => later(160));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) later(200); });
+  window.addEventListener('pageshow', () => later(200));
+  window.addEventListener('orientationchange', () => setTimeout(() => { maxVH = Math.max(window.innerHeight, fullH()); heal(2); }, 400));
+  later(300); later(1200);
 })();
 // ---------- 共用 ----------
 const $ = (s, el) => (el || document).querySelector(s);
