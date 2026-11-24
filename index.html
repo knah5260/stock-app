@@ -48,7 +48,7 @@ button{cursor:pointer}
   #v-calendar > :not(h1):not(#ca-grid){grid-column:2}
   #v-trade.on{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,1fr);grid-auto-flow:row dense;align-content:start;gap:18px 22px}
   #v-trade > .row{grid-column:1/-1}
-  #v-trade > #tr-kinds, #v-trade > #tr-divseg, #v-trade > #tr-spseg, #v-trade > .form{grid-column:1}
+  #v-trade > #tr-kinds, #v-trade > #tr-divseg, #v-trade > #tr-spseg, #v-trade > #tr-crseg, #v-trade > .form{grid-column:1}
   #v-trade > #tr-side{display:flex !important;flex-direction:column;gap:18px;grid-column:2;grid-row:2 / span 3;align-self:start}
 }
 h1{margin:0;font-size:26px;font-weight:700}
@@ -241,6 +241,31 @@ h2{margin:0;font-size:15px;font-weight:600}
   #ca-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;align-items:start}
   .page > *{max-width:980px}
 }
+.pick{position:fixed;z-index:60;width:320px;max-width:calc(100% - 16px);background:#1B1F26;border:1px solid #333A45;border-radius:14px;box-shadow:0 14px 34px rgba(0,0,0,.6);padding:4px;display:flex;flex-direction:column}
+.pick button{display:flex;align-items:center;gap:10px;height:44px;border:0;background:transparent;color:var(--tx);font-size:15px;padding:0 10px;border-radius:10px;text-align:left}
+.pick button:active{background:#262B34}
+.pick b{min-width:58px;font-variant-numeric:tabular-nums}
+.pick .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick .m{font-size:12px;color:var(--mut);white-space:nowrap}
+.dp .sec2{font-size:12px;color:var(--dim);padding:10px 10px 2px}
+.dp button.ac{display:flex;align-items:center;gap:12px;height:44px;border:0;border-radius:12px;background:transparent;color:var(--tx);font-size:15px;padding:0 10px;text-align:left}
+.dp button.ac .rd{width:18px;height:18px;border-radius:9px;border:2px solid #4A5160;flex-shrink:0}
+.dp button.ac.on .rd{border:6px solid #6CB8FF}
+.tag{font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px;background:#1E2E4A;color:#9CC4FF;margin-left:6px;vertical-align:middle}
+.tag.s{background:#173A2A;color:#9CF0C4}
+.tag.a{background:#2C313B;color:#C9CED6}
+.selrow select{flex:1;min-width:0;text-align:right;background:transparent;border:0;color:var(--tx);font-size:16px;-webkit-appearance:none;appearance:none;direction:rtl}
+.acc{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.acc:last-child{border-bottom:0}
+.acc .n{flex:1;min-width:0;font-size:15px}
+@media (max-width:699px){
+  .al{flex-wrap:nowrap;gap:14px}
+  .al svg{width:118px;height:118px}
+  .al ul{flex:1 1 auto}
+  .al li .m{display:none}
+  .al li{font-size:13px;gap:6px}
+  .al li .p{min-width:44px}
+}
 </style>
 </head>
 <body>
@@ -251,11 +276,12 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="row">
     <div class="row" style="gap:12px;justify-content:flex-start;min-width:0;align-items:flex-start">
       <button class="avatar" id="ov-avatar" aria-label="開啟選單"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="dot" id="ov-dot"></span></button>
-      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button></div>
+      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button></div>
     </div>
+    <span class="row" style="gap:8px;align-self:flex-start"><button class="iconbtn" id="btn-priv" aria-label="隱藏金額"></button>
     <button class="iconbtn" id="btn-refresh" aria-label="重新抓收盤價並更新">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
-    </button>
+    </button></span>
   </div>
   <div class="card col" style="gap:14px">
     <div class="col"><span class="lbl">台股總資產</span><span class="big" id="ov-mv">—</span></div>
@@ -281,8 +307,8 @@ h2{margin:0;font-size:15px;font-weight:600}
     <h2>報酬率對比（基金單位淨值法）</h2>
     <div class="grid3">
       <div class="col" style="border-right:1px solid #2A2E36;gap:2px"><span class="lbl">我的</span><span style="font-size:17px;font-weight:700" id="ov-r1">—</span></div>
-      <div class="col" style="border-right:1px solid #2A2E36;gap:2px"><span class="lbl">加權指數</span><span style="font-size:17px;font-weight:700" id="ov-r2">—</span></div>
-      <div class="col" style="gap:2px"><span class="lbl">0050</span><span style="font-size:17px;font-weight:700" id="ov-r3">—</span></div>
+      <div class="col" style="border-right:1px solid #2A2E36;gap:2px"><span class="lbl" id="ov-l2">加權指數</span><span style="font-size:17px;font-weight:700" id="ov-r2">—</span></div>
+      <div class="col" style="gap:2px"><span class="lbl" id="ov-l3">0050</span><span style="font-size:17px;font-weight:700" id="ov-r3">—</span></div>
     </div>
     <span class="lbl" id="ov-cmpnote" style="line-height:1.5"></span>
   </div>
@@ -328,17 +354,21 @@ h2{margin:0;font-size:15px;font-weight:600}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button></span>
   </div>
   <div class="kinds" id="tr-kinds">
-    <button data-k="buy" class="buy">買進</button><button data-k="sell" class="sell">賣出</button><button data-k="div" class="div">股利</button><button data-k="split" class="sp">分割/減資</button>
+    <button data-k="buy" class="buy">買進</button><button data-k="sell" class="sell">賣出</button><button data-k="div" class="div">股利</button><button data-k="split" class="sp">其他</button>
   </div>
-  <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr));display:none" id="tr-spseg">
-    <button class="on" data-k="split">股票分割</button><button data-k="rsplit">反分割（減資）</button>
+  <div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="tr-crseg">
+    <button class="on" data-k="cash">現股</button><button data-k="mt">融資</button><button data-k="ss">融券</button>
+  </div>
+  <div class="seg" style="grid-template-columns:repeat(4,minmax(0,1fr));display:none" id="tr-spseg">
+    <button class="on" data-k="split">分割</button><button data-k="rsplit">減資</button><button data-k="repay">融資現償</button><button data-k="call">追繳</button>
   </div>
   <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr));display:none" id="tr-divseg">
     <button class="on" data-k="cash">現金股利</button><button data-k="stock">股票股利</button>
   </div>
   <div class="form">
+    <label class="selrow" id="tr-acctrow" style="display:none"><span>帳戶</span><select id="tr-acct"></select></label>
     <label><span id="tr-datelbl">日期</span><input type="date" id="tr-date"></label>
-    <label><span>股票</span><input type="text" id="tr-name" list="tr-stocks" placeholder="名稱或代號" autocomplete="off"></label>
+    <label><span>股票</span><input type="text" id="tr-name" placeholder="名稱或代號" autocomplete="off"></label>
     <label><span id="tr-unitslbl">股數</span><input type="number" inputmode="numeric" id="tr-units" placeholder="0"></label>
     <label id="tr-pricerow"><span id="tr-pricelbl">成交價</span><input type="number" inputmode="decimal" step="any" id="tr-price" placeholder="0"></label>
     <label id="tr-dtrow"><span>當沖</span><input type="checkbox" id="tr-dt"></label>
@@ -389,10 +419,14 @@ h2{margin:0;font-size:15px;font-weight:600}
       <span class="avatar" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
       <div class="col" style="gap:2px;min-width:0"><b style="font-size:17px">我的證券資產</b><span class="lbl" id="dr-status">已連線到 Google 試算表</span></div>
     </div>
+    <span class="sec2" id="dr-acctlbl" style="display:none">帳戶</span>
+    <div class="col" style="gap:2px" id="dr-accts"></div>
+    <span class="sec2">功能</span>
     <button class="di" data-pg="corp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>除權息與股本變動<span class="n" id="dr-ca" style="display:none"></span></button>
     <button class="di" data-pg="divinc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg>股利與所得</button>
     <button class="di" data-pg="dca"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>定期定額</button>
     <button class="di" data-pg="batch"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>批次新增紀錄</button>
+    <button class="di" id="dr-export"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>匯出交易紀錄（CSV）</button>
     <button class="di" data-pg="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
     <div class="foot" id="dr-foot">版本 2.0</div>
   </nav>
@@ -401,7 +435,13 @@ h2{margin:0;font-size:15px;font-weight:600}
 <!-- 設定 -->
 <section class="page" id="pg-settings" aria-label="設定">
   <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>設定</h1></div>
-  <span class="sec">交易成本</span>
+  <span class="sec">帳戶</span>
+  <div class="card col" style="gap:4px">
+    <div id="st-accts"></div>
+    <div class="row" style="gap:8px;padding-top:8px"><input class="inp" id="st-newacct" placeholder="新帳戶名稱，例如：元大、國泰" maxlength="20"><button class="small pri" id="st-addacct" style="flex-shrink:0">新增</button></div>
+    <span class="note">每個帳戶是一份獨立的試算表（從主帳戶複製設定，交易紀錄是空的），庫存和成本分開計算。側邊選單可以切換帳戶或查看「全部帳戶」合計。</span>
+  </div>
+  <div class="row" style="padding:6px 4px 0"><span class="sec" style="padding:0">交易成本</span><label class="selrow" id="st-acctrow" style="display:none;gap:6px;font-size:13px;color:var(--mut)">套用帳戶 <select id="st-acct" style="font-size:14px;color:var(--acc)"></select></label></div>
   <div class="card col" style="gap:6px">
     <div class="row"><h2>手續費折扣（依日期區間）</h2></div>
     <span class="note">每段從「起始日」開始，到下一段的前一天為止。交易日落在哪一段，就用那一段的折數。</span>
@@ -414,6 +454,17 @@ h2{margin:0;font-size:15px;font-weight:600}
   </div>
   <span class="note" style="padding:0 4px">手續費＝成交金額 × 0.1425% × 折數，無條件捨去，不足最低手續費以最低計。未滿 1,000 股（零股）套用零股最低手續費。交易稅（股票 0.3%、ETF 0.1%、當沖 0.15%）依法規固定，不需設定。<br>儲存後，試算表裡所有紀錄的手續費都會依新設定重新計算。</span>
   <button class="primary" id="st-savefee">儲存手續費設定</button>
+
+  <span class="sec">信用交易（融資融券）</span>
+  <div class="card" style="padding:2px 16px">
+    <label class="srow"><span>融資成數（成）</span><input class="inp" type="number" inputmode="decimal" step="0.1" id="st-mp"></label>
+    <label class="srow"><span>融券保證金成數（成）</span><input class="inp" type="number" inputmode="decimal" step="0.1" id="st-ss"></label>
+    <label class="srow"><span>融資年利率（%）</span><input class="inp" type="number" inputmode="decimal" step="0.01" id="st-mi"></label>
+    <label class="srow"><span>融券年利率（%）</span><input class="inp" type="number" inputmode="decimal" step="0.01" id="st-si"></label>
+    <label class="srow"><span>借券費率（%）</span><input class="inp" type="number" inputmode="decimal" step="0.01" id="st-sf"></label>
+  </div>
+  <span class="note" style="padding:0 4px">依你的券商設定填寫。一般上市股票融資 6 成、融券保證金 9 成；借券費多為 0.08%。</span>
+  <button class="primary" id="st-savecr" style="background:#2C313B;color:var(--tx)">儲存信用交易設定</button>
 
   <span class="sec">除權息</span>
   <div class="card" style="padding:2px 16px">
@@ -467,6 +518,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 <section class="page" id="pg-batch" aria-label="批次新增紀錄">
   <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 id="bt-title">批次新增紀錄</h1></div>
   <span class="note" id="bt-note">一次輸入多筆買賣（例如零股、定期定額），核對後一起存進 LOG。</span>
+  <div class="form" id="bt-acctrow" style="display:none"><label class="selrow"><span>寫入帳戶</span><select id="bt-acct"></select></label></div>
   <div id="bt-list" class="list"></div>
   <button class="addbtn" id="bt-addrow">＋ 再加一筆</button>
   <button class="primary" id="bt-save">全部儲存</button>
@@ -481,12 +533,17 @@ h2{margin:0;font-size:15px;font-weight:600}
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const M = '−';
-const fmt = v => v === null || v === undefined || isNaN(v) ? '—' : Math.round(Math.abs(v)).toLocaleString('en-US');
-const sgn = v => v === null || v === undefined || isNaN(v) ? '—' : (v > 0 ? '+' : v < 0 ? M : '') + fmt(v);
+let PRIV = (() => { try { return localStorage.getItem('zqPriv') === '1'; } catch (e) { return false; } })();
+let ACCT = (() => { try { return localStorage.getItem('zqAcct') || 'main'; } catch (e) { return 'main'; } })();
+const MASK = '＊＊＊＊';
+const EYE_ON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.4 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 5.2A9.2 9.2 0 0 1 12 5c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2M1 1l22 22"/></svg>';
+const fmt = v => v === null || v === undefined || isNaN(v) ? '—' : PRIV ? MASK : Math.round(Math.abs(v)).toLocaleString('en-US');
+const sgn = v => v === null || v === undefined || isNaN(v) ? '—' : PRIV ? MASK : (v > 0 ? '+' : v < 0 ? M : '') + fmt(v);
 const pct = (v, d) => v === null || v === undefined || isNaN(v) ? '—' : (v > 0 ? '+' : v < 0 ? M : '') + Math.abs(v * 100).toFixed(d === undefined ? 2 : d) + '%';
 const arrowPct = v => v === null || v === undefined || isNaN(v) ? '' : (v > 0 ? '▲ ' : v < 0 ? '▼ ' : '') + pct(v);
 const cls = v => v > 0 ? 'up' : v < 0 ? 'dn' : 'zero';
-const wan = v => { const a = Math.abs(v), s = v > 0 ? '+' : v < 0 ? M : ''; return a >= 10000 ? s + (a / 10000).toFixed(2) + '萬' : s + Math.round(a).toLocaleString('en-US'); };
+const wan = v => { if (PRIV) return MASK; const a = Math.abs(v), s = v > 0 ? '+' : v < 0 ? M : ''; return a >= 10000 ? s + (a / 10000).toFixed(2) + '萬' : s + Math.round(a).toLocaleString('en-US'); };
 const esc = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const parse = s => { const p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); };
@@ -513,13 +570,13 @@ function askToken(msg) {
   });
   return askP;
 }
-async function rawCall(fn, args) {
+async function rawCall(fn, args, acct) {
   let tok = getTok();
   if (!tok) tok = await askToken();
   for (let i = 0; i < 3; i++) {
     let j;
     try {
-      const r = await fetch(API, {method: 'POST', body: JSON.stringify({token: tok, fn: fn, args: args})});
+      const r = await fetch(API, {method: 'POST', body: JSON.stringify({token: tok, fn: fn, args: args, acct: acct === undefined ? ACCT : acct})});
       j = await r.json();
     } catch (e) { throw new Error('連線失敗，請檢查網路'); }
     if (j.ok) return j.data;
@@ -530,8 +587,8 @@ async function rawCall(fn, args) {
 }
 // 快取：讀過的資料先立刻顯示，背景再向試算表拿最新的；有變動才重畫。
 // 資料存在手機裡，下次打開 App 也能馬上看到上次的畫面。
-const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup|Settings|CorpActions|Dividends|Prices)$/;
-const CK = 'zqCache1', inflight = {};
+const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup|Settings|CorpActions|Dividends|Prices|Accounts)$/;
+const CK = 'zqCache2', inflight = {};
 let cache = {};
 try { cache = JSON.parse(localStorage.getItem(CK) || '{}') || {}; } catch (e) { cache = {}; }
 let saveT;
@@ -547,14 +604,15 @@ function onFresh() {
     if (loaders[current] && current !== 'trade') loaders[current]();
   }, 150);
 }
-async function call(fn, ...args) {
+function call(fn, ...args) { return callIn(ACCT, fn, ...args); }
+async function callIn(acct, fn, ...args) {
   if (!READS.test(fn)) {
-    const r = await rawCall(fn, args);
+    const r = await rawCall(fn, args, acct);
     cache = {}; saveCache();
     return r;
   }
-  const key = fn + '|' + JSON.stringify(args), c = cache[key];
-  const fetchFresh = () => inflight[key] || (inflight[key] = rawCall(fn, args).then(d => {
+  const key = acct + '|' + fn + '|' + JSON.stringify(args), c = cache[key];
+  const fetchFresh = () => inflight[key] || (inflight[key] = rawCall(fn, args, acct).then(d => {
     delete inflight[key];
     const changed = !c || JSON.stringify(c.d) !== JSON.stringify(d);
     cache[key] = {d: d, t: Date.now()}; saveCache();
@@ -714,7 +772,7 @@ async function loadOverview() {
     const d = await call('appOverview', ovRange.from, ovRange.to);
     ovData = d;
     if (d.empty) { $('#ov-sub').textContent = '還沒有資產歷史，請按右上角更新'; return; }
-    $('#ov-sub').textContent = md(d.asOf) + ' 收盤 · ' + (d.updated ? d.updated + ' 已更新' : '');
+    $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : '');
     $('#ov-mv').textContent = fmt(d.mv);
     setNum('#ov-today', d.todayPl, true);
     $('#ov-todayr').textContent = arrowPct(d.todayR); $('#ov-todayr').className = cls(d.todayR);
@@ -726,6 +784,7 @@ async function loadOverview() {
     call('appHoldings').then(h => {
       const cost = h.reduce((a, x) => a + (x.cost || 0), 0), pl = h.reduce((a, x) => a + (x.pl || 0), 0);
       setRet('#ov-ret-h', cost > 0 ? pl / cost : null);
+      setMaintPill(h);
     }).catch(() => {});
     renderCmp();
     renderRisk();
@@ -735,11 +794,13 @@ async function loadOverview() {
   } catch (e) { toast('讀取失敗：' + errMsg(e)); }
   finally { $('#v-overview').classList.remove('loading'); }
 }
+const BL = () => ({tx: ovData && ovData.benchTx ? '加權指數（含息）' : '加權指數', e50: ovData && ovData.benchE50 ? '0050（含息）' : '0050'});
 function renderCmp() {
   const d = ovData; if (!d || d.empty) return;
   const set = (id, v) => { $(id).textContent = v === null || v === undefined || isNaN(v) ? '—' : pct(v); $(id).className = v === null || v === undefined || isNaN(v) ? 'zero' : cls(v); };
   set('#ov-r1', d.rangeR); set('#ov-r2', d.tx); set('#ov-r3', d.e50);
-  $('#ov-cmpnote').textContent = '把帳戶當成一檔基金，只比每天的漲跌幅，不受加碼、減碼時機影響。加權指數、0050 為股價報酬，未含股利。';
+  $('#ov-l2').textContent = BL().tx; $('#ov-l3').textContent = BL().e50;
+  $('#ov-cmpnote').textContent = '把帳戶當成一檔基金，只比每天的漲跌幅，不受加碼、減碼時機影響。' + (d.benchTx && d.benchE50 ? '加權指數用證交所「發行量加權股價報酬指數」，0050 也把配息加回去，和你含股利的淨值報酬是同一個基準。' : '加權指數、0050 目前是股價報酬，未含股利（按右上角更新後會換成含息版本）。');
 }
 function riskOf(vals, dates) {
   const v = [1]; const ds = [null];
@@ -757,7 +818,7 @@ function renderRisk() {
   const s = d.series, xs = s.map(x => x.d);
   const R = [riskOf(s.map(x => x.r), xs), riskOf(s.map(x => x.tx), xs), riskOf(s.map(x => x.e50), xs)];
   const cell = (r, k, c) => '<span class="v ' + (r && c ? c(r[k]) : '') + '">' + (r ? pct(r[k], 1).replace('+', '') : '—') + '</span>';
-  $('#ov-risk').innerHTML = '<span></span><span class="h">我的</span><span class="h">加權指數</span><span class="h">0050</span>' +
+  $('#ov-risk').innerHTML = '<span></span><span class="h">我的</span><span class="h">' + BL().tx + '</span><span class="h">' + BL().e50 + '</span>' +
     '<span class="l">最大回撤</span>' + R.map(r => cell(r, 'mdd', v => v < 0 ? 'dn' : 'zero')).join('') +
     '<span class="l">距區間高點</span>' + R.map(r => cell(r, 'cur', v => v < 0 ? 'dn' : 'zero')).join('') +
     '<span class="l">年化波動度</span>' + R.map(r => cell(r, 'vol')).join('');
@@ -797,12 +858,12 @@ function renderOvChart() {
   if (!ovData || ovData.empty) return;
   const s = ovData.series, xs = s.map(x => x.d);
   let series, f, zero = false, leg = '';
-  if (ovChart === 'mv') { series = [{v: s.map(x => x.mv), c: '#F59A4A', area: true}]; f = v => v === null ? '—' : (v / 10000).toFixed(1) + '萬'; }
+  if (ovChart === 'mv') { series = [{v: s.map(x => x.mv), c: '#F59A4A', area: true}]; f = v => v === null ? '—' : PRIV ? MASK : (v / 10000).toFixed(1) + '萬'; }
   else if (ovChart === 'pl') { series = [{v: s.map(x => x.pl), c: '#FF6B6B', area: true}]; f = v => v === null ? '—' : wan(v); zero = true; }
   else {
     series = [{v: s.map(x => x.r), c: '#F59A4A', w: 2.6}, {v: s.map(x => x.tx), c: '#5AA7FF'}, {v: s.map(x => x.e50), c: '#9AA0A8'}];
     f = v => pct(v, 1); zero = true;
-    leg = '<span><i style="background:#F59A4A"></i>我的</span><span><i style="background:#5AA7FF"></i>加權指數</span><span><i style="background:#9AA0A8"></i>0050</span><span style="color:var(--dim)">淨值報酬</span>';
+    leg = '<span><i style="background:#F59A4A"></i>我的</span><span><i style="background:#5AA7FF"></i>' + BL().tx + '</span><span><i style="background:#9AA0A8"></i>' + BL().e50 + '</span><span style="color:var(--dim)">淨值報酬</span>';
   }
   $('#ov-legend').innerHTML = leg;
   drawChart($('#ov-chart'), series, xs, {f, zero});
@@ -853,14 +914,21 @@ async function loadHoldings() {
       if (!h.length) { body.innerHTML = noHit(qs.ho, '持股'); return; }
       const mv = h.reduce((s, x) => s + (x.mv || 0), 0), pl = h.reduce((s, x) => s + (x.pl || 0), 0), cost = h.reduce((s, x) => s + (x.cost || 0), 0);
       const alloc = qs.ho ? '' : allocCard(hAll);
+      const mts = maintByAcct(hAll);
+      const mtCard = mts.length ? '<div class="card col" style="gap:8px"><span class="lbl">整戶擔保維持率（融資＋融券）</span>' + mts.map(o => '<div class="row"><span>' + (ACCT === '*' ? esc(acctName(o.acct)) : '目前') + '</span><span style="font-size:20px;font-weight:700;' + maintCls(o.r) + '">' + Math.round(o.r * 100) + '%</span></div>').join('') +
+        '<span class="note">＝（融資股票市值＋融券擔保品＋融券保證金）÷（融資金額＋融券股票市值）。低於 130% 券商會追繳，補回 166% 以上才解除。</span></div>' : '';
       body.innerHTML = '<div class="card grid2"><div class="col"><span class="lbl">持股市值</span><span style="font-size:22px;font-weight:700">' + fmt(mv) +
-        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' + alloc +
+        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' + mtCard + alloc +
         h.map(x => '<div class="card col hc" style="gap:12px"><div class="row" style="align-items:flex-start"><div class="col" style="gap:2px"><span style="font-size:17px;font-weight:700">' + esc(shortName(x.name)) +
-          '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
+          (x.short ? '<span class="tag s">融券</span>' : x.mt > 0 ? '<span class="tag">融資</span>' : '') + (ACCT === '*' && x.acctName ? '<span class="tag a">' + esc(x.acctName) + '</span>' : '') +
+          '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股' + (x.mt > 0 && !x.short && x.mt < x.units ? '（融資 ' + fmt(x.mt) + '）' : '') + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + arrowPct(x.r).replace(/(\.\d)\d%/, '$1%') + '</span></div></div><div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
           '<div class="col" style="gap:2px"><span class="lbl">現價</span><span style="font-weight:600">' + (x.price === null ? '—' : x.price.toLocaleString('en-US')) + '</span></div>' +
           '<div class="col" style="gap:2px"><span class="lbl">成本均價</span><span style="font-weight:600">' + (x.avg === null ? '—' : x.avg.toFixed(2)) + '</span></div>' +
-          '<div class="col" style="gap:2px"><span class="lbl">市值</span><span style="font-weight:600">' + fmt(x.mv) + '</span></div></div></div>').join('');
+          '<div class="col" style="gap:2px"><span class="lbl">市值</span><span style="font-weight:600">' + fmt(x.mv) + '</span></div></div>' +
+          (x.short ? '<div class="grid3" style="padding-top:2px"><div class="col" style="gap:2px"><span class="lbl">擔保品</span><span style="font-weight:600">' + fmt(x.collat) + '</span></div><div class="col" style="gap:2px"><span class="lbl">保證金</span><span style="font-weight:600">' + fmt(x.margin) + '</span></div><div class="col" style="gap:2px"><span class="lbl">個股維持率</span><span style="font-weight:600">' + (x.mv ? Math.round((x.collat + x.margin) / Math.abs(x.price * x.units) * 100) + '%' : '—') + '</span></div></div>' :
+           x.mt > 0 ? '<div class="grid3" style="padding-top:2px"><div class="col" style="gap:2px"><span class="lbl">融資金額</span><span style="font-weight:600">' + fmt(x.loan) + '</span></div><div class="col" style="gap:2px"><span class="lbl">自備款</span><span style="font-weight:600">' + fmt(x.self) + '</span></div><div class="col" style="gap:2px"><span class="lbl">個股維持率</span><span style="font-weight:600">' + (x.loan ? Math.round(x.price * x.mt / x.loan * 100) + '%' : '—') + '</span></div></div>' : '') +
+          '</div>').join('');
     } else if (hoTab === 'closed') {
       const r = (await call('appRealized', hoRange.from, hoRange.to)).filter(x => qMatch(x.name, qs.ho));
       const s = r.reduce((a, x) => a + (x.pl || 0), 0), w = r.filter(x => x.pl > 0).length;
@@ -874,9 +942,10 @@ async function loadHoldings() {
       b = b.filter(x => qMatch(x.name, qs.ho)); recs = recs.filter(x => qMatch(x.name, qs.ho));
       const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0);
       const tp = sum('pl');
-      const tr = recs.filter(x => x.item === '買進' || x.item === '賣出');
+      const BUYS = ['買進', '融資買進', '融券買進'], SELLS = ['賣出', '融資賣出', '融券賣出'];
+      const tr = recs.filter(x => BUYS.indexOf(x.item) >= 0 || SELLS.indexOf(x.item) >= 0);
       const tsum = (f, k) => tr.filter(f).reduce((a, x) => a + (x[k] || 0), 0);
-      const vBuy = tsum(x => x.item === '買進', 'amt'), vSell = tsum(x => x.item === '賣出', 'amt');
+      const vBuy = tsum(x => BUYS.indexOf(x.item) >= 0, 'amt'), vSell = tsum(x => SELLS.indexOf(x.item) >= 0, 'amt');
       const vCost = tsum(() => true, 'fee') + tsum(() => true, 'tax');
       const volCard = '<div class="card col" style="gap:12px"><div class="row" style="align-items:flex-end"><div class="col"><span class="lbl">區間總交易量（買進＋賣出成交金額）</span><span style="font-size:22px;font-weight:700">' + fmt(vBuy + vSell) + '</span></div><span class="lbl">' + tr.length + ' 筆交易</span></div>' +
         '<div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
@@ -897,14 +966,15 @@ function allocCard(hs) {
   let a = Object.values(g).filter(x => x.mv > 0).sort((p, q) => q.mv - p.mv);
   const tot = a.reduce((s, x) => s + x.mv, 0); if (!tot) return '';
   const C = ['#F59A4A', '#5AA7FF', '#B48CFF', '#4FD1C5', '#F6C945', '#FF8FB1', '#8FA3BF'];
-  if (a.length > 8) { const rest = a.slice(7); a = a.slice(0, 7).concat([{name: '其他 ' + rest.length + ' 檔', mv: rest.reduce((s, x) => s + x.mv, 0), o: 1}]); }
+  const lim = innerWidth < 700 ? 6 : 8;
+  if (a.length > lim) { const rest = a.slice(lim - 1); a = a.slice(0, lim - 1).concat([{name: '其他 ' + rest.length + ' 檔', mv: rest.reduce((s, x) => s + x.mv, 0), o: 1}]); }
   a.forEach((x, i) => x.c = x.o ? '#4A4F58' : C[i % C.length]);
   const R = 52, W = 18, L = 2 * Math.PI * R; let off = 0;
   const arcs = a.map(x => { const len = x.mv / tot * L, gap = a.length > 1 ? Math.min(2, len / 3) : 0;
     const el = '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke="' + x.c + '" stroke-width="' + W + '" stroke-dasharray="' + (len - gap).toFixed(2) + ' ' + (L - len + gap).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 70 70)"/>';
     off += len; return el; }).join('');
   return '<div class="card col" style="gap:12px"><span class="lbl">持股配置（依市值）</span><div class="al"><svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="持股配置圓餅圖">' + arcs +
-    '<text x="70" y="66" text-anchor="middle" fill="#A3A9B2" font-size="11">' + a.length + (a.some(x => x.o) ? '+' : '') + ' 檔</text><text x="70" y="84" text-anchor="middle" fill="#F2F3F5" font-size="14" font-weight="700">' + (tot / 10000).toFixed(1) + '萬</text></svg><ul>' +
+    '<text x="70" y="66" text-anchor="middle" fill="#A3A9B2" font-size="11">' + a.length + (a.some(x => x.o) ? '+' : '') + ' 檔</text><text x="70" y="84" text-anchor="middle" fill="#F2F3F5" font-size="14" font-weight="700">' + (PRIV ? MASK : (tot / 10000).toFixed(1) + '萬') + '</text></svg><ul>' +
     a.map(x => '<li><i style="background:' + x.c + '"></i><span class="n">' + esc(x.name) + '</span><span class="p">' + (x.mv / tot * 100).toFixed(1) + '%</span><span class="m">' + fmt(Math.round(x.mv)) + '</span></li>').join('') + '</ul></div></div>';
 }
 
@@ -967,7 +1037,7 @@ function renderDetail(map) {
 }
 
 // ---------- 新增／修改紀錄 ----------
-let meta = null, kind = 'buy', divType = 'cash', spType = 'split', editing = null;
+let meta = null, kind = 'buy', divType = 'cash', spType = 'split', crType = 'cash', editing = null;
 async function loadMeta() {
   if (meta) return meta;
   meta = await call('appMeta');
@@ -977,15 +1047,18 @@ async function loadMeta() {
 function setKind(k) {
   kind = k;
   $$('#tr-kinds button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
-  const isDiv = k === 'div', isSp = k === 'split';
+  const isDiv = k === 'div', isSp = k === 'split', isTr = k === 'buy' || k === 'sell';
+  const ratio = isSp && (spType === 'split' || spType === 'rsplit');
   $('#tr-divseg').style.display = isDiv ? '' : 'none';
   $('#tr-spseg').style.display = isSp ? '' : 'none';
-  $('#tr-dtrow').style.display = isDiv || isSp ? 'none' : '';
-  $('#tr-datelbl').textContent = isDiv ? '發放日' : isSp ? '生效日' : '日期';
-  $('#tr-pricerow').style.display = (isDiv && divType === 'stock') || isSp ? 'none' : '';
-  $('#tr-unitslbl').textContent = isDiv ? (divType === 'cash' ? '持有股數' : '配發股數') : isSp ? (spType === 'split' ? '1 股變成幾股' : '幾股合成 1 股') : '股數';
-  $('#tr-units').setAttribute('inputmode', isSp ? 'decimal' : 'numeric');
-  $('#tr-pricelbl').textContent = isDiv ? '每股現金股利' : '成交價';
+  $('#tr-crseg').style.display = isTr ? '' : 'none';
+  $('#tr-dtrow').style.display = isTr ? '' : 'none';
+  $('#tr-datelbl').textContent = isDiv ? '發放日' : ratio ? '生效日' : '日期';
+  $('#tr-pricerow').style.display = (isDiv && divType === 'stock') || ratio || (isSp && spType === 'repay') ? 'none' : '';
+  $('#tr-units').closest('label').style.display = isSp && spType === 'call' ? 'none' : '';
+  $('#tr-unitslbl').textContent = isDiv ? (divType === 'cash' ? '持有股數' : '配發股數') : ratio ? (spType === 'split' ? '1 股變成幾股' : '幾股合成 1 股') : isSp && spType === 'repay' ? '償還股數' : '股數';
+  $('#tr-units').setAttribute('inputmode', ratio ? 'decimal' : 'numeric');
+  $('#tr-pricelbl').textContent = isDiv ? '每股現金股利' : isSp && spType === 'call' ? '補繳金額' : '成交價';
   if (isDiv && divType === 'cash') autoHeld();
   estimate();
 }
@@ -993,21 +1066,17 @@ $$('#tr-kinds button').forEach(b => b.onclick = () => setKind(b.dataset.k));
 $$('#tr-divseg button').forEach(b => b.onclick = () => { divType = b.dataset.k; $$('#tr-divseg button').forEach(x => x.classList.toggle('on', x === b)); setKind('div'); });
 $$('#tr-spseg button').forEach(b => b.onclick = () => { spType = b.dataset.k; $$('#tr-spseg button').forEach(x => x.classList.toggle('on', x === b)); setKind('split'); });
 $('#tr-batch').onclick = () => openBatch();
+$$('#tr-crseg button').forEach(b => b.onclick = () => { crType = b.dataset.k; $$('#tr-crseg button').forEach(x => x.classList.toggle('on', x === b)); setKind(kind); });
+$('#tr-acct').onchange = () => { meta = null; loadMeta().then(estimate).catch(() => {}); };
 function autoHeld() {
   if (!meta || editing) return;
   const s = meta.stocks.find(x => x.name === $('#tr-name').value);
   if (s && s.held) $('#tr-units').value = s.held;
 }
 $('#tr-name').addEventListener('change', async () => {
-  const el = $('#tr-name'); let v = el.value.trim();
-  if (!meta) await loadMeta();
-  if (/^[0-9A-Z]{4,6}$/i.test(v)) {
-    const s = meta.stocks.find(x => x.code === v.toUpperCase());
-    if (s) v = s.name; else { try { const n = await call('appLookup', v.toUpperCase()); if (n) v = n; else toast('查不到代號 ' + v + '，請輸入「名稱（代號）」'); } catch (e) {} }
-  } else if (v && !/（.+）$/.test(v)) {
-    const s = meta.stocks.find(x => shortName(x.name) === v);
-    if (s) v = s.name;
-  }
+  const el = $('#tr-name');
+  const v = await normName(el.value);
+  if (!meta) { try { await loadMeta(); } catch (e) {} }
   el.value = v;
   if (kind === 'div' && divType === 'cash') autoHeld();
   estimate();
@@ -1019,7 +1088,12 @@ function estimate() {
   const disc = meta ? discAt($('#tr-date').value || TODAY) / 10 : 0.6, minFee = meta ? (u >= 1000 ? meta.minFee : meta.minOdd) : 20;
   const amt = Math.floor(u * p);
   let rows = [], tot = '', totLbl = '淨金額', note = '預估（儲存後會顯示試算表實際計算結果）';
-  if (kind === 'split') {
+  const it = formRecord().item, cr = meta && meta.credit || {mp: 6, ss: 9, sf: 0.0008};
+  if (kind === 'split' && (spType === 'repay' || spType === 'call')) {
+    rows = spType === 'repay' ? [['償還股數', fmt(u)]] : [['補繳金額', fmt(p)]];
+    totLbl = spType === 'repay' ? '融資現償' : '保證金追繳'; tot = spType === 'repay' ? fmt(u) + ' 股' : fmt(p);
+    note = spType === 'repay' ? '現金償還融資，股票轉成現股；需付的金額以試算表計算為準' : '補繳融資或融券的保證金';
+  } else if (kind === 'split') {
     const s = meta && meta.stocks.find(x => x.name === name), held = s ? s.held : 0;
     const after = u > 0 ? (spType === 'split' ? held * u : held / u) : held;
     rows = [['目前庫存', fmt(held) + ' 股']]; totLbl = '變動後庫存'; tot = fmt(after) + ' 股';
@@ -1034,20 +1108,36 @@ function estimate() {
     const net = kind === 'sell' ? amt - fee - tax : -(amt + fee);
     rows = [['成交金額', fmt(amt)], ['手續費', fmt(fee)], ['交易稅', fmt(tax)]];
     tot = sgn(net);
+    if (it === '融資買進') {
+      const loan = Math.floor(amt * (cr.mp || 0) / 10 / 1000) * 1000;
+      rows = [['成交金額', fmt(amt)], ['手續費', fmt(fee)], ['融資金額（' + (cr.mp || 0) + ' 成）', fmt(loan)]]; totLbl = '自備款'; tot = fmt(amt - loan + fee);
+      note = '預估；融資利息從撥款日起算，以試算表計算為準';
+    } else if (it === '融券賣出') {
+      const bf = Math.round(amt * (cr.sf || 0)), mg = Math.ceil(amt * (cr.ss || 0) / 10 / 100) * 100;
+      rows = [['成交金額', fmt(amt)], ['手續費', fmt(fee)], ['交易稅', fmt(tax)], ['借券費', fmt(bf)], ['擔保品', fmt(amt - fee - tax - bf)]]; totLbl = '需繳保證金（' + (cr.ss || 0) + ' 成）'; tot = fmt(mg);
+      note = '預估；擔保品和保證金在回補時才結算';
+    } else if (it === '融資賣出' || it === '融券買進') {
+      note = it === '融資賣出' ? '預估；賣出款會先償還融資金額和利息，實際入帳以試算表為準' : '預估；回補後退還擔保品和保證金，實際損益以試算表為準';
+    }
   }
   $('#tr-est').innerHTML = '<span class="lbl">' + note + '</span>' + rows.map(r => '<div><span style="color:#D5D8DD">' + r[0] + '</span><span>' + r[1] + '</span></div>').join('') + '<div class="tot"><span>' + totLbl + '</span><span>' + tot + '</span></div>';
 }
 function formRecord() {
-  const item = kind === 'buy' ? '買進' : kind === 'sell' ? '賣出' : kind === 'split' ? (spType === 'split' ? '股票分割' : '股票反分割') : divType === 'cash' ? '現金股利' : '股票股利';
-  const noPrice = item === '股票股利' || kind === 'split';
-  return {date: $('#tr-date').value, item: item, name: $('#tr-name').value.trim(), units: +$('#tr-units').value, price: noPrice ? 0 : +$('#tr-price').value, dayTrade: (kind === 'buy' || kind === 'sell') && $('#tr-dt').checked};
+  const CR = {buy: {cash: '買進', mt: '融資買進', ss: '融券買進'}, sell: {cash: '賣出', mt: '融資賣出', ss: '融券賣出'}};
+  const SP = {split: '股票分割', rsplit: '股票反分割', repay: '融資現償', call: '保證金追繳'};
+  const item = CR[kind] ? CR[kind][crType] : kind === 'split' ? SP[spType] : divType === 'cash' ? '現金股利' : '股票股利';
+  const noPrice = ['股票股利', '股票分割', '股票反分割', '融資現償'].indexOf(item) >= 0;
+  return {date: $('#tr-date').value, item: item, name: $('#tr-name').value.trim(), units: item === '保證金追繳' ? 1 : +$('#tr-units').value, price: noPrice ? 0 : +$('#tr-price').value,
+    dayTrade: !!CR[kind] && $('#tr-dt').checked, acct: multi() ? $('#tr-acct').value : writeAcct()};
 }
 function resetForm() {
   editing = null;
   $('#tr-title').textContent = '新增紀錄';
   $('#tr-date').value = TODAY; $('#tr-name').value = ''; $('#tr-units').value = ''; $('#tr-price').value = ''; $('#tr-dt').checked = false;
   $('#tr-delete').style.display = 'none'; $('#tr-cancel').style.display = 'none'; $('#tr-save').textContent = '儲存到 LOG';
+  crType = 'cash'; $$('#tr-crseg button').forEach(b => b.classList.toggle('on', b.dataset.k === 'cash'));
   setKind('buy');
+  if (typeof renderAcctUI === 'function' && $('#dr-accts')) renderAcctUI();
 }
 function resultSheet(r, title) {
   const rows = [['成交金額', fmt(r.amt)], ['手續費', fmt(r.fee)], ['交易稅', fmt(r.tax)], ['淨金額', sgn(r.net)], ['批號', r.batch === '' ? '—' : r.batch]];
@@ -1059,10 +1149,12 @@ $('#tr-save').onclick = async () => {
   const rec = formRecord();
   if (!rec.name || !/（.+）$/.test(rec.name)) return toast('請選擇股票，或輸入代號');
   if (!(rec.units > 0)) return toast(kind === 'split' ? '請輸入比例' : '請輸入股數');
-  if (['買進', '賣出', '現金股利'].indexOf(rec.item) >= 0 && !(rec.price > 0)) return toast('請輸入價格');
+  if (['買進', '賣出', '現金股利', '融資買進', '融資賣出', '融券賣出', '融券買進', '保證金追繳'].indexOf(rec.item) >= 0 && !(rec.price > 0)) return toast(rec.item === '保證金追繳' ? '請輸入金額' : '請輸入價格');
+  if (!editing && !(await confirmWarn(recWarnings(rec)))) return;
   const b = $('#tr-save'); b.disabled = true; b.textContent = '儲存中…';
   try {
-    const r = editing ? await call('appUpdateRecord', editing.row, editing.expect, rec) : await call('appAddRecord', rec);
+    const acct = rec.acct; delete rec.acct;
+    const r = editing ? await callIn(acct, 'appUpdateRecord', editing.row, editing.expect, rec) : await callIn(acct, 'appAddRecord', rec);
     resultSheet(r, editing ? '已修改' : '已寫入 LOG');
     meta = null; loadMeta();
     Object.keys(loaded).forEach(k => loaded[k] = false);
@@ -1077,18 +1169,21 @@ $('#tr-delete').onclick = () => {
   $('#sh-no').onclick = closeSheet;
   $('#sh-del').onclick = async () => {
     $('#sh-del').disabled = true;
-    try { await call('appDeleteRecord', editing.row, editing.expect); closeSheet(); toast('已刪除'); Object.keys(loaded).forEach(k => loaded[k] = false); resetForm(); show('records'); }
+    try { await callIn(editing.acct, 'appDeleteRecord', editing.row, editing.expect); closeSheet(); toast('已刪除'); Object.keys(loaded).forEach(k => loaded[k] = false); resetForm(); show('records'); }
     catch (e) { closeSheet(); toast('刪除失敗：' + errMsg(e), 4000); }
   };
 };
 $('#tr-cancel').onclick = () => { resetForm(); show('records'); };
 function editRecord(x) {
-  editing = {row: x.row, expect: {d: x.d, item: x.item, name: x.name}};
+  editing = {row: x.row, expect: {d: x.d, item: x.item, name: x.name}, acct: x.acct || writeAcct()};
   divType = x.item === '股票股利' ? 'stock' : 'cash';
-  spType = x.item === '股票反分割' ? 'rsplit' : 'split';
+  spType = {股票反分割: 'rsplit', 融資現償: 'repay', 保證金追繳: 'call'}[x.item] || 'split';
+  crType = /融資/.test(x.item) ? 'mt' : /融券/.test(x.item) ? 'ss' : 'cash';
+  $$('#tr-crseg button').forEach(b => b.classList.toggle('on', b.dataset.k === crType));
   $$('#tr-divseg button').forEach(b => b.classList.toggle('on', b.dataset.k === divType));
   $$('#tr-spseg button').forEach(b => b.classList.toggle('on', b.dataset.k === spType));
-  setKind(x.item === '買進' ? 'buy' : x.item === '賣出' ? 'sell' : /分割/.test(x.item) ? 'split' : 'div');
+  setKind(/^(買進|融資買進|融券買進)$/.test(x.item) ? 'buy' : /^(賣出|融資賣出|融券賣出)$/.test(x.item) ? 'sell' : /分割|現償|追繳/.test(x.item) ? 'split' : 'div');
+  renderAcctUI();
   $('#tr-title').textContent = '修改紀錄';
   $('#tr-date').value = x.d; $('#tr-name').value = x.name; $('#tr-units').value = x.units; $('#tr-price').value = x.price || ''; $('#tr-dt').checked = !!x.dayTrade;
   $('#tr-delete').style.display = ''; $('#tr-cancel').style.display = 'flex'; $('#tr-save').textContent = '儲存修改';
@@ -1120,10 +1215,10 @@ function renderRecords() {
   let h = '', last = '';
   f.forEach((x, i) => {
     if (x.d !== last) { last = x.d; h += '<span class="lbl" style="font-weight:700;padding:4px 4px 0">' + md(x.d) + '</span>'; }
-    const b = x.item === '買進' ? 'b-buy' : x.item === '賣出' ? 'b-sell' : /分割/.test(x.item) ? 'b-sp' : 'b-div';
-    const desc = /分割/.test(x.item) ? (x.item === '股票分割' ? '1 股 → ' + x.units + ' 股' : x.units + ' 股 → 1 股') : /股利/.test(x.item) ? (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' : '配發 ' + fmt(x.units) + ' 股') : fmt(x.units) + ' 股 @' + x.price + (x.dayTrade ? ' · 當沖' : '');
+    const b = /^(買進|融資買進|融券買進)$/.test(x.item) ? 'b-buy' : /^(賣出|融資賣出|融券賣出)$/.test(x.item) ? 'b-sell' : /分割|現償|追繳/.test(x.item) ? 'b-sp' : 'b-div';
+    const desc = (ACCT === '*' && x.acctName ? x.acctName + ' · ' : '') + (x.item === '保證金追繳' ? '補繳 ' + fmt(x.price) + ' 元' : x.item === '融資現償' ? '償還 ' + fmt(x.units) + ' 股' : /分割/.test(x.item) ? (x.item === '股票分割' ? '1 股 → ' + x.units + ' 股' : x.units + ' 股 → 1 股') : /股利/.test(x.item) ? (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' : '配發 ' + fmt(x.units) + ' 股') : fmt(x.units) + ' 股 @' + x.price + (x.dayTrade ? ' · 當沖' : ''));
     h += '<button class="item row" data-i="' + reData.indexOf(x) + '" style="text-align:left;width:100%;color:inherit;padding:10px 12px" aria-label="修改 ' + esc(shortName(x.name)) + ' ' + esc(x.item) + '">' +
-      '<span class="badge ' + b + '">' + esc(x.item.replace('現金', '').replace('股票股利', '配股').replace('股票反分割', '反分割').replace('股票分割', '分割')) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(shortName(x.name)) +
+      '<span class="badge ' + b + '">' + esc(({融資買進: '資買', 融資賣出: '資賣', 融券賣出: '券賣', 融券買進: '券買', 融資現償: '現償', 保證金追繳: '追繳', 股票反分割: '減資', 股票分割: '分割', 股票股利: '配股', 現金股利: '股利'})[x.item] || x.item) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(shortName(x.name)) +
       '</span><span class="lbl">' + desc + '</span></span><span style="font-size:14px;font-weight:700">' + (x.net === null ? '—' : sgn(x.net)) + '</span>' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3A9B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>';
   });
@@ -1176,7 +1271,7 @@ function openDrawer() { $('#drawer').classList.add('show'); $('#drawer').setAttr
 function closeDrawer() { $('#drawer').classList.remove('show'); $('#drawer').setAttribute('aria-hidden', 'true'); }
 $('#ov-avatar').onclick = openDrawer;
 $('#dr-bg').onclick = closeDrawer;
-$$('#drawer .di').forEach(b => b.onclick = () => { closeDrawer(); openPage(b.dataset.pg); });
+$$('#drawer .di[data-pg]').forEach(b => b.onclick = () => { closeDrawer(); openPage(b.dataset.pg); });
 $('#dr-foot').textContent = '版本 ' + APP_VER; $('#st-ver').textContent = '版本 ' + APP_VER;
 let pageCur = null;
 const pageLoaders = {settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
@@ -1192,6 +1287,9 @@ function afterWrite() { meta = null; loadMeta().catch(() => {}); Object.keys(loa
 async function normName(v) {
   v = String(v || '').trim();
   if (!v) return v;
+  try { await loadSymbols(); } catch (e) {}
+  if (/^[0-9A-Z]{4,6}$/i.test(v) && symOf(v)) { const x = symOf(v); return x[1] + '（' + x[0] + '）'; }
+  if (!/（.+）$/.test(v) && SYM) { const l = SYM.list.filter(x => x[1] === v); if (l.length === 1) return l[0][1] + '（' + l[0][0] + '）'; }
   if (!meta) { try { await loadMeta(); } catch (e) { return v; } }
   if (/^[0-9A-Z]{4,6}$/i.test(v)) {
     const s = meta.stocks.find(x => x.code === v.toUpperCase());
@@ -1211,13 +1309,51 @@ function discAt(d) {
 }
 
 // ---------- 設定 ----------
-let stData = null, stFees = [];
+let stData = null, stFees = [], stAcct = null;
+function renderStAccts() {
+  $('#st-accts').innerHTML = ACCTS.map(a => '<div class="acc"><span class="n">' + esc(a.name) + (a.id === 'main' ? ' <span class="tag a">主帳戶</span>' : '') + '</span>' +
+    (a.url ? '<a class="link" href="' + esc(a.url) + '" target="_blank" rel="noopener" style="height:auto;font-size:13px">試算表</a>' : '') +
+    '<button class="small" data-ren="' + esc(a.id) + '">改名</button>' + (a.id !== 'main' ? '<button class="small" data-rm="' + esc(a.id) + '">移除</button>' : '') + '</div>').join('');
+  $$('#st-accts [data-ren]').forEach(b => b.onclick = async () => {
+    const a = ACCTS.find(x => x.id === b.dataset.ren);
+    openSheet('<h2>帳戶改名</h2><input class="inp" id="rn-in" maxlength="20" value="' + esc(a.name) + '"><button class="primary" id="rn-ok">儲存</button><button class="link" id="rn-no" style="justify-content:center">取消</button>');
+    $('#rn-no').onclick = closeSheet;
+    $('#rn-ok').onclick = async () => { try { saveAccts(await callIn('main', 'appRenameAccount', a.id, $('#rn-in').value)); closeSheet(); renderStAccts(); toast('已改名'); } catch (e) { toast(errMsg(e), 4000); } };
+  });
+  $$('#st-accts [data-rm]').forEach(b => b.onclick = () => {
+    const a = ACCTS.find(x => x.id === b.dataset.rm);
+    openSheet('<h2>移除「' + esc(a.name) + '」？</h2><span class="sub">App 不再顯示這個帳戶。它的試算表檔案會保留在你的 Google 雲端硬碟，不會被刪除，需要的話可以自己去刪。</span><button class="danger" id="rm-ok">移除帳戶</button><button class="link" id="rm-no" style="justify-content:center">取消</button>');
+    $('#rm-no').onclick = closeSheet;
+    $('#rm-ok').onclick = async () => { try { saveAccts(await callIn('main', 'appRemoveAccount', a.id)); closeSheet(); renderStAccts(); if (ACCT === a.id) switchAcct('main'); toast('已移除'); } catch (e) { toast(errMsg(e), 4000); } };
+  });
+  $('#st-acctrow').style.display = multi() ? '' : 'none';
+  $('#st-acct').innerHTML = acctOptions(stAcct || writeAcct());
+}
+$('#st-addacct').onclick = async () => {
+  const n = $('#st-newacct').value.trim(); if (!n) return toast('請輸入帳戶名稱');
+  const b = $('#st-addacct'); b.disabled = true; b.textContent = '建立中…'; toast('正在複製試算表建立新帳戶，約需 20～40 秒…', 8000);
+  try { saveAccts(await callIn('main', 'appCreateAccount', n)); $('#st-newacct').value = ''; renderStAccts(); toast('已建立「' + n + '」'); }
+  catch (e) { toast('建立失敗：' + errMsg(e), 5000); }
+  finally { b.disabled = false; b.textContent = '新增'; }
+};
+$('#st-acct').onchange = () => { stAcct = $('#st-acct').value; loadSettings(); };
+$('#st-savecr').onclick = async () => {
+  const o = {mp: +$('#st-mp').value, ss: +$('#st-ss').value, mi: +$('#st-mi').value / 100, si: +$('#st-si').value / 100, sf: +$('#st-sf').value / 100};
+  const b = $('#st-savecr'); b.disabled = true;
+  try { await callIn(stAcct || writeAcct(), 'appSaveCredit', o); afterWrite(); toast('已儲存信用交易設定'); }
+  catch (e) { toast('儲存失敗：' + errMsg(e), 4000); } finally { b.disabled = false; }
+};
 async function loadSettings() {
+  stAcct = stAcct || writeAcct();
+  loadAccts().then(renderStAccts);
+  renderStAccts();
   $('#st-autoca').checked = autoCA();
   $('#st-api').value = API;
   $('#st-fees').innerHTML = '<div class="skel" style="height:60px;margin:8px 0"></div>';
   try {
-    stData = await call('appSettings');
+    stData = await callIn(stAcct, 'appSettings');
+    const c = stData.credit || {};
+    $('#st-mp').value = c.mp ?? ''; $('#st-ss').value = c.ss ?? ''; $('#st-mi').value = c.mi === undefined ? '' : +(c.mi * 100).toFixed(4); $('#st-si').value = c.si === undefined ? '' : +(c.si * 100).toFixed(4); $('#st-sf').value = c.sf === undefined ? '' : +(c.sf * 100).toFixed(4);
     stFees = (stData.fees.length ? stData.fees : [{from: '1990-01-01', disc: 10}]).map(f => ({from: f.from, disc: f.disc}));
     renderFees();
     $('#st-min').value = stData.minFee; $('#st-minodd').value = stData.minOdd;
@@ -1258,14 +1394,14 @@ $('#st-savefee').onclick = async () => {
   if (new Set(list.map(f => f.from)).size !== list.length) return toast('有兩段的起始日相同');
   const b = $('#st-savefee'); b.disabled = true; b.textContent = '儲存中…';
   try {
-    stData = await call('appSaveFees', list, +$('#st-min').value || 0, +$('#st-minodd').value || 0);
+    stData = await callIn(stAcct || writeAcct(), 'appSaveFees', list, +$('#st-min').value || 0, +$('#st-minodd').value || 0);
     stFees = stData.fees.map(f => ({from: f.from, disc: f.disc})); renderFees();
     afterWrite(); toast('已儲存，試算表正在重算手續費');
   } catch (e) { toast('儲存失敗：' + errMsg(e), 4000); }
   finally { b.disabled = false; b.textContent = '儲存手續費設定'; }
 };
 $('#st-autoca').onchange = e => { try { localStorage.setItem('zqAutoCA', e.target.checked ? '1' : '0'); } catch (x) {} if (e.target.checked) checkCA(); else setCaBadge(0); };
-$('#st-undis').onclick = async () => { try { await call('appDismissAction', '__reset__'); $('#st-dis').textContent = '0 筆'; toast('已還原'); checkCA(); } catch (e) { toast(errMsg(e)); } };
+$('#st-undis').onclick = async () => { try { await callIn('main', 'appDismissAction', '__reset__'); $('#st-dis').textContent = '0 筆'; toast('已還原'); checkCA(); } catch (e) { toast(errMsg(e)); } };
 $('#st-tok').onclick = async () => { setTok(''); await askToken('請輸入新的 App 密碼。'); toast('已更新密碼'); };
 $('#st-clear').onclick = () => { cache = {}; try { localStorage.removeItem(CK); } catch (e) {} afterWrite(); toast('已清除，重新讀取中'); loadOverview(); };
 $('#st-saveapi').onclick = () => {
@@ -1283,7 +1419,7 @@ const CA_LBL = {cash: '現金股利', stock: '股票股利', split: '股票分�
 function setCaBadge(n) {
   $('#ov-dot').textContent = n; $('#ov-dot').classList.toggle('on', n > 0);
   $('#dr-ca').textContent = n; $('#dr-ca').style.display = n > 0 ? '' : 'none';
-  $('#ov-ca').innerHTML = n + ' 筆除權息／股本變動待確認 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
+  $('#ov-ca').innerHTML = n + ' 筆除權息待確認 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
   $('#ov-ca').classList.toggle('on', n > 0);
 }
 function checkCA() { if (!autoCA()) return; call('appCorpActions').then(r => setCaBadge(r.items.length)).catch(() => {}); }
@@ -1294,7 +1430,7 @@ async function loadCorp(force) {
   $('#ca-head').textContent = '正在比對證交所、櫃買中心的公告，第一次約需 10～30 秒…';
   try {
     let r;
-    if (force) { r = await rawCall('appCorpActions', [true]); cache['appCorpActions|[]'] = {d: r, t: Date.now()}; saveCache(); }
+    if (force) { r = await rawCall('appCorpActions', [true]); cache[ACCT + '|appCorpActions|[]'] = {d: r, t: Date.now()}; saveCache(); }
     else r = await call('appCorpActions');
     caItems = r.items; setCaBadge(caItems.length); renderCorp(r.checked);
   } catch (e) { $('#ca-list').innerHTML = '<div class="empty">檢查失敗：' + esc(errMsg(e)) + '</div>'; $('#ca-head').textContent = ''; }
@@ -1320,7 +1456,7 @@ function renderCorp(checked) {
     else if (x.type === 'stock') f += '<label>配發股數<input class="inp" type="number" inputmode="numeric" data-k="units" value="' + esc(x.units) + '"></label>';
     else if (x.type === 'reduce') f += '<label>每千股換發股數<input class="inp" type="number" inputmode="decimal" step="any" data-k="perK" value="' + (x.units ? Math.round(1000 / x.units * 100) / 100 : '') + '" placeholder="例：600"></label>';
     else f += '<label>' + (x.type === 'split' ? '1 股變成幾股' : '幾股合成 1 股') + '<input class="inp" type="number" inputmode="decimal" step="any" data-k="units" value="' + esc(x.units) + '"></label>';
-    return '<div class="card ca" data-i="' + i + '"><div class="t"><span class="badge ' + b + '">' + CA_LBL[x.type] + '</span><b>' + esc(shortName(x.name)) + '</b><span class="lbl">' + esc(x.code) + '</span></div>' +
+    return '<div class="card ca" data-i="' + i + '"><div class="t"><span class="badge ' + b + '">' + CA_LBL[x.type] + '</span><b>' + esc(shortName(x.name)) + '</b><span class="lbl">' + esc(x.code) + '</span>' + (x.acctName && multi() ? '<span class="tag a">' + esc(x.acctName) + '</span>' : '') + '</div>' +
       '<span class="note" style="color:#C9CED6">' + caDesc(x) + '</span>' +
       (x.afterPending ? '<span class="warn">這檔股票有更早的分割／減資還沒記錄，股數可能不對，請先處理上面那筆。</span>' : '') +
       '<div class="f">' + f + '</div><div class="acts"><button class="small" data-dis>忽略</button><button class="small pri" data-rec>記錄到 LOG</button></div></div>';
@@ -1328,12 +1464,12 @@ function renderCorp(checked) {
   $$('#ca-list .ca').forEach(el => {
     const x = caItems[+el.dataset.i];
     el.querySelector('[data-dis]').onclick = async () => {
-      try { await call('appDismissAction', x.key); toast('已忽略'); loadCorp(); } catch (e) { toast(errMsg(e)); }
+      try { await callIn(x.acct || writeAcct(), 'appDismissAction', x.key); toast('已忽略'); loadCorp(); } catch (e) { toast(errMsg(e)); }
     };
     el.querySelector('[data-rec]').onclick = async e => {
       const rec = caRecord(x, el); if (!rec) return;
       e.target.disabled = true; e.target.textContent = '記錄中…';
-      try { await call('appAddRecord', rec); toast('已記錄 ' + shortName(x.name) + ' ' + CA_LBL[x.type]); afterWrite(); loadCorp(); }
+      try { await callIn(x.acct || writeAcct(), 'appAddRecord', rec); toast('已記錄 ' + shortName(x.name) + ' ' + CA_LBL[x.type]); afterWrite(); loadCorp(); }
       catch (err) { toast('記錄失敗：' + errMsg(err), 4000); e.target.disabled = false; e.target.textContent = '記錄到 LOG'; }
     };
   });
@@ -1350,10 +1486,12 @@ function caRecord(x, el) {
 }
 $('#ca-all').onclick = async () => {
   const list = [];
-  $$('#ca-list .ca').forEach(el => { const x = caItems[+el.dataset.i]; if (x.needInput || x.afterPending) return; const r = caRecord(x, el); if (r) list.push(r); });
-  if (!list.length) return;
+  const by = {};
+  $$('#ca-list .ca').forEach(el => { const x = caItems[+el.dataset.i]; if (x.needInput || x.afterPending) return; const r = caRecord(x, el); if (r) (by[x.acct || writeAcct()] = by[x.acct || writeAcct()] || []).push(r); });
+  const n = Object.values(by).reduce((a, l) => a + l.length, 0);
+  if (!n) return;
   const b = $('#ca-all'); b.disabled = true; b.textContent = '記錄中…';
-  try { await call('appAddRecords', list); toast('已記錄 ' + list.length + ' 筆'); afterWrite(); loadCorp(); }
+  try { for (const a of Object.keys(by)) await callIn(a, 'appAddRecords', by[a]); toast('已記錄 ' + n + ' 筆'); afterWrite(); loadCorp(); }
   catch (e) { toast('記錄失敗：' + errMsg(e), 4000); }
   finally { b.disabled = false; b.textContent = '全部記錄'; }
 };
@@ -1397,9 +1535,10 @@ let dcPlans = [], dcRecs = [], dcPend = [];
 async function loadDca() {
   $('#dc-list').innerHTML = '<div class="skel"></div>'; $('#dc-pend').innerHTML = '';
   try {
-    const s = await call('appSettings'); dcPlans = s.plans || [];
+    const s = await callIn('main', 'appSettings'); dcPlans = s.plans || [];
     const start = dcPlans.reduce((a, p) => p.start < a ? p.start : a, TODAY);
-    dcRecs = dcPlans.length ? await call('appRecords', start, TODAY) : [];
+    dcRecs = [];
+    for (const a of [...new Set(dcPlans.map(p => p.acct || 'main'))]) (await callIn(a, 'appRecords', start, TODAY)).forEach(r => dcRecs.push(Object.assign({}, r, {acct: a})));
     renderDca();
   } catch (e) { $('#dc-list').innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
 }
@@ -1417,8 +1556,8 @@ function dcPending() {
   });
   out.sort((a, b) => a.date < b.date ? -1 : 1);
   return out.filter(o => {
-    const hit = dcRecs.find(r => r.item === '買進' && r.name === o.plan.name && r.d >= o.date && r.d <= addDays(o.date, 7) && !used[r.row]);
-    if (hit) { used[hit.row] = 1; return false; }
+    const hit = dcRecs.find(r => r.item === '買進' && r.name === o.plan.name && (r.acct || 'main') === (o.plan.acct || 'main') && r.d >= o.date && r.d <= addDays(o.date, 7) && !used[r.acct + r.row]);
+    if (hit) { used[hit.acct + hit.row] = 1; return false; }
     return true;
   });
 }
@@ -1431,7 +1570,7 @@ function renderDca() {
     '<div class="card empty" style="padding:18px">扣款都記錄好了 👍</div>';
   if ($('#dc-fill')) $('#dc-fill').onclick = dcFill;
   $('#dc-list').innerHTML = dcPlans.length ? dcPlans.map((p, i) => '<div class="item col" style="gap:8px"><div class="row"><span class="col" style="gap:2px;min-width:0"><span style="font-size:16px;font-weight:700">' + esc(shortName(p.name)) + '</span>' +
-    '<span class="lbl">每月 ' + p.days.join('、') + ' 日 · 每次 ' + fmt(p.amount) + ' 元 · ' + ymd(p.start) + ' 起</span></span>' +
+    '<span class="lbl">' + (multi() ? esc(acctName(p.acct || 'main')) + ' · ' : '') + '每月 ' + p.days.join('、') + ' 日 · 每次 ' + fmt(p.amount) + ' 元 · ' + ymd(p.start) + ' 起</span></span>' +
     '<label class="sw" aria-label="啟用"><input type="checkbox" data-on="' + i + '" ' + (p.active ? 'checked' : '') + '><span></span></label></div>' +
     '<div class="acts row" style="justify-content:flex-end"><button class="small" data-ed="' + i + '">編輯</button></div></div>').join('') :
     '<div class="card empty">還沒有定期定額，按右上角 ＋ 新增</div>';
@@ -1439,25 +1578,27 @@ function renderDca() {
   $$('#dc-list [data-on]').forEach(c => c.onchange = async () => { const l = dcPlans.map(p => Object.assign({}, p)); l[+c.dataset.on].active = c.checked; await dcSave(l); });
 }
 async function dcSave(list) {
-  try { dcPlans = await call('appSavePlans', list); renderDca(); return true; }
+  try { dcPlans = await callIn('main', 'appSavePlans', list); renderDca(); return true; }
   catch (e) { toast('儲存失敗：' + errMsg(e), 4000); return false; }
 }
 $('#dc-add').onclick = () => dcEdit(-1);
 function dcEdit(i) {
-  const p = i >= 0 ? dcPlans[i] : {name: '', days: [6], amount: 3000, start: TODAY, active: true};
+  const p = i >= 0 ? dcPlans[i] : {name: '', days: [6], amount: 3000, start: TODAY, active: true, acct: writeAcct()};
   openSheet('<h2>' + (i >= 0 ? '編輯' : '新增') + '定期定額</h2><div class="form">' +
-    '<label><span>股票</span><input type="text" id="dc-name" list="tr-stocks" placeholder="名稱或代號" autocomplete="off" value="' + esc(p.name) + '"></label>' +
+    (multi() ? '<label class="selrow"><span>帳戶</span><select id="dc-acct">' + acctOptions(p.acct || 'main') + '</select></label>' : '') +
+    '<label><span>股票</span><input type="text" id="dc-name" placeholder="名稱或代號" autocomplete="off" value="' + esc(p.name) + '"></label>' +
     '<label><span>每月扣款日</span><input type="text" id="dc-days" inputmode="numeric" placeholder="例：6,16,26" value="' + esc(p.days.join(',')) + '"></label>' +
     '<label><span>每次金額（元）</span><input type="number" id="dc-amt" inputmode="numeric" value="' + esc(p.amount) + '"></label>' +
     '<label><span>開始日期</span><input type="date" id="dc-start" value="' + esc(p.start) + '"></label></div>' +
     '<span class="note">扣款日可以填多個，用逗號分開。遇到假日券商會順延，App 比對紀錄時會往後找 7 天。</span>' +
     '<button class="primary" id="dc-ok">儲存</button>' + (i >= 0 ? '<button class="danger" id="dc-del">刪除這個定期定額</button>' : '') + '<button class="link" id="dc-no" style="justify-content:center">取消</button>');
+  attachPicker($('#dc-name'));
   $('#dc-name').addEventListener('change', async () => { $('#dc-name').value = await normName($('#dc-name').value); });
   $('#dc-no').onclick = closeSheet;
   $('#dc-ok').onclick = async () => {
     const name = await normName($('#dc-name').value);
     const days = $('#dc-days').value.split(/[^\d]+/).map(Number).filter(d => d >= 1 && d <= 31);
-    const np = {id: p.id, name: name, days: days, amount: +$('#dc-amt').value, start: $('#dc-start').value, active: p.active};
+    const np = {id: p.id, name: name, days: days, amount: +$('#dc-amt').value, start: $('#dc-start').value, active: p.active, acct: $('#dc-acct') ? $('#dc-acct').value : 'main'};
     if (!/（.+）$/.test(name)) return toast('請選擇股票，或輸入代號');
     if (!days.length) return toast('請填扣款日');
     if (!(np.amount >= 100)) return toast('金額至少 100 元');
@@ -1480,7 +1621,7 @@ async function dcFill() {
       by[c].forEach(o => {
         const q = px[o.date], p = q ? q.p : '', d = q ? q.d : o.date;
         const units = p ? Math.floor(o.plan.amount / (p * (1 + 0.001425 * discAt(d) / 10))) : '';
-        rows.push({date: d, item: '買進', name: o.plan.name, units: units, price: p});
+        rows.push({date: d, item: '買進', name: o.plan.name, units: units, price: p, acct: o.plan.acct || 'main'});
       });
     }
     rows.sort((a, b) => a.date < b.date ? -1 : 1);
@@ -1496,13 +1637,14 @@ function openBatch(rows, title, note) {
   btRows = [];
   btRows = rows && rows.length ? rows : [btBlank()];
   $('#bt-title').textContent = title || '批次新增紀錄';
+  renderAcctUI(); if (btRows[0] && btRows[0].acct) $('#bt-acct').value = btRows[0].acct;
   $('#bt-note').textContent = note || '一次輸入多筆買賣（例如零股、定期定額），核對後一起存進 LOG。';
   renderBatch();
   if (pageCur !== 'batch') openPage('batch');
 }
 function renderBatch() {
   $('#bt-list').innerHTML = btRows.map((r, i) => '<div class="brow" data-i="' + i + '"><div class="hd"><span class="lbl" style="font-weight:700">第 ' + (i + 1) + ' 筆</span><button class="xbtn" data-x aria-label="刪除第 ' + (i + 1) + ' 筆">×</button></div>' +
-    '<label class="full">股票<input class="inp" type="text" list="tr-stocks" data-k="name" placeholder="名稱或代號" autocomplete="off" value="' + esc(r.name) + '"></label>' +
+    '<label class="full">股票<input class="inp" type="text" data-k="name" placeholder="名稱或代號" autocomplete="off" value="' + esc(r.name) + '"></label>' +
     '<label>日期<input class="inp" type="date" data-k="date" value="' + esc(r.date) + '"></label>' +
     '<label>項目<select class="inp" data-k="item"><option' + (r.item === '買進' ? ' selected' : '') + '>買進</option><option' + (r.item === '賣出' ? ' selected' : '') + '>賣出</option></select></label>' +
     '<label>股數<input class="inp" type="number" inputmode="numeric" data-k="units" value="' + esc(r.units) + '"></label>' +
@@ -1511,7 +1653,7 @@ function renderBatch() {
     const i = +el.dataset.i;
     el.querySelectorAll('[data-k]').forEach(inp => {
       inp.addEventListener('input', () => { btRows[i][inp.dataset.k] = inp.value; });
-      if (inp.dataset.k === 'name') inp.addEventListener('change', async () => { inp.value = btRows[i].name = await normName(inp.value); });
+      if (inp.dataset.k === 'name') { attachPicker(inp); inp.addEventListener('change', async () => { inp.value = btRows[i].name = await normName(inp.value); }); }
     });
     el.querySelector('[data-x]').onclick = () => { btRows.splice(i, 1); if (!btRows.length) btRows.push(btBlank()); renderBatch(); };
   });
@@ -1529,19 +1671,188 @@ $('#bt-save').onclick = async () => {
     if (!(rec.price > 0)) return toast('第 ' + (i + 1) + ' 筆：請填成交價');
     list.push(rec);
   }
+  const acct = multi() ? $('#bt-acct').value : writeAcct();
+  let m = meta;
+  try { m = acct === ACCT && meta ? meta : await callIn(acct, 'appMeta'); } catch (e) {}
+  const warn = [];
+  list.forEach((r, i) => recWarnings(r, m && m.stocks.find(x => x.name === r.name) || {held: 0, short: 0}).forEach(w => warn.push('第 ' + (i + 1) + ' 筆：' + w)));
+  if (!(await confirmWarn(warn))) return;
   const b = $('#bt-save'); b.disabled = true; b.textContent = '儲存中（' + list.length + ' 筆）…';
   try {
-    await call('appAddRecords', list);
+    await callIn(acct, 'appAddRecords', list);
     toast('已寫入 ' + list.length + ' 筆'); afterWrite(); btRows = []; closePage();
     if (dcPlans.length) loadDca();
   } catch (e) { toast('儲存失敗：' + errMsg(e), 5000); }
   finally { b.disabled = false; renderBatch(); }
 };
 
+
+// ---------- 帳戶 ----------
+let ACCTS = (() => { try { return JSON.parse(localStorage.getItem('zqAccts') || 'null') || [{id: 'main', name: '主帳戶'}]; } catch (e) { return [{id: 'main', name: '主帳戶'}]; } })();
+const acctName = id => id === '*' ? '全部帳戶' : ((ACCTS.find(a => a.id === id) || {}).name || '主帳戶');
+const multi = () => ACCTS.length > 1;
+const writeAcct = () => ACCT === '*' ? 'main' : ACCT;
+function saveAccts(l) { ACCTS = l && l.length ? l : [{id: 'main', name: '主帳戶'}]; try { localStorage.setItem('zqAccts', JSON.stringify(ACCTS)); } catch (e) {} renderAcctUI(); }
+async function loadAccts() { try { saveAccts(await callIn('main', 'appAccounts')); } catch (e) {} }
+function acctOptions(sel, allowAll) {
+  return (allowAll ? '<option value="*"' + (sel === '*' ? ' selected' : '') + '>全部帳戶</option>' : '') +
+    ACCTS.map(a => '<option value="' + esc(a.id) + '"' + (a.id === sel ? ' selected' : '') + '>' + esc(a.name) + '</option>').join('');
+}
+function renderAcctUI() {
+  if (!ACCTS.some(a => a.id === ACCT) && ACCT !== '*') ACCT = 'main';
+  if (ACCT === '*' && !multi()) ACCT = 'main';
+  $('#dr-accts').innerHTML = ACCTS.length < 2 ? '' : ['*'].concat(ACCTS.map(a => a.id)).map(id =>
+    '<button class="ac' + (id === ACCT ? ' on' : '') + '" data-a="' + esc(id) + '"><span class="rd"></span>' + esc(acctName(id)) + '</button>').join('');
+  $$('#dr-accts .ac').forEach(b => b.onclick = () => { switchAcct(b.dataset.a); closeDrawer(); });
+  $('#dr-acctlbl').style.display = multi() ? '' : 'none';
+  $('#dr-status').textContent = multi() ? '目前：' + acctName(ACCT) : '已連線到 Google 試算表';
+  const trA = $('#tr-acctrow'); if (trA) { trA.style.display = multi() ? '' : 'none'; $('#tr-acct').innerHTML = acctOptions(editing ? editing.acct : writeAcct()); }
+  const btA = $('#bt-acctrow'); if (btA) { btA.style.display = multi() ? '' : 'none'; $('#bt-acct').innerHTML = acctOptions(writeAcct()); }
+}
+function switchAcct(id) {
+  ACCT = id; try { localStorage.setItem('zqAcct', id); } catch (e) {}
+  meta = null; loadMeta().catch(() => {});
+  Object.keys(loaded).forEach(k => loaded[k] = false);
+  renderAcctUI();
+  if (pageCur) openPage(pageCur); else show(current);
+  toast('已切換到「' + acctName(id) + '」');
+}
+
+// ---------- 全市場代號表 ----------
+let SYM = (() => { try { return JSON.parse(localStorage.getItem('zqSym') || 'null'); } catch (e) { return null; } })();
+let symP = null;
+function loadSymbols(force) {
+  if (!force && SYM && Date.now() - (SYM.got || 0) < 12 * 3600e3) return Promise.resolve(SYM);
+  if (symP) return symP;
+  symP = rawCall('appSymbols', [], 'main').then(d => { SYM = {got: Date.now(), list: d.list}; try { localStorage.setItem('zqSym', JSON.stringify(SYM)); } catch (e) {} symP = null; return SYM; }, e => { symP = null; throw e; });
+  return symP;
+}
+const symOf = code => SYM && SYM.list.find(x => x[0] === String(code).toUpperCase());
+function symSearch(q) {
+  q = String(q || '').trim().toUpperCase();
+  if (!q || !SYM) return [];
+  const held = new Set((meta && meta.stocks || []).map(s => s.code));
+  const out = [];
+  SYM.list.forEach(x => {
+    const c = x[0], n = String(x[1]).toUpperCase();
+    let s = -1;
+    if (c === q) s = 0; else if (c.startsWith(q)) s = 1; else if (n.startsWith(q)) s = 2; else if (n.includes(q)) s = 3;
+    if (s >= 0) out.push([held.has(c) ? s - 0.5 : s, c.length, x]);
+  });
+  out.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  return out.slice(0, 8).map(o => o[2]);
+}
+let pickEl = null;
+function attachPicker(input) {
+  if (input.dataset.pk) return; input.dataset.pk = 1;
+  input.removeAttribute('list');
+  const close = () => { if (pickEl) { pickEl.remove(); pickEl = null; } };
+  const open = () => {
+    const r = symSearch(input.value.replace(/（.*$/, ''));
+    close();
+    if (!r.length || /（.+）$/.test(input.value)) return;
+    const b = input.getBoundingClientRect();
+    pickEl = document.createElement('div'); pickEl.className = 'pick';
+    pickEl.style.left = Math.max(8, Math.min(b.left, innerWidth - 328)) + 'px'; pickEl.style.top = (b.bottom + 6) + 'px';
+    pickEl.innerHTML = r.map((x, i) => '<button data-i="' + i + '"><b>' + esc(x[0]) + '</b><span class="n">' + esc(x[1]) + '</span><span class="m">' + esc(x[2]) + (x[3] ? ' · ' + x[3] : '') + '</span></button>').join('');
+    pickEl.querySelectorAll('button').forEach(btn => btn.addEventListener('mousedown', e => e.preventDefault()));
+    pickEl.querySelectorAll('button').forEach(btn => btn.onclick = () => {
+      const x = r[+btn.dataset.i]; input.value = x[1] + '（' + x[0] + '）'; close();
+      input.dispatchEvent(new Event('change', {bubbles: true})); input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    document.getElementById('app').appendChild(pickEl);
+  };
+  input.addEventListener('input', () => { if (!SYM) loadSymbols().then(open).catch(() => {}); else open(); });
+  input.addEventListener('focus', () => { loadSymbols().catch(() => {}); });
+  input.addEventListener('blur', () => setTimeout(close, 150));
+}
+document.addEventListener('scroll', () => { if (pickEl) { pickEl.remove(); pickEl = null; } }, true);
+
+// ---------- 隱私模式 ----------
+function setPriv(on) {
+  PRIV = on; try { localStorage.setItem('zqPriv', on ? '1' : '0'); } catch (e) {}
+  $('#btn-priv').innerHTML = on ? EYE_OFF : EYE_ON; $('#btn-priv').setAttribute('aria-label', on ? '顯示金額' : '隱藏金額');
+  Object.keys(loaded).forEach(k => loaded[k] = false);
+  if (pageCur) openPage(pageCur); else show(current);
+}
+$('#btn-priv').onclick = () => setPriv(!PRIV);
+$('#btn-priv').innerHTML = PRIV ? EYE_OFF : EYE_ON;
+
+// ---------- 防呆檢查 ----------
+function recWarnings(rec, accHeld) {
+  const w = [];
+  if (rec.date > TODAY) w.push(ymd(rec.date) + ' 是未來的日期');
+  const code = (rec.name.match(/（(.+)）$/) || [])[1] || '';
+  const s = accHeld || (meta && meta.stocks.find(x => x.name === rec.name));
+  const held = s ? s.held : 0, short = s ? s.short : 0;
+  if (['賣出', '融資賣出', '融資現償'].indexOf(rec.item) >= 0 && rec.units > held) w.push(shortName(rec.name) + ' 目前庫存只有 ' + held.toLocaleString('en-US') + ' 股，這筆要' + rec.item + ' ' + rec.units.toLocaleString('en-US') + ' 股');
+  if (rec.item === '融券買進' && rec.units > short) w.push(shortName(rec.name) + ' 目前融券只有 ' + short.toLocaleString('en-US') + ' 股，這筆要回補 ' + rec.units.toLocaleString('en-US') + ' 股');
+  const sym = symOf(code);
+  if (sym && sym[3] && ['買進', '賣出', '融資買進', '融資賣出', '融券賣出', '融券買進'].indexOf(rec.item) >= 0 && rec.price > 0) {
+    const d = rec.price / sym[3] - 1;
+    if (Math.abs(d) > 0.25) w.push('成交價 ' + rec.price + ' 和最近收盤價 ' + sym[3] + ' 差了 ' + Math.round(Math.abs(d) * 100) + '%，是不是打錯小數點？');
+  }
+  if (['買進', '賣出', '融資買進', '融資賣出', '融券賣出', '融券買進', '融資現償'].indexOf(rec.item) >= 0 && rec.units % 1) w.push('股數不是整數');
+  return w;
+}
+function confirmWarn(w) {
+  if (!w.length) return Promise.resolve(true);
+  return new Promise(res => {
+    openSheet('<h2>請再確認一下</h2><div class="card col" style="gap:8px">' + w.map(x => '<span style="font-size:14px;line-height:1.5">⚠️ ' + esc(x) + '</span>').join('') + '</div>' +
+      '<button class="primary" id="cw-ok">沒錯，照樣儲存</button><button class="link" id="cw-no" style="justify-content:center">回去修改</button>');
+    $('#cw-ok').onclick = () => { closeSheet(); res(true); };
+    $('#cw-no').onclick = () => { closeSheet(); res(false); };
+  });
+}
+
+// ---------- 整戶維持率 ----------
+function maintOf(hs) {
+  let num = 0, den = 0, any = false;
+  hs.forEach(x => {
+    if (x.short) { any = true; num += (x.collat || 0) + (x.margin || 0); den += (x.price || 0) * (x.units || 0); }
+    else if (x.mt > 0) { any = true; num += (x.price || 0) * x.mt; den += x.loan || 0; }
+  });
+  return any && den > 0 ? num / den : null;
+}
+function maintByAcct(hs) {
+  const g = {}; hs.forEach(x => (g[x.acct || ACCT] = g[x.acct || ACCT] || []).push(x));
+  return Object.keys(g).map(k => ({acct: k, r: maintOf(g[k])})).filter(o => o.r !== null);
+}
+function maintCls(r) { return r < 1.3 ? 'color:#FF6B6B' : r < 1.66 ? 'color:#F5C04A' : 'color:#9CF0C4'; }
+function setMaintPill(hs) {
+  const low = maintByAcct(hs).filter(o => o.r < 1.66).sort((a, b) => a.r - b.r)[0];
+  const p = $('#ov-mt');
+  if (!low) { p.classList.remove('on'); return; }
+  p.textContent = (multi() ? acctName(low.acct) + ' ' : '') + '整戶維持率 ' + Math.round(low.r * 100) + '%' + (low.r < 1.3 ? '，低於 130% 會被追繳' : '，接近追繳線');
+  p.style.cssText = low.r < 1.3 ? 'border-color:#6A2A2E;background:#2A1214;color:#FF8A8A' : '';
+  p.classList.add('on');
+}
+$('#ov-mt').onclick = () => { show('holdings', true); };
+
+// ---------- 匯出 ----------
+async function exportCSV() {
+  toast('正在整理交易紀錄…', 6000);
+  try {
+    const rows = await call('appRecords', '1900-01-01', '9999-12-31');
+    const head = ['帳戶', '日期', '項目', '股票名稱', '代號', '股數/比例', '單價', '成交金額', '手續費', '交易稅', '淨金額', '批號', '當沖'];
+    const q = v => { v = v === null || v === undefined ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const lines = [head.join(',')].concat(rows.slice().reverse().map(x => [x.acctName || acctName(ACCT), x.d, x.item, shortName(x.name), (x.name.match(/（(.+)）$/) || [])[1] || '', x.units, x.price, x.amt, x.fee, x.tax, x.net, x.batch, x.dayTrade ? 'Y' : ''].map(q).join(',')));
+    const name = '交易紀錄_' + acctName(ACCT) + '_' + TODAY + '.csv';
+    const file = new File(['﻿' + lines.join('\r\n')], name, {type: 'text/csv'});
+    if (navigator.canShare && navigator.canShare({files: [file]})) { try { await navigator.share({files: [file], title: name}); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    toast('已匯出 ' + rows.length + ' 筆');
+  } catch (e) { toast('匯出失敗：' + errMsg(e), 4000); }
+}
+$('#dr-export').onclick = () => { closeDrawer(); exportCSV(); };
+
 // ---------- 啟動 ----------
 const loaders = {overview: loadOverview, holdings: loadHoldings, calendar: loadCalendar, trade: () => { loaded.trade = true; loadMeta().then(estimate).catch(() => {}); }, records: loadRecords};
+attachPicker($('#tr-name'));
+renderAcctUI();
 resetForm();
 moveLens('overview');
+loadAccts(); loadSymbols().catch(() => {});
 loadOverview().finally(() => setTimeout(prefetch, 300));
 loadMeta().catch(() => {});
 window.addEventListener('resize', () => { if (current === 'overview') renderOvChart(); });
