@@ -82,6 +82,14 @@ h2{margin:0;font-size:15px;font-weight:600}
 .cell.pos{background:#4A1F24;color:#FFB3B3}.cell.neg{background:#173A2A;color:#9CF0C4}
 .cell.out{opacity:.35}
 .cell.sel{border:2px solid var(--acc)}
+.cell.hit{box-shadow:inset 0 0 0 2px #6CB8FF}
+.search{display:flex;align-items:center;gap:8px;height:42px;padding:0 6px 0 12px;border-radius:12px;background:var(--card);border:1px solid var(--bd);color:var(--mut)}
+.search:focus-within{border-color:#3E6FA8}
+.search input{flex:1;min-width:0;height:100%;background:transparent;border:0;outline:none;color:var(--tx);font-size:16px;-webkit-appearance:none;appearance:none}
+.search input::placeholder{color:var(--dim)}
+.search input::-webkit-search-cancel-button{display:none}
+.search .clr{width:30px;height:30px;border-radius:15px;border:0;background:#2A2F38;color:var(--tx);font-size:18px;line-height:1;display:none}
+.search.has .clr{display:block}
 .cell.wk{background:#12151A;border:1px solid #3A3F49}
 /* 圖表 */
 .chart{position:relative;height:150px}
@@ -157,6 +165,7 @@ h2{margin:0;font-size:15px;font-weight:600}
     <button class="on" data-k="open">未實現</button><button data-k="closed">已實現</button><button data-k="total">投資總績效</button>
   </div>
   <div id="ho-rangebox" style="display:none"></div>
+  <label class="search" for="ho-q"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="ho-q" placeholder="搜尋股票名稱或代號" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="搜尋股票名稱或代號"><button type="button" class="clr" data-for="ho-q" aria-label="清除搜尋">×</button></label>
   <div id="ho-body" class="list"></div>
 </section>
 
@@ -164,6 +173,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 <section class="view" id="v-calendar" aria-label="報酬日曆">
   <h1>報酬日曆</h1>
   <div id="ca-rangebox"></div>
+  <label class="search" for="ca-q"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="ca-q" placeholder="標出某檔股票的交易日" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="標出某檔股票的交易日"><button type="button" class="clr" data-for="ca-q" aria-label="清除搜尋">×</button></label>
   <div class="card col" style="gap:10px" id="ca-sum"></div>
   <div class="cal" id="ca-grid"></div>
   <div class="card col" style="gap:8px" id="ca-detail"></div>
@@ -211,6 +221,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="re-seg">
     <button class="on" data-k="all">全部</button><button data-k="trade">買賣</button><button data-k="div">股利</button>
   </div>
+  <label class="search" for="re-q"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="re-q" placeholder="搜尋股票名稱或代號" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="搜尋股票名稱或代號"><button type="button" class="clr" data-for="re-q" aria-label="清除搜尋">×</button></label>
   <div class="card grid3" id="re-stat"></div>
   <div class="list" id="re-list"></div>
 </section>
@@ -492,6 +503,23 @@ $('#btn-refresh').onclick = async () => {
   finally { b.classList.remove('spin'); }
 };
 
+// ---------- 搜尋 ----------
+const qs = {ho: '', re: '', ca: ''};
+function qMatch(name, q) {
+  if (!q) return true;
+  const n = String(name || '').toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).some(w => n.includes(w));
+}
+function hookSearch(key, onChange) {
+  const el = $('#' + key + '-q'), box = el.closest('.search');
+  let t;
+  const fire = () => { qs[key] = el.value.trim(); box.classList.toggle('has', !!el.value); clearTimeout(t); t = setTimeout(onChange, 120); };
+  el.addEventListener('input', fire);
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
+  box.querySelector('.clr').onclick = e => { e.preventDefault(); el.value = ''; fire(); };
+}
+const noHit = (q, what) => '<div class="empty">找不到符合「' + esc(q) + '」的' + what + '</div>';
+
 // ---------- 持股與績效 ----------
 let hoTab = 'open';
 const hoRange = rangeBox($('#ho-rangebox'), ['本月', '近3月', '今年', '全部'], '本月', () => loadHoldings());
@@ -499,14 +527,17 @@ $$('#ho-seg button').forEach(b => b.onclick = () => {
   $$('#ho-seg button').forEach(x => x.classList.toggle('on', x === b)); hoTab = b.dataset.k;
   $('#ho-rangebox').style.display = hoTab === 'open' ? 'none' : ''; loadHoldings();
 });
+hookSearch('ho', () => loadHoldings());
 async function loadHoldings() {
   loaded.holdings = true;
   const body = $('#ho-body');
   body.innerHTML = '<div class="skel"></div><div class="skel"></div>';
   try {
     if (hoTab === 'open') {
-      const h = await call('appHoldings');
-      if (!h.length) { body.innerHTML = '<div class="empty">目前沒有持股</div>'; return; }
+      const hAll = await call('appHoldings');
+      if (!hAll.length) { body.innerHTML = '<div class="empty">目前沒有持股</div>'; return; }
+      const h = hAll.filter(x => qMatch(x.name, qs.ho));
+      if (!h.length) { body.innerHTML = noHit(qs.ho, '持股'); return; }
       const mv = h.reduce((s, x) => s + (x.mv || 0), 0), pl = h.reduce((s, x) => s + (x.pl || 0), 0);
       body.innerHTML = '<div class="card grid2"><div class="col"><span class="lbl">持股市值</span><span style="font-size:22px;font-weight:700">' + fmt(mv) +
         '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span></div></div>' +
@@ -517,15 +548,16 @@ async function loadHoldings() {
           '<div class="col" style="gap:2px"><span class="lbl">成本均價</span><span style="font-weight:600">' + (x.avg === null ? '—' : x.avg.toFixed(2)) + '</span></div>' +
           '<div class="col" style="gap:2px"><span class="lbl">市值</span><span style="font-weight:600">' + fmt(x.mv) + '</span></div></div></div>').join('');
     } else if (hoTab === 'closed') {
-      const r = await call('appRealized', hoRange.from, hoRange.to);
+      const r = (await call('appRealized', hoRange.from, hoRange.to)).filter(x => qMatch(x.name, qs.ho));
       const s = r.reduce((a, x) => a + (x.pl || 0), 0), w = r.filter(x => x.pl > 0).length;
       body.innerHTML = '<div class="card grid2"><div class="col"><span class="lbl">區間已實現</span><span style="font-size:22px;font-weight:700" class="' + cls(s) + '">' + sgn(s) +
         '</span></div><div class="col"><span class="lbl">賣出筆數</span><span style="font-size:22px;font-weight:700">' + r.length + ' 筆</span><span class="lbl">賺 ' + w + ' ・ 賠 ' + (r.length - w) + '</span></div></div>' +
         (r.length ? r.map(x => '<div class="item row"><div class="col" style="gap:2px;min-width:0"><span style="font-size:15px;font-weight:600">' + esc(shortName(x.name)) +
           '</span><span class="lbl">' + md(x.d) + ' · 批號 ' + esc(x.batch) + ' · ' + esc(x.item) + ' ' + fmt(x.units) + ' 股 @' + x.price + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:16px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
-          '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + pct(x.r, 1) + '</span></div></div>').join('') : '<div class="empty">這個區間沒有已實現損益</div>');
+          '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + pct(x.r, 1) + '</span></div></div>').join('') : (qs.ho ? noHit(qs.ho, '已實現紀錄') : '<div class="empty">這個區間沒有已實現損益</div>'));
     } else {
-      const [b, recs] = await Promise.all([call('appPerformance', hoRange.from, hoRange.to), call('appRecords', hoRange.from, hoRange.to)]);
+      let [b, recs] = await Promise.all([call('appPerformance', hoRange.from, hoRange.to), call('appRecords', hoRange.from, hoRange.to)]);
+      b = b.filter(x => qMatch(x.name, qs.ho)); recs = recs.filter(x => qMatch(x.name, qs.ho));
       const sum = k => b.reduce((a, x) => a + (x[k] || 0), 0);
       const tp = sum('pl');
       const tr = recs.filter(x => x.item === '買進' || x.item === '賣出');
@@ -541,7 +573,7 @@ async function loadHoldings() {
         '</div></div>' + volCard + '<span class="lbl" style="padding-left:4px">區間內持有過的批次（依損益排序）</span>' +
         (b.length ? b.map(x => '<div class="item row"><div class="col" style="gap:3px;min-width:0"><span style="font-size:15px;font-weight:600">' + esc(shortName(x.name)) + ' <span class="lbl" style="font-weight:400">批號 ' + esc(x.batch) + '</span></span><span class="lbl">' +
           md(x.start) + ' – ' + (x.hold ? '持有中' : md(x.end)) + ' · 投入 ' + fmt(x.inv) + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:16px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
-          '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + pct(x.r, 1) + '</span></div></div>').join('') : '<div class="empty">這個區間沒有持有紀錄</div>');
+          '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + pct(x.r, 1) + '</span></div></div>').join('') : (qs.ho ? noHit(qs.ho, '持有紀錄') : '<div class="empty">這個區間沒有持有紀錄</div>'));
     }
   } catch (e) { body.innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
 }
@@ -549,6 +581,7 @@ async function loadHoldings() {
 // ---------- 日曆 ----------
 let caData = null, caPick = null;
 const caRange = rangeBox($('#ca-rangebox'), ['本週', '本月', '近30天', '近3月'], '本月', () => loadCalendar());
+hookSearch('ca', () => { if (caData) renderCalendar(); });
 async function loadCalendar() {
   loaded.calendar = true;
   $('#ca-grid').innerHTML = '<div class="skel" style="grid-column:1/-1"></div>';
@@ -564,6 +597,8 @@ function renderCalendar() {
     '<div class="grid3" style="border-top:1px solid var(--line);padding-top:8px"><div class="col" style="gap:2px"><span class="lbl">交易日</span><span style="font-weight:600">' + caData.days.length + ' 天</span></div>' +
     '<div class="col" style="gap:2px"><span class="lbl">賺／賠天數</span><span style="font-weight:600">' + up + ' ／ ' + dn + '</span></div>' +
     '<div class="col" style="gap:2px"><span class="lbl">最大單日</span><span style="font-weight:600">' + (best === null ? '—' : sgn(best)) + '</span></div></div>';
+  const hits = new Set(qs.ca ? caData.trades.filter(x => qMatch(x.name, qs.ca)).map(x => x.d) : []);
+  if (qs.ca) $('#ca-sum').innerHTML += '<div class="row" style="border-top:1px solid var(--line);padding-top:8px;font-size:13px"><span style="color:#D5D8DD">「' + esc(qs.ca) + '」有交易的日子</span><span style="color:#6CB8FF;font-weight:600">' + (hits.size ? hits.size + ' 天（藍框）' : '區間內沒有') + '</span></div>';
   let h = ['一', '二', '三', '四', '五', '週'].map(x => '<div class="h">' + x + '</div>').join('');
   const start = new Date(from); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
   let lastM = -1;
@@ -574,7 +609,7 @@ function renderCalendar() {
       const key = iso(dt), inR = dt >= from && dt <= to, v = inR ? map[key] : null;
       if (inR) { anyIn = true; if (dt.getMonth() !== lastM && monthStart === null) monthStart = dt; }
       if (v) { ws += v.pl || 0; wp *= 1 + (v.r || 0); wh = true; }
-      const c = 'cell' + (v ? (v.pl > 0 ? ' pos' : v.pl < 0 ? ' neg' : '') : '') + (inR ? '' : ' out') + (caPick === key ? ' sel' : '');
+      const c = 'cell' + (v ? (v.pl > 0 ? ' pos' : v.pl < 0 ? ' neg' : '') : '') + (inR ? '' : ' out') + (caPick === key ? ' sel' : '') + (hits.has(key) ? ' hit' : '');
       row += '<button class="' + c + '" data-d="' + key + '" aria-label="' + (dt.getMonth() + 1) + '月' + dt.getDate() + '日' + (v ? '，' + wan(v.pl) : '') + '"><span class="d">' + (dt.getDate() === 1 ? (dt.getMonth() + 1) + '/1' : dt.getDate()) +
         '</span><span class="a">' + (v ? wan(v.pl) : '') + '</span><span class="p">' + (v ? pct(v.r) : '') + '</span></button>';
     }
@@ -590,7 +625,7 @@ function renderDetail(map) {
   const el = $('#ca-detail');
   if (!caPick) { el.innerHTML = '<span class="lbl">點日曆上的日期，查看當天交易明細</span>'; return; }
   const v = map[caPick];
-  const tr = caData.trades.filter(x => x.d === caPick);
+  const tr = caData.trades.filter(x => x.d === caPick && qMatch(x.name, qs.ca));
   const rz = caData.realized.filter(x => x.d === caPick);
   const realSum = rz.reduce((a, x) => a + (x.pl || 0), 0);
   let h = '<div class="row" style="align-items:baseline"><h2>' + md(caPick) + ' 明細</h2><span style="font-size:17px;font-weight:700" class="' + (v ? cls(v.pl) : 'zero') + '">' + (v ? sgn(v.pl) : '休市') + '</span></div>';
@@ -724,6 +759,7 @@ $('#tr-torecords').onclick = () => show('records');
 let reType = 'all', reData = [];
 const reRange = rangeBox($('#re-rangebox'), ['本週', '本月', '近3月', '今年', '全部'], '本月', () => loadRecords());
 $$('#re-seg button').forEach(b => b.onclick = () => { $$('#re-seg button').forEach(x => x.classList.toggle('on', x === b)); reType = b.dataset.k; renderRecords(); });
+hookSearch('re', () => renderRecords());
 $('#re-back').onclick = () => show('trade');
 $('#re-add').onclick = () => { resetForm(); show('trade'); };
 async function loadRecords() {
@@ -734,11 +770,11 @@ async function loadRecords() {
 }
 function renderRecords() {
   const isDiv = x => /股利/.test(x.item);
-  const f = reData.filter(x => reType === 'all' || (reType === 'div' ? isDiv(x) : !isDiv(x)));
+  const f = reData.filter(x => (reType === 'all' || (reType === 'div' ? isDiv(x) : !isDiv(x))) && qMatch(x.name, qs.re));
   const s = pred => f.filter(pred).reduce((a, x) => a + Math.abs(x.net || 0), 0);
   $('#re-stat').innerHTML = [['買進', s(x => x.item === '買進')], ['賣出', s(x => x.item === '賣出')], ['股利入帳', s(x => x.item === '現金股利')]]
     .map(([l, v]) => '<div class="col" style="gap:2px"><span class="lbl">' + l + '</span><span style="font-weight:600">' + fmt(v) + '</span></div>').join('');
-  if (!f.length) { $('#re-list').innerHTML = '<div class="empty">這個區間沒有符合的紀錄</div>'; return; }
+  if (!f.length) { $('#re-list').innerHTML = qs.re ? noHit(qs.re, '紀錄') : '<div class="empty">這個區間沒有符合的紀錄</div>'; return; }
   let h = '', last = '';
   f.forEach((x, i) => {
     if (x.d !== last) { last = x.d; h += '<span class="lbl" style="font-weight:700;padding:4px 4px 0">' + md(x.d) + '</span>'; }
