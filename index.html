@@ -231,14 +231,20 @@ h2{margin:0;font-size:15px;font-weight:600}
 (function () {
   function fixGap() {
     let g = 0;
-    if (window.navigator.standalone && window.innerHeight < window.innerWidth === false) {
-      g = Math.round(screen.height - window.innerHeight);
+    const portrait = window.innerHeight >= window.innerWidth;
+    if (window.navigator.standalone && portrait) {
+      const h = Math.min(window.innerHeight, document.documentElement.clientHeight || window.innerHeight);
+      g = Math.round(screen.height - h);
       if (g < 0 || g > 120) g = 0;
     }
     document.documentElement.style.setProperty('--gap', g + 'px');
   }
   fixGap();
+  [50, 300, 800, 1500, 3000].forEach(t => setTimeout(fixGap, t));
+  window.addEventListener('load', fixGap);
+  window.addEventListener('pageshow', fixGap);
   window.addEventListener('resize', fixGap);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(fixGap, 100); });
   window.addEventListener('orientationchange', () => setTimeout(fixGap, 300));
 })();
 // ---------- 共用 ----------
