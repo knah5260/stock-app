@@ -48,7 +48,7 @@ button{cursor:pointer}
   #v-calendar > :not(h1):not(#ca-grid){grid-column:2}
   #v-trade.on{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,1fr);grid-auto-flow:row dense;align-content:start;gap:18px 22px}
   #v-trade > .row{grid-column:1/-1}
-  #v-trade > #tr-kinds, #v-trade > #tr-divseg, #v-trade > .form{grid-column:1}
+  #v-trade > #tr-kinds, #v-trade > #tr-divseg, #v-trade > #tr-spseg, #v-trade > .form{grid-column:1}
   #v-trade > #tr-side{display:flex !important;flex-direction:column;gap:18px;grid-column:2;grid-row:2 / span 3;align-self:start}
 }
 h1{margin:0;font-size:26px;font-weight:700}
@@ -106,8 +106,9 @@ h2{margin:0;font-size:15px;font-weight:600}
 .primary{height:52px;border:0;border-radius:14px;background:var(--acc);color:#1A1208;font-size:17px;font-weight:700;flex-shrink:0}
 .primary:disabled{opacity:.5}
 .danger{height:48px;border:1px solid #5A2A2E;border-radius:14px;background:transparent;color:var(--up);font-size:16px;font-weight:600}
-.kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.kinds button{height:48px;border-radius:12px;border:1px solid #2A2E36;background:var(--card);color:var(--mut);font-size:16px;font-weight:700}
+.kinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.kinds button{height:48px;border-radius:12px;border:1px solid #2A2E36;background:var(--card);color:var(--mut);font-size:15px;font-weight:700;padding:0 2px;white-space:nowrap}
+.kinds button.on.sp{background:#6CA6FF;color:#0A1A30;border-color:#6CA6FF}
 .kinds button.on.buy{background:var(--up);color:#2A0A0C;border-color:var(--up)}
 .kinds button.on.sell{background:var(--dn);color:#06261A;border-color:var(--dn)}
 .kinds button.on.div{background:#F5C04A;color:#2A1E05;border-color:#F5C04A}
@@ -165,6 +166,81 @@ h2{margin:0;font-size:15px;font-weight:600}
 .loading{opacity:.55;pointer-events:none}
 .skel{height:80px;border-radius:16px;background:linear-gradient(90deg,#171A20,#1F232B,#171A20);background-size:200% 100%;animation:sk 1.2s infinite}
 @keyframes sk{to{background-position:-200% 0}}
+/* 側邊欄與子頁 */
+.avatar{width:40px;height:40px;border-radius:20px;border:1px solid #2A2E36;background:linear-gradient(160deg,#2A3240,#1A1E26);display:flex;align-items:center;justify-content:center;color:#C9D6EA;position:relative;flex-shrink:0}
+.avatar .dot{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:8px;background:var(--acc);color:#1A1208;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px}
+.avatar .dot.on{display:flex}
+.drawer{position:absolute;inset:0;z-index:30;pointer-events:none}
+.drawer .bg{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;transition:opacity .25s}
+.drawer .dp{position:absolute;top:0;bottom:0;left:0;width:min(320px,84%);background:#121519;border-right:1px solid #22262E;transform:translateX(-102%);transition:transform .3s cubic-bezier(.3,.9,.3,1);
+  padding:calc(22px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.drawer.show{pointer-events:auto}
+.drawer.show .bg{opacity:1}
+.drawer.show .dp{transform:none}
+.dp .who{display:flex;align-items:center;gap:12px;padding:4px 6px 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.dp .who .avatar{width:52px;height:52px;border-radius:26px}
+.dp button.di{display:flex;align-items:center;gap:14px;height:52px;border:0;border-radius:14px;background:transparent;color:var(--tx);font-size:16px;padding:0 10px;text-align:left}
+.dp button.di:active{background:#1D2128}
+.dp button.di svg{color:#8FB8F0;flex-shrink:0}
+.dp button.di .n{margin-left:auto;background:var(--acc);color:#1A1208;font-size:12px;font-weight:800;border-radius:10px;padding:2px 8px}
+.dp .foot{margin-top:auto;font-size:12px;color:var(--dim);padding:10px}
+.page{position:absolute;inset:0;z-index:25;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(14px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom));display:none;flex-direction:column;gap:14px}
+.page.on{display:flex;animation:pgin .28s cubic-bezier(.3,.9,.3,1)}
+@keyframes pgin{from{transform:translateX(30px);opacity:.3}to{transform:none;opacity:1}}
+.page > *{width:100%;max-width:760px;margin-left:auto;margin-right:auto;flex-shrink:0}
+.phead{display:flex;align-items:center;gap:4px;min-height:48px}
+.phead h1{font-size:22px}
+.phead .back{width:44px;height:44px;border:0;background:transparent;color:var(--tx);display:flex;align-items:center;justify-content:center;margin-left:-12px}
+.sec{font-size:13px;font-weight:700;color:var(--mut);padding:6px 4px 0;letter-spacing:.02em}
+.note{font-size:12px;color:var(--mut);line-height:1.6}
+.fee{display:grid;grid-template-columns:minmax(0,1fr) auto 76px 32px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.fee:last-child{border-bottom:0}
+.fee .from{font-size:15px}
+.fee input,.inp{height:40px;border-radius:10px;border:1px solid #2E333C;background:var(--card2);color:var(--tx);font-size:16px;padding:0 10px;min-width:0;width:100%;-webkit-appearance:none;appearance:none}
+.fee input[type=number]{text-align:right}
+.fee .to{font-size:12px;color:var(--mut);white-space:nowrap}
+.xbtn{width:32px;height:32px;border-radius:16px;border:0;background:#2A2F38;color:var(--mut);font-size:18px;line-height:1}
+.xbtn:disabled{opacity:.25}
+.addbtn{height:44px;border-radius:12px;border:1px dashed #3A4150;background:transparent;color:#8FB8F0;font-size:15px;font-weight:600}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;border-bottom:1px solid var(--line);font-size:15px}
+.srow:last-child{border-bottom:0}
+.srow > span:first-child{color:var(--mut);flex-shrink:0}
+.srow input.inp{max-width:120px;text-align:right}
+.srow .v{color:var(--tx);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sw{position:relative;width:51px;height:31px;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw span{position:absolute;inset:0;border-radius:16px;background:#39404B;transition:background .2s}
+.sw span:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw input:checked + span{background:#34C759}
+.sw input:checked + span:after{transform:translateX(20px)}
+.small{height:38px;border-radius:10px;border:1px solid #2E333C;background:var(--card2);color:var(--tx);font-size:14px;font-weight:600;padding:0 14px}
+.small.pri{background:var(--acc);border-color:var(--acc);color:#1A1208}
+.ca{display:flex;flex-direction:column;gap:10px}
+.ca .t{display:flex;align-items:center;gap:8px}
+.ca .t b{font-size:16px}
+.ca .warn{font-size:12px;color:#F5C04A;line-height:1.5}
+.ca .f{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ca .f label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut)}
+.ca .acts{display:flex;gap:8px;justify-content:flex-end}
+.b-sp{background:#1E2E4A;color:#9CC4FF}
+.pill{align-self:flex-start;margin-top:6px;height:30px;border-radius:15px;border:1px solid #5A4520;background:#2A2110;color:#F5C04A;font-size:13px;font-weight:600;padding:0 12px;display:none;align-items:center;gap:4px}
+.pill.on{display:inline-flex}
+.brow{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.brow label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut);min-width:0}
+.brow .full{grid-column:1/-1}
+.brow .hd{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
+.brow select.inp{text-align:left}
+.yseg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.yseg button{flex:0 0 auto;height:34px;padding:0 14px;border-radius:17px;border:1px solid #2A2E36;background:var(--card);color:#C9CED6;font-size:14px}
+.yseg button.on{background:var(--acc);border-color:var(--acc);color:#1A1208;font-weight:700}
+.kv{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
+.kv.tot{font-size:16px;font-weight:700;border-top:1px solid var(--line);padding-top:9px;margin-top:4px}
+@media (min-width:700px) and (min-height:600px){
+  .page{padding:calc(24px + env(safe-area-inset-top)) 32px calc(40px + env(safe-area-inset-bottom))}
+  #bt-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  #ca-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;align-items:start}
+  .page > *{max-width:980px}
+}
 </style>
 </head>
 <body>
@@ -173,7 +249,10 @@ h2{margin:0;font-size:15px;font-weight:600}
 <!-- 總覽 -->
 <section class="view on" id="v-overview" aria-label="總覽">
   <div class="row">
-    <div class="col" style="gap:2px"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span></div>
+    <div class="row" style="gap:12px;justify-content:flex-start;min-width:0;align-items:flex-start">
+      <button class="avatar" id="ov-avatar" aria-label="開啟選單"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="dot" id="ov-dot"></span></button>
+      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button></div>
+    </div>
     <button class="iconbtn" id="btn-refresh" aria-label="重新抓收盤價並更新">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
     </button>
@@ -244,11 +323,15 @@ h2{margin:0;font-size:15px;font-weight:600}
 <section class="view" id="v-trade" aria-label="新增紀錄">
   <div class="row">
     <h1 id="tr-title">新增紀錄</h1>
+    <span class="row" style="gap:14px"><button class="link" id="tr-batch">批次</button>
     <button class="link" id="tr-torecords">交易紀錄
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></button></span>
   </div>
   <div class="kinds" id="tr-kinds">
-    <button data-k="buy" class="buy">買進</button><button data-k="sell" class="sell">賣出</button><button data-k="div" class="div">股利</button>
+    <button data-k="buy" class="buy">買進</button><button data-k="sell" class="sell">賣出</button><button data-k="div" class="div">股利</button><button data-k="split" class="sp">分割/減資</button>
+  </div>
+  <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr));display:none" id="tr-spseg">
+    <button class="on" data-k="split">股票分割</button><button data-k="rsplit">反分割（減資）</button>
   </div>
   <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr));display:none" id="tr-divseg">
     <button class="on" data-k="cash">現金股利</button><button data-k="stock">股票股利</button>
@@ -297,6 +380,98 @@ h2{margin:0;font-size:15px;font-weight:600}
   <button data-v="trade" aria-label="交易"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>交易</button>
 </nav>
 
+
+<!-- 側邊欄 -->
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="bg" id="dr-bg"></div>
+  <nav class="dp" aria-label="選單">
+    <div class="who">
+      <span class="avatar" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
+      <div class="col" style="gap:2px;min-width:0"><b style="font-size:17px">我的證券資產</b><span class="lbl" id="dr-status">已連線到 Google 試算表</span></div>
+    </div>
+    <button class="di" data-pg="corp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>除權息與股本變動<span class="n" id="dr-ca" style="display:none"></span></button>
+    <button class="di" data-pg="divinc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg>股利與所得</button>
+    <button class="di" data-pg="dca"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>定期定額</button>
+    <button class="di" data-pg="batch"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>批次新增紀錄</button>
+    <button class="di" data-pg="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
+    <div class="foot" id="dr-foot">版本 2.0</div>
+  </nav>
+</div>
+
+<!-- 設定 -->
+<section class="page" id="pg-settings" aria-label="設定">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>設定</h1></div>
+  <span class="sec">交易成本</span>
+  <div class="card col" style="gap:6px">
+    <div class="row"><h2>手續費折扣（依日期區間）</h2></div>
+    <span class="note">每段從「起始日」開始，到下一段的前一天為止。交易日落在哪一段，就用那一段的折數。</span>
+    <div id="st-fees"></div>
+    <button class="addbtn" id="st-addfee">＋ 新增區間</button>
+  </div>
+  <div class="card" style="padding:2px 16px">
+    <label class="srow"><span>整股最低手續費</span><input class="inp" type="number" inputmode="numeric" id="st-min" min="0"></label>
+    <label class="srow"><span>零股最低手續費</span><input class="inp" type="number" inputmode="numeric" id="st-minodd" min="0"></label>
+  </div>
+  <span class="note" style="padding:0 4px">手續費＝成交金額 × 0.1425% × 折數，無條件捨去，不足最低手續費以最低計。未滿 1,000 股（零股）套用零股最低手續費。交易稅（股票 0.3%、ETF 0.1%、當沖 0.15%）依法規固定，不需設定。<br>儲存後，試算表裡所有紀錄的手續費都會依新設定重新計算。</span>
+  <button class="primary" id="st-savefee">儲存手續費設定</button>
+
+  <span class="sec">除權息</span>
+  <div class="card" style="padding:2px 16px">
+    <div class="srow"><span style="color:var(--tx)">自動檢查除權息與股本變動</span><label class="sw"><input type="checkbox" id="st-autoca"><span></span></label></div>
+    <div class="srow"><span>已忽略的項目</span><span class="row" style="gap:10px"><span class="v" id="st-dis">—</span><button class="small" id="st-undis">全部還原</button></span></div>
+  </div>
+  <span class="note" style="padding:0 4px">開啟後，每次打開 App 會比對證交所、櫃買中心公告和你的持股，有沒記錄的配息、配股、分割或減資就會在總覽提醒你。</span>
+
+  <span class="sec">帳戶與資料</span>
+  <div class="card" style="padding:2px 16px">
+    <div class="srow"><span>Google 試算表</span><a class="link" id="st-sheet" href="#" target="_blank" rel="noopener" style="height:auto">開啟</a></div>
+    <div class="srow"><span>App 密碼</span><button class="small" id="st-tok">重新輸入</button></div>
+    <div class="srow"><span>暫存資料</span><button class="small" id="st-clear">清除並重新讀取</button></div>
+    <div class="srow" style="flex-wrap:wrap;padding:10px 0;gap:8px"><span>後端網址</span><input class="inp" type="url" id="st-api" style="flex:1 1 100%;font-size:13px" spellcheck="false" autocapitalize="off"><span class="note" style="flex:1 1 100%">給別人使用時，對方要複製一份試算表、自己部署 Apps Script，再把自己的網址貼在這裡。</span><button class="small" id="st-saveapi">儲存網址</button></div>
+  </div>
+
+  <span class="sec">關於</span>
+  <div class="card col" style="gap:6px">
+    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；盤中現價來自 Google 財經（最多延遲 20 分鐘）。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
+    <span class="lbl" id="st-ver">版本 2.0</span>
+  </div>
+</section>
+
+<!-- 除權息與股本變動 -->
+<section class="page" id="pg-corp" aria-label="除權息與股本變動">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">除權息與股本變動</h1>
+    <button class="iconbtn" id="ca-re" aria-label="重新檢查"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button></div>
+  <span class="note" id="ca-head">依你在 LOG 的持股，比對證交所、櫃買中心公告的除權息、分割與減資。請由舊到新確認，金額以券商實際入帳為準。</span>
+  <div class="row" id="ca-allrow" style="display:none"><span class="lbl" id="ca-count"></span><button class="small pri" id="ca-all">全部記錄</button></div>
+  <div id="ca-list" class="list"></div>
+</section>
+
+<!-- 股利與所得 -->
+<section class="page" id="pg-divinc" aria-label="股利與所得">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>股利與所得</h1></div>
+  <div class="yseg" id="di-years"></div>
+  <div id="di-body" class="col" style="gap:14px"></div>
+</section>
+
+<!-- 定期定額 -->
+<section class="page" id="pg-dca" aria-label="定期定額">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">定期定額</h1>
+    <button class="iconbtn" style="background:var(--acc);border-color:var(--acc);color:#1A1208" id="dc-add" aria-label="新增定期定額"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+  <div id="dc-pend"></div>
+  <span class="sec">我的定期定額</span>
+  <div id="dc-list" class="list"></div>
+  <span class="note" style="padding:0 4px">設定好扣款日和金額後，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存進 LOG。</span>
+</section>
+
+<!-- 批次新增 -->
+<section class="page" id="pg-batch" aria-label="批次新增紀錄">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 id="bt-title">批次新增紀錄</h1></div>
+  <span class="note" id="bt-note">一次輸入多筆買賣（例如零股、定期定額），核對後一起存進 LOG。</span>
+  <div id="bt-list" class="list"></div>
+  <button class="addbtn" id="bt-addrow">＋ 再加一筆</button>
+  <button class="primary" id="bt-save">全部儲存</button>
+</section>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="panel" id="sheet-panel"></div></div>
 </div>
@@ -319,7 +494,8 @@ const md = s => +s.slice(5, 7) + '/' + +s.slice(8, 10);
 const shortName = n => String(n).replace(/（.*）$/, '');
 const TODAY = iso(new Date());
 
-const API = 'https://script.google.com/macros/s/AKfycbwEQLYI55021drkDDC_9Mdy1xjuJvIJi3dd2CMo4fu_FOVVFFDn21kGfliqnU0roEx2/exec';
+const API_DEF = 'https://script.google.com/macros/s/AKfycbwEQLYI55021drkDDC_9Mdy1xjuJvIJi3dd2CMo4fu_FOVVFFDn21kGfliqnU0roEx2/exec';
+let API = (() => { try { return localStorage.getItem('zqApi') || API_DEF; } catch (e) { return API_DEF; } })();
 const TK = 'zqAppToken';
 function getTok() { try { return localStorage.getItem(TK) || ''; } catch (e) { return window.__tok || ''; } }
 function setTok(v) { window.__tok = v; try { if (v) localStorage.setItem(TK, v); else localStorage.removeItem(TK); } catch (e) {} }
@@ -354,7 +530,7 @@ async function rawCall(fn, args) {
 }
 // 快取：讀過的資料先立刻顯示，背景再向試算表拿最新的；有變動才重畫。
 // 資料存在手機裡，下次打開 App 也能馬上看到上次的畫面。
-const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup)$/;
+const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup|Settings|CorpActions|Dividends|Prices)$/;
 const CK = 'zqCache1', inflight = {};
 let cache = {};
 try { cache = JSON.parse(localStorage.getItem(CK) || '{}') || {}; } catch (e) { cache = {}; }
@@ -553,6 +729,7 @@ async function loadOverview() {
     }).catch(() => {});
     renderCmp();
     renderRisk();
+    checkCA();
     renderOvChart();
     loadHeat();
   } catch (e) { toast('讀取失敗：' + errMsg(e)); }
@@ -782,7 +959,7 @@ function renderDetail(map) {
   const rz = caData.realized.filter(x => x.d === caPick);
   const realSum = rz.reduce((a, x) => a + (x.pl || 0), 0);
   let h = '<div class="row" style="align-items:baseline"><h2>' + md(caPick) + ' 明細</h2><span style="font-size:17px;font-weight:700" class="' + (v ? cls(v.pl) : 'zero') + '">' + (v ? sgn(v.pl) : '休市') + '</span></div>';
-  tr.forEach(x => { h += '<div class="row" style="font-size:13px;border-top:1px solid var(--line);padding-top:8px"><span style="color:#D5D8DD">' + esc(shortName(x.name)) + ' ' + esc(x.item) + ' ' + fmt(x.units) + (x.item === '現金股利' ? ' 股' : ' 股 @' + x.price) + '</span><span class="lbl">' + (x.dayTrade ? '當沖・' : '') + '批號 ' + esc(x.batch) + '</span></div>'; });
+  tr.forEach(x => { h += '<div class="row" style="font-size:13px;border-top:1px solid var(--line);padding-top:8px"><span style="color:#D5D8DD">' + esc(shortName(x.name)) + ' ' + esc(x.item) + ' ' + (/分割/.test(x.item) ? '比例 ' + x.units : fmt(x.units) + (/股利/.test(x.item) ? ' 股' : ' 股 @' + x.price)) + '</span><span class="lbl">' + (x.dayTrade ? '當沖・' : '') + '批號 ' + esc(x.batch) + '</span></div>'; });
   if (rz.length) h += '<div class="row" style="font-size:13px;border-top:1px solid var(--line);padding-top:8px"><span style="color:#D5D8DD">當天已實現</span><span class="' + cls(realSum) + '">' + sgn(realSum) + '</span></div>';
   if (v && (tr.length || rz.length)) h += '<div class="row" style="font-size:13px;border-top:1px solid var(--line);padding-top:8px"><span style="color:#D5D8DD">其餘為持股價格變動與手續費稅</span><span class="lbl">' + sgn((v.pl || 0) - realSum) + '</span></div>';
   if (!tr.length && v) h += '<div class="row" style="font-size:13px;border-top:1px solid var(--line);padding-top:8px"><span style="color:#D5D8DD">當天沒有交易</span><span class="lbl">持股價格變動</span></div>';
@@ -790,7 +967,7 @@ function renderDetail(map) {
 }
 
 // ---------- 新增／修改紀錄 ----------
-let meta = null, kind = 'buy', divType = 'cash', editing = null;
+let meta = null, kind = 'buy', divType = 'cash', spType = 'split', editing = null;
 async function loadMeta() {
   if (meta) return meta;
   meta = await call('appMeta');
@@ -800,18 +977,22 @@ async function loadMeta() {
 function setKind(k) {
   kind = k;
   $$('#tr-kinds button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
-  const isDiv = k === 'div';
+  const isDiv = k === 'div', isSp = k === 'split';
   $('#tr-divseg').style.display = isDiv ? '' : 'none';
-  $('#tr-dtrow').style.display = isDiv ? 'none' : '';
-  $('#tr-datelbl').textContent = isDiv ? '發放日' : '日期';
-  $('#tr-pricerow').style.display = isDiv && divType === 'stock' ? 'none' : '';
-  $('#tr-unitslbl').textContent = isDiv ? (divType === 'cash' ? '持有股數' : '配發股數') : '股數';
+  $('#tr-spseg').style.display = isSp ? '' : 'none';
+  $('#tr-dtrow').style.display = isDiv || isSp ? 'none' : '';
+  $('#tr-datelbl').textContent = isDiv ? '發放日' : isSp ? '生效日' : '日期';
+  $('#tr-pricerow').style.display = (isDiv && divType === 'stock') || isSp ? 'none' : '';
+  $('#tr-unitslbl').textContent = isDiv ? (divType === 'cash' ? '持有股數' : '配發股數') : isSp ? (spType === 'split' ? '1 股變成幾股' : '幾股合成 1 股') : '股數';
+  $('#tr-units').setAttribute('inputmode', isSp ? 'decimal' : 'numeric');
   $('#tr-pricelbl').textContent = isDiv ? '每股現金股利' : '成交價';
   if (isDiv && divType === 'cash') autoHeld();
   estimate();
 }
 $$('#tr-kinds button').forEach(b => b.onclick = () => setKind(b.dataset.k));
 $$('#tr-divseg button').forEach(b => b.onclick = () => { divType = b.dataset.k; $$('#tr-divseg button').forEach(x => x.classList.toggle('on', x === b)); setKind('div'); });
+$$('#tr-spseg button').forEach(b => b.onclick = () => { spType = b.dataset.k; $$('#tr-spseg button').forEach(x => x.classList.toggle('on', x === b)); setKind('split'); });
+$('#tr-batch').onclick = () => openBatch();
 function autoHeld() {
   if (!meta || editing) return;
   const s = meta.stocks.find(x => x.name === $('#tr-name').value);
@@ -835,10 +1016,15 @@ $('#tr-name').addEventListener('change', async () => {
 function estimate() {
   const u = +$('#tr-units').value || 0, p = +$('#tr-price').value || 0;
   const name = $('#tr-name').value, code = (name.match(/（(.+)）$/) || [])[1] || '';
-  const disc = meta ? meta.disc / 10 : 0.6, minFee = meta ? (u >= 1000 ? meta.minFee : meta.minOdd) : 20;
+  const disc = meta ? discAt($('#tr-date').value || TODAY) / 10 : 0.6, minFee = meta ? (u >= 1000 ? meta.minFee : meta.minOdd) : 20;
   const amt = Math.floor(u * p);
   let rows = [], tot = '', totLbl = '淨金額', note = '預估（儲存後會顯示試算表實際計算結果）';
-  if (kind === 'div') {
+  if (kind === 'split') {
+    const s = meta && meta.stocks.find(x => x.name === name), held = s ? s.held : 0;
+    const after = u > 0 ? (spType === 'split' ? held * u : held / u) : held;
+    rows = [['目前庫存', fmt(held) + ' 股']]; totLbl = '變動後庫存'; tot = fmt(after) + ' 股';
+    note = spType === 'split' ? '分割不影響成本總額，只改變股數和均價' : '減資時，比例 ＝ 1000 ÷ 每千股換發股數（例：每千股換發 600 股 → 1.6667）。退還股款不會記錄。';
+  } else if (kind === 'div') {
     if (divType === 'cash') { rows = [['股利總額', fmt(amt)]]; totLbl = '股利總額'; tot = '+' + fmt(amt); note = '預估（匯費、二代健保以試算表計算為準）'; }
     else { rows = [['配發股數', fmt(u)]]; totLbl = '新增股數'; tot = '+' + fmt(u); note = '股票股利不影響現金，只增加庫存股數'; }
   } else {
@@ -852,8 +1038,9 @@ function estimate() {
   $('#tr-est').innerHTML = '<span class="lbl">' + note + '</span>' + rows.map(r => '<div><span style="color:#D5D8DD">' + r[0] + '</span><span>' + r[1] + '</span></div>').join('') + '<div class="tot"><span>' + totLbl + '</span><span>' + tot + '</span></div>';
 }
 function formRecord() {
-  const item = kind === 'buy' ? '買進' : kind === 'sell' ? '賣出' : divType === 'cash' ? '現金股利' : '股票股利';
-  return {date: $('#tr-date').value, item: item, name: $('#tr-name').value.trim(), units: +$('#tr-units').value, price: item === '股票股利' ? 0 : +$('#tr-price').value, dayTrade: kind !== 'div' && $('#tr-dt').checked};
+  const item = kind === 'buy' ? '買進' : kind === 'sell' ? '賣出' : kind === 'split' ? (spType === 'split' ? '股票分割' : '股票反分割') : divType === 'cash' ? '現金股利' : '股票股利';
+  const noPrice = item === '股票股利' || kind === 'split';
+  return {date: $('#tr-date').value, item: item, name: $('#tr-name').value.trim(), units: +$('#tr-units').value, price: noPrice ? 0 : +$('#tr-price').value, dayTrade: (kind === 'buy' || kind === 'sell') && $('#tr-dt').checked};
 }
 function resetForm() {
   editing = null;
@@ -871,8 +1058,8 @@ function resultSheet(r, title) {
 $('#tr-save').onclick = async () => {
   const rec = formRecord();
   if (!rec.name || !/（.+）$/.test(rec.name)) return toast('請選擇股票，或輸入代號');
-  if (!(rec.units > 0)) return toast('請輸入股數');
-  if (rec.item !== '股票股利' && !(rec.price > 0)) return toast('請輸入價格');
+  if (!(rec.units > 0)) return toast(kind === 'split' ? '請輸入比例' : '請輸入股數');
+  if (['買進', '賣出', '現金股利'].indexOf(rec.item) >= 0 && !(rec.price > 0)) return toast('請輸入價格');
   const b = $('#tr-save'); b.disabled = true; b.textContent = '儲存中…';
   try {
     const r = editing ? await call('appUpdateRecord', editing.row, editing.expect, rec) : await call('appAddRecord', rec);
@@ -898,8 +1085,10 @@ $('#tr-cancel').onclick = () => { resetForm(); show('records'); };
 function editRecord(x) {
   editing = {row: x.row, expect: {d: x.d, item: x.item, name: x.name}};
   divType = x.item === '股票股利' ? 'stock' : 'cash';
+  spType = x.item === '股票反分割' ? 'rsplit' : 'split';
   $$('#tr-divseg button').forEach(b => b.classList.toggle('on', b.dataset.k === divType));
-  setKind(x.item === '買進' ? 'buy' : x.item === '賣出' ? 'sell' : 'div');
+  $$('#tr-spseg button').forEach(b => b.classList.toggle('on', b.dataset.k === spType));
+  setKind(x.item === '買進' ? 'buy' : x.item === '賣出' ? 'sell' : /分割/.test(x.item) ? 'split' : 'div');
   $('#tr-title').textContent = '修改紀錄';
   $('#tr-date').value = x.d; $('#tr-name').value = x.name; $('#tr-units').value = x.units; $('#tr-price').value = x.price || ''; $('#tr-dt').checked = !!x.dayTrade;
   $('#tr-delete').style.display = ''; $('#tr-cancel').style.display = 'flex'; $('#tr-save').textContent = '儲存修改';
@@ -931,10 +1120,10 @@ function renderRecords() {
   let h = '', last = '';
   f.forEach((x, i) => {
     if (x.d !== last) { last = x.d; h += '<span class="lbl" style="font-weight:700;padding:4px 4px 0">' + md(x.d) + '</span>'; }
-    const b = x.item === '買進' ? 'b-buy' : x.item === '賣出' ? 'b-sell' : 'b-div';
-    const desc = /股利/.test(x.item) ? (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' : '配發 ' + fmt(x.units) + ' 股') : fmt(x.units) + ' 股 @' + x.price + (x.dayTrade ? ' · 當沖' : '');
+    const b = x.item === '買進' ? 'b-buy' : x.item === '賣出' ? 'b-sell' : /分割/.test(x.item) ? 'b-sp' : 'b-div';
+    const desc = /分割/.test(x.item) ? (x.item === '股票分割' ? '1 股 → ' + x.units + ' 股' : x.units + ' 股 → 1 股') : /股利/.test(x.item) ? (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' : '配發 ' + fmt(x.units) + ' 股') : fmt(x.units) + ' 股 @' + x.price + (x.dayTrade ? ' · 當沖' : '');
     h += '<button class="item row" data-i="' + reData.indexOf(x) + '" style="text-align:left;width:100%;color:inherit;padding:10px 12px" aria-label="修改 ' + esc(shortName(x.name)) + ' ' + esc(x.item) + '">' +
-      '<span class="badge ' + b + '">' + esc(x.item.replace('現金', '').replace('股票股利', '配股')) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(shortName(x.name)) +
+      '<span class="badge ' + b + '">' + esc(x.item.replace('現金', '').replace('股票股利', '配股').replace('股票反分割', '反分割').replace('股票分割', '分割')) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(shortName(x.name)) +
       '</span><span class="lbl">' + desc + '</span></span><span style="font-size:14px;font-weight:700">' + (x.net === null ? '—' : sgn(x.net)) + '</span>' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3A9B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>';
   });
@@ -976,6 +1165,378 @@ $('#sheet').onclick = e => { if (e.target.id === 'sheet' && !askP) closeSheet();
     $('#sh-ok').onclick = closeSheet;
   });
 })();
+
+
+// ---------- 側邊欄與子頁 ----------
+const APP_VER = '2.0';
+const ymd = s => s ? +s.slice(0, 4) + '/' + +s.slice(5, 7) + '/' + +s.slice(8, 10) : '';
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
+const autoCA = () => { try { return localStorage.getItem('zqAutoCA') !== '0'; } catch (e) { return true; } };
+function openDrawer() { $('#drawer').classList.add('show'); $('#drawer').setAttribute('aria-hidden', 'false'); }
+function closeDrawer() { $('#drawer').classList.remove('show'); $('#drawer').setAttribute('aria-hidden', 'true'); }
+$('#ov-avatar').onclick = openDrawer;
+$('#dr-bg').onclick = closeDrawer;
+$$('#drawer .di').forEach(b => b.onclick = () => { closeDrawer(); openPage(b.dataset.pg); });
+$('#dr-foot').textContent = '版本 ' + APP_VER; $('#st-ver').textContent = '版本 ' + APP_VER;
+let pageCur = null;
+const pageLoaders = {settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
+function openPage(p) {
+  $$('.page').forEach(x => x.classList.toggle('on', x.id === 'pg-' + p));
+  pageCur = p; $('#pg-' + p).scrollTop = 0;
+  if (pageLoaders[p]) pageLoaders[p]();
+}
+function closePage() { $$('.page').forEach(x => x.classList.remove('on')); pageCur = null; }
+$$('[data-back]').forEach(b => b.onclick = closePage);
+function afterWrite() { meta = null; loadMeta().catch(() => {}); Object.keys(loaded).forEach(k => loaded[k] = false); }
+// 股票欄：輸入代號或簡稱，轉成「名稱（代號）」
+async function normName(v) {
+  v = String(v || '').trim();
+  if (!v) return v;
+  if (!meta) { try { await loadMeta(); } catch (e) { return v; } }
+  if (/^[0-9A-Z]{4,6}$/i.test(v)) {
+    const s = meta.stocks.find(x => x.code === v.toUpperCase());
+    if (s) return s.name;
+    try { const n = await call('appLookup', v.toUpperCase()); if (n) return n; } catch (e) {}
+    toast('查不到代號 ' + v + '，請輸入「名稱（代號）」');
+    return v;
+  }
+  if (!/（.+）$/.test(v)) { const s = meta.stocks.find(x => shortName(x.name) === v); if (s) return s.name; }
+  return v;
+}
+function discAt(d) {
+  if (!meta || !meta.fees || !meta.fees.length) return meta ? meta.disc : 10;
+  let disc = meta.fees[0].disc;
+  meta.fees.forEach(f => { if (f.from <= d) disc = f.disc; });
+  return disc;
+}
+
+// ---------- 設定 ----------
+let stData = null, stFees = [];
+async function loadSettings() {
+  $('#st-autoca').checked = autoCA();
+  $('#st-api').value = API;
+  $('#st-fees').innerHTML = '<div class="skel" style="height:60px;margin:8px 0"></div>';
+  try {
+    stData = await call('appSettings');
+    stFees = (stData.fees.length ? stData.fees : [{from: '1990-01-01', disc: 10}]).map(f => ({from: f.from, disc: f.disc}));
+    renderFees();
+    $('#st-min').value = stData.minFee; $('#st-minodd').value = stData.minOdd;
+    $('#st-dis').textContent = stData.dismissed + ' 筆';
+    $('#st-sheet').href = stData.sheetUrl;
+  } catch (e) { $('#st-fees').innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
+}
+function renderFees() {
+  const first = stFees[0];
+  stFees = [first].concat(stFees.slice(1).sort((a, b) => a.from < b.from ? -1 : 1));
+  $('#st-fees').innerHTML = stFees.map((f, i) => {
+    const next = stFees[i + 1];
+    const to = next && next.from ? '至 ' + ymd(addDays(next.from, -1)) : '至今';
+    return '<div class="fee" data-i="' + i + '">' +
+      (i === 0 ? '<span class="from">最早</span>' : '<input type="date" value="' + esc(f.from) + '" data-k="from" aria-label="起始日">') +
+      '<span class="to">' + to + '</span>' +
+      '<input type="number" inputmode="decimal" step="0.01" min="0.1" max="10" value="' + esc(f.disc) + '" data-k="disc" aria-label="折數">' +
+      '<button class="xbtn" data-x ' + (i === 0 ? 'disabled' : '') + ' aria-label="刪除這段">×</button></div>';
+  }).join('') + '<div class="row" style="padding-top:6px"><span class="lbl">折數填 6 代表 6 折、2.8 代表 2.8 折；10 為不打折</span></div>';
+  $$('#st-fees .fee').forEach(row => {
+    const i = +row.dataset.i;
+    row.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', () => { stFees[i][inp.dataset.k] = inp.dataset.k === 'disc' ? inp.value : inp.value; });
+      if (inp.dataset.k === 'from') inp.addEventListener('change', renderFees);
+    });
+    row.querySelector('[data-x]').onclick = () => { stFees.splice(i, 1); renderFees(); };
+  });
+}
+$('#st-addfee').onclick = () => {
+  const last = stFees[stFees.length - 1];
+  let d = TODAY; while (stFees.some(f => f.from === d)) d = addDays(d, 1);
+  stFees.push({from: d, disc: last ? last.disc : 6}); renderFees();
+};
+$('#st-savefee').onclick = async () => {
+  const list = stFees.map((f, i) => ({from: i === 0 ? '1990-01-01' : f.from, disc: +f.disc}));
+  if (list.some(f => !(f.disc > 0 && f.disc <= 10))) return toast('折數要介於 0.1～10');
+  if (list.slice(1).some(f => !/^\d{4}-\d{2}-\d{2}$/.test(f.from))) return toast('請填每段的起始日');
+  if (new Set(list.map(f => f.from)).size !== list.length) return toast('有兩段的起始日相同');
+  const b = $('#st-savefee'); b.disabled = true; b.textContent = '儲存中…';
+  try {
+    stData = await call('appSaveFees', list, +$('#st-min').value || 0, +$('#st-minodd').value || 0);
+    stFees = stData.fees.map(f => ({from: f.from, disc: f.disc})); renderFees();
+    afterWrite(); toast('已儲存，試算表正在重算手續費');
+  } catch (e) { toast('儲存失敗：' + errMsg(e), 4000); }
+  finally { b.disabled = false; b.textContent = '儲存手續費設定'; }
+};
+$('#st-autoca').onchange = e => { try { localStorage.setItem('zqAutoCA', e.target.checked ? '1' : '0'); } catch (x) {} if (e.target.checked) checkCA(); else setCaBadge(0); };
+$('#st-undis').onclick = async () => { try { await call('appDismissAction', '__reset__'); $('#st-dis').textContent = '0 筆'; toast('已還原'); checkCA(); } catch (e) { toast(errMsg(e)); } };
+$('#st-tok').onclick = async () => { setTok(''); await askToken('請輸入新的 App 密碼。'); toast('已更新密碼'); };
+$('#st-clear').onclick = () => { cache = {}; try { localStorage.removeItem(CK); } catch (e) {} afterWrite(); toast('已清除，重新讀取中'); loadOverview(); };
+$('#st-saveapi').onclick = () => {
+  const v = $('#st-api').value.trim();
+  if (v && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(v)) return toast('網址格式應為 https://script.google.com/macros/s/…/exec', 4000);
+  API = v || API_DEF;
+  try { if (v && v !== API_DEF) localStorage.setItem('zqApi', v); else localStorage.removeItem('zqApi'); } catch (e) {}
+  cache = {}; try { localStorage.removeItem(CK); } catch (e) {}
+  $('#st-api').value = API; afterWrite(); toast('已儲存，重新讀取中'); loadOverview();
+};
+
+// ---------- 除權息與股本變動 ----------
+let caItems = [];
+const CA_LBL = {cash: '現金股利', stock: '股票股利', split: '股票分割', rsplit: '股票反分割', reduce: '減資'};
+function setCaBadge(n) {
+  $('#ov-dot').textContent = n; $('#ov-dot').classList.toggle('on', n > 0);
+  $('#dr-ca').textContent = n; $('#dr-ca').style.display = n > 0 ? '' : 'none';
+  $('#ov-ca').innerHTML = n + ' 筆除權息／股本變動待確認 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
+  $('#ov-ca').classList.toggle('on', n > 0);
+}
+function checkCA() { if (!autoCA()) return; call('appCorpActions').then(r => setCaBadge(r.items.length)).catch(() => {}); }
+$('#ov-ca').onclick = () => openPage('corp');
+async function loadCorp(force) {
+  $('#ca-list').innerHTML = '<div class="skel"></div><div class="skel"></div>';
+  $('#ca-allrow').style.display = 'none';
+  $('#ca-head').textContent = '正在比對證交所、櫃買中心的公告，第一次約需 10～30 秒…';
+  try {
+    let r;
+    if (force) { r = await rawCall('appCorpActions', [true]); cache['appCorpActions|[]'] = {d: r, t: Date.now()}; saveCache(); }
+    else r = await call('appCorpActions');
+    caItems = r.items; setCaBadge(caItems.length); renderCorp(r.checked);
+  } catch (e) { $('#ca-list').innerHTML = '<div class="empty">檢查失敗：' + esc(errMsg(e)) + '</div>'; $('#ca-head').textContent = ''; }
+}
+$('#ca-re').onclick = () => loadCorp(true);
+function caDesc(x) {
+  if (x.type === 'cash') return '除息日 ' + ymd(x.date) + ' 前持有 ' + fmt(x.shares) + ' 股，每股 ' + x.price + ' 元，約 ' + fmt(x.est) + ' 元。實際入帳會扣匯費 10 元，單筆滿 2 萬元再扣二代健保 2.11%。';
+  if (x.type === 'stock') return '除權日 ' + ymd(x.date) + ' 前持有 ' + fmt(x.shares) + ' 股，每千股配 ' + x.perK + ' 股，約配發 ' + fmt(x.units) + ' 股（不足 1 股的部分券商會折發現金）。';
+  if (x.type === 'split') return ymd(x.date) + ' 恢復買賣，1 股分割為 ' + x.units + ' 股：' + fmt(x.shares) + ' 股 → ' + fmt(x.after) + ' 股。';
+  if (x.type === 'rsplit') return ymd(x.date) + ' 恢復買賣，' + x.units + ' 股合併為 1 股：' + fmt(x.shares) + ' 股 → ' + fmt(x.after) + ' 股。';
+  return ymd(x.date) + ' 減資恢復買賣（' + esc(x.why || '減資') + '），持有 ' + fmt(x.shares) + ' 股。' + (x.needInput ? '退還股款的減資無法從公告算出換股比例，請依券商通知填「每千股換發股數」。退還的現金不會記進 LOG。' : '比例由公告的參考價推算，請和券商通知核對。');
+}
+function renderCorp(checked) {
+  $('#ca-head').textContent = '依你在 LOG 的持股，比對證交所、櫃買中心公告的除權息、分割與減資（' + (checked ? ymd(checked) + ' 檢查' : '') + '）。請由舊到新確認，金額以券商實際入帳為準。';
+  if (!caItems.length) { $('#ca-list').innerHTML = '<div class="card empty">目前沒有待記錄的項目 👍</div>'; return; }
+  const easy = caItems.filter(x => !x.needInput && !x.afterPending);
+  $('#ca-allrow').style.display = easy.length > 1 ? '' : 'none';
+  $('#ca-count').textContent = '共 ' + caItems.length + ' 筆，其中 ' + easy.length + ' 筆可直接記錄';
+  $('#ca-list').innerHTML = caItems.map((x, i) => {
+    const b = x.type === 'cash' || x.type === 'stock' ? 'b-div' : 'b-sp';
+    let f = '<label>' + (x.type === 'cash' ? '入帳日' : '生效日') + '<input class="inp" type="date" data-k="date" value="' + esc(x.date) + '"></label>';
+    if (x.type === 'cash') f += '<label>股數<input class="inp" type="number" inputmode="numeric" data-k="units" value="' + esc(x.units) + '"></label><label>每股股利（元）<input class="inp" type="number" inputmode="decimal" step="any" data-k="price" value="' + esc(x.price) + '"></label>';
+    else if (x.type === 'stock') f += '<label>配發股數<input class="inp" type="number" inputmode="numeric" data-k="units" value="' + esc(x.units) + '"></label>';
+    else if (x.type === 'reduce') f += '<label>每千股換發股數<input class="inp" type="number" inputmode="decimal" step="any" data-k="perK" value="' + (x.units ? Math.round(1000 / x.units * 100) / 100 : '') + '" placeholder="例：600"></label>';
+    else f += '<label>' + (x.type === 'split' ? '1 股變成幾股' : '幾股合成 1 股') + '<input class="inp" type="number" inputmode="decimal" step="any" data-k="units" value="' + esc(x.units) + '"></label>';
+    return '<div class="card ca" data-i="' + i + '"><div class="t"><span class="badge ' + b + '">' + CA_LBL[x.type] + '</span><b>' + esc(shortName(x.name)) + '</b><span class="lbl">' + esc(x.code) + '</span></div>' +
+      '<span class="note" style="color:#C9CED6">' + caDesc(x) + '</span>' +
+      (x.afterPending ? '<span class="warn">這檔股票有更早的分割／減資還沒記錄，股數可能不對，請先處理上面那筆。</span>' : '') +
+      '<div class="f">' + f + '</div><div class="acts"><button class="small" data-dis>忽略</button><button class="small pri" data-rec>記錄到 LOG</button></div></div>';
+  }).join('');
+  $$('#ca-list .ca').forEach(el => {
+    const x = caItems[+el.dataset.i];
+    el.querySelector('[data-dis]').onclick = async () => {
+      try { await call('appDismissAction', x.key); toast('已忽略'); loadCorp(); } catch (e) { toast(errMsg(e)); }
+    };
+    el.querySelector('[data-rec]').onclick = async e => {
+      const rec = caRecord(x, el); if (!rec) return;
+      e.target.disabled = true; e.target.textContent = '記錄中…';
+      try { await call('appAddRecord', rec); toast('已記錄 ' + shortName(x.name) + ' ' + CA_LBL[x.type]); afterWrite(); loadCorp(); }
+      catch (err) { toast('記錄失敗：' + errMsg(err), 4000); e.target.disabled = false; e.target.textContent = '記錄到 LOG'; }
+    };
+  });
+}
+function caRecord(x, el) {
+  const v = k => { const i = el.querySelector('[data-k="' + k + '"]'); return i ? i.value : ''; };
+  const rec = {date: v('date'), item: x.item, name: x.name, units: +v('units'), price: 0};
+  if (x.type === 'cash') rec.price = +v('price');
+  if (x.type === 'reduce') { const k = +v('perK'); if (!(k > 0)) { toast('請填每千股換發股數'); return null; } rec.units = Math.round(1000 / k * 10000) / 10000; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date)) { toast('請填日期'); return null; }
+  if (!(rec.units > 0)) { toast('數量要大於 0'); return null; }
+  if (x.type === 'cash' && !(rec.price > 0)) { toast('請填每股股利'); return null; }
+  return rec;
+}
+$('#ca-all').onclick = async () => {
+  const list = [];
+  $$('#ca-list .ca').forEach(el => { const x = caItems[+el.dataset.i]; if (x.needInput || x.afterPending) return; const r = caRecord(x, el); if (r) list.push(r); });
+  if (!list.length) return;
+  const b = $('#ca-all'); b.disabled = true; b.textContent = '記錄中…';
+  try { await call('appAddRecords', list); toast('已記錄 ' + list.length + ' 筆'); afterWrite(); loadCorp(); }
+  catch (e) { toast('記錄失敗：' + errMsg(e), 4000); }
+  finally { b.disabled = false; b.textContent = '全部記錄'; }
+};
+
+// ---------- 股利與所得 ----------
+let diData = null, diYear = null;
+async function loadDivinc() {
+  $('#di-body').innerHTML = '<div class="skel"></div><div class="skel"></div>';
+  try {
+    diData = await call('appDividends');
+    const ys = [...new Set(diData.map(x => x.d.slice(0, 4)).concat([TODAY.slice(0, 4)]))].sort().reverse();
+    if (!diYear || ys.indexOf(diYear) < 0) diYear = ys[0];
+    $('#di-years').innerHTML = ys.map(y => '<button data-y="' + y + '" class="' + (y === diYear ? 'on' : '') + '">' + y + ' 年</button>').join('');
+    $$('#di-years button').forEach(b => b.onclick = () => { diYear = b.dataset.y; $$('#di-years button').forEach(x => x.classList.toggle('on', x === b)); renderDivinc(); });
+    renderDivinc();
+  } catch (e) { $('#di-body').innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
+}
+function renderDivinc() {
+  const rows = diData.filter(x => x.d.slice(0, 4) === diYear);
+  const cash = rows.filter(x => x.item === '現金股利'), stock = rows.filter(x => x.item === '股票股利');
+  const S = (l, k) => l.reduce((a, x) => a + (x[k] || 0), 0);
+  const gross = S(cash, 'amt'), fee = S(cash, 'fee'), nhi = S(cash, 'nhi'), net = S(cash, 'net');
+  const shares = S(stock, 'units'), par = shares * 10, income = gross + par;
+  const credit = Math.min(Math.round(income * 0.085), 80000), sep = Math.round(income * 0.28);
+  const kv = (l, v, c) => '<div class="kv' + (c || '') + '"><span style="color:#D5D8DD">' + l + '</span><span>' + v + '</span></div>';
+  let h = '<div class="card col" style="gap:4px"><h2 style="margin-bottom:6px">' + diYear + ' 年現金股利</h2>' +
+    kv('股利總額', fmt(gross)) + kv('匯費', fee ? M + fmt(fee) : '0') + kv('二代健保補充保費', nhi ? M + fmt(nhi) : '0') + kv('實際入帳', fmt(net), ' tot') +
+    '<span class="note" style="margin-top:6px">單筆股利滿 2 萬元會被代扣 2.11% 補充保費（今年 ' + cash.filter(x => x.nhi > 0).length + ' 筆被扣）。</span></div>';
+  if (stock.length) h += '<div class="card col" style="gap:4px"><h2 style="margin-bottom:6px">股票股利</h2>' + kv('配發股數', fmt(shares) + ' 股') + kv('股利所得（以面額 10 元計）', fmt(par)) + '</div>';
+  h += '<div class="card col" style="gap:4px"><h2 style="margin-bottom:6px">報稅試算（僅供參考）</h2>' + kv('股利所得合計', fmt(income)) +
+    kv('合併計稅：可抵減稅額 8.5%', fmt(credit) + (income * 0.085 > 80000 ? '（已達上限）' : '')) + kv('分開計稅：股利稅額 28%', fmt(sep)) +
+    '<span class="note" style="margin-top:6px">合併計稅是把股利併入綜合所得，再用股利的 8.5% 抵稅（每戶上限 8 萬元）；分開計稅是股利單獨按 28% 計稅。一般來說，適用稅率 30% 以下選合併計稅較有利，40% 級距才考慮分開計稅，實際請以國稅局試算為準。ETF 配息可能含資本利得或收益平準金，所得類別以扣繳憑單為準。</span></div>';
+  h += '<span class="sec">' + diYear + ' 年明細</span>';
+  h += rows.length ? '<div class="list">' + rows.map(x => '<div class="item row"><span class="badge b-div">' + (x.item === '現金股利' ? '股利' : '配股') + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600">' + esc(shortName(x.name)) + '</span><span class="lbl">' + md(x.d) + ' · ' +
+    (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' + (x.nhi ? ' · 健保 ' + fmt(x.nhi) : '') : '配發 ' + fmt(x.units) + ' 股') + '</span></span><span style="font-weight:700">' + (x.item === '現金股利' ? fmt(x.net) : '+' + fmt(x.units) + ' 股') + '</span></div>').join('') + '</div>' : '<div class="card empty">這一年還沒有股利紀錄</div>';
+  $('#di-body').innerHTML = h;
+}
+
+// ---------- 定期定額 ----------
+let dcPlans = [], dcRecs = [], dcPend = [];
+async function loadDca() {
+  $('#dc-list').innerHTML = '<div class="skel"></div>'; $('#dc-pend').innerHTML = '';
+  try {
+    const s = await call('appSettings'); dcPlans = s.plans || [];
+    const start = dcPlans.reduce((a, p) => p.start < a ? p.start : a, TODAY);
+    dcRecs = dcPlans.length ? await call('appRecords', start, TODAY) : [];
+    renderDca();
+  } catch (e) { $('#dc-list').innerHTML = '<div class="empty">讀取失敗：' + esc(errMsg(e)) + '</div>'; }
+}
+function dcPending() {
+  const out = [], used = {};
+  dcPlans.filter(p => p.active).forEach(p => {
+    let y = +p.start.slice(0, 4), m = +p.start.slice(5, 7);
+    while (true) {
+      const ym = y + '-' + String(m).padStart(2, '0');
+      if (ym > TODAY.slice(0, 7)) break;
+      const dim = new Date(y, m, 0).getDate();
+      p.days.forEach(d => { const k = ym + '-' + String(Math.min(d, dim)).padStart(2, '0'); if (k >= p.start && k <= TODAY) out.push({plan: p, date: k}); });
+      m++; if (m > 12) { m = 1; y++; }
+    }
+  });
+  out.sort((a, b) => a.date < b.date ? -1 : 1);
+  return out.filter(o => {
+    const hit = dcRecs.find(r => r.item === '買進' && r.name === o.plan.name && r.d >= o.date && r.d <= addDays(o.date, 7) && !used[r.row]);
+    if (hit) { used[hit.row] = 1; return false; }
+    return true;
+  });
+}
+function renderDca() {
+  dcPend = dcPending();
+  $('#dc-pend').innerHTML = !dcPlans.length ? '' : dcPend.length ?
+    '<div class="card col" style="gap:8px"><div class="row"><h2>還有 ' + dcPend.length + ' 筆扣款沒有記錄</h2><button class="small pri" id="dc-fill">帶入批次新增</button></div>' +
+    dcPend.slice(-8).map(o => '<div class="kv"><span style="color:#D5D8DD">' + ymd(o.date) + ' ' + esc(shortName(o.plan.name)) + '</span><span>' + fmt(o.plan.amount) + ' 元</span></div>').join('') +
+    (dcPend.length > 8 ? '<span class="lbl">（只列最近 8 筆）</span>' : '') + '</div>' :
+    '<div class="card empty" style="padding:18px">扣款都記錄好了 👍</div>';
+  if ($('#dc-fill')) $('#dc-fill').onclick = dcFill;
+  $('#dc-list').innerHTML = dcPlans.length ? dcPlans.map((p, i) => '<div class="item col" style="gap:8px"><div class="row"><span class="col" style="gap:2px;min-width:0"><span style="font-size:16px;font-weight:700">' + esc(shortName(p.name)) + '</span>' +
+    '<span class="lbl">每月 ' + p.days.join('、') + ' 日 · 每次 ' + fmt(p.amount) + ' 元 · ' + ymd(p.start) + ' 起</span></span>' +
+    '<label class="sw" aria-label="啟用"><input type="checkbox" data-on="' + i + '" ' + (p.active ? 'checked' : '') + '><span></span></label></div>' +
+    '<div class="acts row" style="justify-content:flex-end"><button class="small" data-ed="' + i + '">編輯</button></div></div>').join('') :
+    '<div class="card empty">還沒有定期定額，按右上角 ＋ 新增</div>';
+  $$('#dc-list [data-ed]').forEach(b => b.onclick = () => dcEdit(+b.dataset.ed));
+  $$('#dc-list [data-on]').forEach(c => c.onchange = async () => { const l = dcPlans.map(p => Object.assign({}, p)); l[+c.dataset.on].active = c.checked; await dcSave(l); });
+}
+async function dcSave(list) {
+  try { dcPlans = await call('appSavePlans', list); renderDca(); return true; }
+  catch (e) { toast('儲存失敗：' + errMsg(e), 4000); return false; }
+}
+$('#dc-add').onclick = () => dcEdit(-1);
+function dcEdit(i) {
+  const p = i >= 0 ? dcPlans[i] : {name: '', days: [6], amount: 3000, start: TODAY, active: true};
+  openSheet('<h2>' + (i >= 0 ? '編輯' : '新增') + '定期定額</h2><div class="form">' +
+    '<label><span>股票</span><input type="text" id="dc-name" list="tr-stocks" placeholder="名稱或代號" autocomplete="off" value="' + esc(p.name) + '"></label>' +
+    '<label><span>每月扣款日</span><input type="text" id="dc-days" inputmode="numeric" placeholder="例：6,16,26" value="' + esc(p.days.join(',')) + '"></label>' +
+    '<label><span>每次金額（元）</span><input type="number" id="dc-amt" inputmode="numeric" value="' + esc(p.amount) + '"></label>' +
+    '<label><span>開始日期</span><input type="date" id="dc-start" value="' + esc(p.start) + '"></label></div>' +
+    '<span class="note">扣款日可以填多個，用逗號分開。遇到假日券商會順延，App 比對紀錄時會往後找 7 天。</span>' +
+    '<button class="primary" id="dc-ok">儲存</button>' + (i >= 0 ? '<button class="danger" id="dc-del">刪除這個定期定額</button>' : '') + '<button class="link" id="dc-no" style="justify-content:center">取消</button>');
+  $('#dc-name').addEventListener('change', async () => { $('#dc-name').value = await normName($('#dc-name').value); });
+  $('#dc-no').onclick = closeSheet;
+  $('#dc-ok').onclick = async () => {
+    const name = await normName($('#dc-name').value);
+    const days = $('#dc-days').value.split(/[^\d]+/).map(Number).filter(d => d >= 1 && d <= 31);
+    const np = {id: p.id, name: name, days: days, amount: +$('#dc-amt').value, start: $('#dc-start').value, active: p.active};
+    if (!/（.+）$/.test(name)) return toast('請選擇股票，或輸入代號');
+    if (!days.length) return toast('請填扣款日');
+    if (!(np.amount >= 100)) return toast('金額至少 100 元');
+    const l = dcPlans.slice(); if (i >= 0) l[i] = np; else l.push(np);
+    $('#dc-ok').disabled = true;
+    if (await dcSave(l)) { closeSheet(); toast('已儲存'); loadDca(); } else $('#dc-ok').disabled = false;
+  };
+  if (i >= 0) $('#dc-del').onclick = async () => { const l = dcPlans.slice(); l.splice(i, 1); if (await dcSave(l)) { closeSheet(); toast('已刪除'); } };
+}
+async function dcFill() {
+  const b = $('#dc-fill'); b.disabled = true; b.textContent = '抓收盤價中…';
+  try {
+    if (!meta) await loadMeta();
+    const by = {};
+    dcPend.forEach(o => { const c = (o.plan.name.match(/（(.+)）$/) || [])[1]; (by[c] = by[c] || []).push(o); });
+    const rows = [];
+    for (const c of Object.keys(by)) {
+      let px = {};
+      try { px = await call('appPrices', c, by[c].map(o => o.date)); } catch (e) {}
+      by[c].forEach(o => {
+        const q = px[o.date], p = q ? q.p : '', d = q ? q.d : o.date;
+        const units = p ? Math.floor(o.plan.amount / (p * (1 + 0.001425 * discAt(d) / 10))) : '';
+        rows.push({date: d, item: '買進', name: o.plan.name, units: units, price: p});
+      });
+    }
+    rows.sort((a, b) => a.date < b.date ? -1 : 1);
+    openBatch(rows, '定期定額入帳', '價格是當天收盤價，股數是用金額推算的，請依券商成交明細修正後再儲存。');
+  } catch (e) { toast('帶入失敗：' + errMsg(e), 4000); }
+  finally { if (b) { b.disabled = false; b.textContent = '帶入批次新增'; } }
+}
+
+// ---------- 批次新增 ----------
+let btRows = [];
+const btBlank = () => ({date: btRows.length ? btRows[btRows.length - 1].date : TODAY, item: '買進', name: btRows.length ? btRows[btRows.length - 1].name : '', units: '', price: ''});
+function openBatch(rows, title, note) {
+  btRows = [];
+  btRows = rows && rows.length ? rows : [btBlank()];
+  $('#bt-title').textContent = title || '批次新增紀錄';
+  $('#bt-note').textContent = note || '一次輸入多筆買賣（例如零股、定期定額），核對後一起存進 LOG。';
+  renderBatch();
+  if (pageCur !== 'batch') openPage('batch');
+}
+function renderBatch() {
+  $('#bt-list').innerHTML = btRows.map((r, i) => '<div class="brow" data-i="' + i + '"><div class="hd"><span class="lbl" style="font-weight:700">第 ' + (i + 1) + ' 筆</span><button class="xbtn" data-x aria-label="刪除第 ' + (i + 1) + ' 筆">×</button></div>' +
+    '<label class="full">股票<input class="inp" type="text" list="tr-stocks" data-k="name" placeholder="名稱或代號" autocomplete="off" value="' + esc(r.name) + '"></label>' +
+    '<label>日期<input class="inp" type="date" data-k="date" value="' + esc(r.date) + '"></label>' +
+    '<label>項目<select class="inp" data-k="item"><option' + (r.item === '買進' ? ' selected' : '') + '>買進</option><option' + (r.item === '賣出' ? ' selected' : '') + '>賣出</option></select></label>' +
+    '<label>股數<input class="inp" type="number" inputmode="numeric" data-k="units" value="' + esc(r.units) + '"></label>' +
+    '<label>成交價<input class="inp" type="number" inputmode="decimal" step="any" data-k="price" value="' + esc(r.price) + '"></label></div>').join('');
+  $$('#bt-list .brow').forEach(el => {
+    const i = +el.dataset.i;
+    el.querySelectorAll('[data-k]').forEach(inp => {
+      inp.addEventListener('input', () => { btRows[i][inp.dataset.k] = inp.value; });
+      if (inp.dataset.k === 'name') inp.addEventListener('change', async () => { inp.value = btRows[i].name = await normName(inp.value); });
+    });
+    el.querySelector('[data-x]').onclick = () => { btRows.splice(i, 1); if (!btRows.length) btRows.push(btBlank()); renderBatch(); };
+  });
+  $('#bt-save').textContent = '全部儲存（' + btRows.length + ' 筆）';
+}
+$('#bt-addrow').onclick = () => { btRows.push(btBlank()); renderBatch(); const l = $$('#bt-list .brow'); l[l.length - 1].scrollIntoView({behavior: 'smooth', block: 'center'}); };
+$('#bt-save').onclick = async () => {
+  const list = [];
+  for (let i = 0; i < btRows.length; i++) {
+    const r = btRows[i];
+    const rec = {date: r.date, item: r.item, name: String(r.name).trim(), units: +r.units, price: +r.price, dayTrade: false};
+    if (!rec.name || !/（.+）$/.test(rec.name)) return toast('第 ' + (i + 1) + ' 筆：請選擇股票');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date)) return toast('第 ' + (i + 1) + ' 筆：請填日期');
+    if (!(rec.units > 0)) return toast('第 ' + (i + 1) + ' 筆：請填股數');
+    if (!(rec.price > 0)) return toast('第 ' + (i + 1) + ' 筆：請填成交價');
+    list.push(rec);
+  }
+  const b = $('#bt-save'); b.disabled = true; b.textContent = '儲存中（' + list.length + ' 筆）…';
+  try {
+    await call('appAddRecords', list);
+    toast('已寫入 ' + list.length + ' 筆'); afterWrite(); btRows = []; closePage();
+    if (dcPlans.length) loadDca();
+  } catch (e) { toast('儲存失敗：' + errMsg(e), 5000); }
+  finally { b.disabled = false; renderBatch(); }
+};
 
 // ---------- 啟動 ----------
 const loaders = {overview: loadOverview, holdings: loadHoldings, calendar: loadCalendar, trade: () => { loaded.trade = true; loadMeta().then(estimate).catch(() => {}); }, records: loadRecords};
