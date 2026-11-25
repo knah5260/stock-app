@@ -176,6 +176,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 .avatar{width:40px;height:40px;border-radius:20px;border:1px solid #2A2E36;background:linear-gradient(160deg,#2A3240,#1A1E26);display:flex;align-items:center;justify-content:center;color:#C9D6EA;position:relative;flex-shrink:0}
 .avatar .dot{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:8px;background:var(--acc);color:#1A1208;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px}
 .avatar .dot.on{display:flex}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .drawer{position:absolute;inset:0;z-index:30;pointer-events:none}
 .drawer .bg{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;transition:opacity .25s}
 .drawer .dp{position:absolute;top:0;bottom:0;left:0;width:min(320px,84%);background:#121519;border-right:1px solid #22262E;transform:translateX(-102%);transition:transform .3s cubic-bezier(.3,.9,.3,1);
@@ -287,7 +288,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="row">
     <div class="row" style="gap:12px;justify-content:flex-start;min-width:0;align-items:flex-start">
       <button class="avatar" id="ov-avatar" aria-label="開啟選單"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="dot" id="ov-dot"></span></button>
-      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">韭菜紀錄</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button><button class="pill" id="ov-due"></button><button class="pill" id="ov-st"></button></div>
+      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的台股總覽</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button><button class="pill" id="ov-due"></button><button class="pill" id="ov-st"></button></div>
     </div>
     <span class="row" style="gap:8px;align-self:flex-start"><button class="iconbtn" id="btn-priv" aria-label="隱藏金額"></button>
     <button class="iconbtn" id="btn-refresh" aria-label="重新抓收盤價並更新">
@@ -428,8 +429,8 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="bg" id="dr-bg"></div>
   <nav class="dp" aria-label="選單">
     <div class="who">
-      <span class="avatar" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
-      <div class="col" style="gap:2px;min-width:0"><b style="font-size:17px">韭菜紀錄</b><span class="lbl" id="dr-status">已連線到 Google 試算表</span></div>
+      <span class="avatar" id="dr-av" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
+      <div class="col" style="gap:2px;min-width:0"><b style="font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="dr-name">韭菜紀錄</b><span class="lbl" id="dr-status">已連線到 Google 試算表</span></div>
     </div>
     <span class="sec2" id="dr-acctlbl" style="display:none">帳戶</span>
     <div class="col" style="gap:2px" id="dr-accts"></div>
@@ -494,6 +495,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 
   <span class="sec">帳戶與資料</span>
   <div class="card" style="padding:2px 16px">
+    <div class="srow g-only" style="gap:10px"><span style="flex-shrink:0">顯示名稱</span><span class="row" style="gap:8px;flex:1;min-width:0;justify-content:flex-end"><input class="inp" id="st-nick" maxlength="20" placeholder="預設用 Google 名稱" style="flex:1;min-width:0;text-align:right"><button class="small" id="st-savenick" style="flex-shrink:0">儲存</button></span></div>
     <div class="srow g-only"><span>Google 帳號</span><span class="row" style="gap:10px;min-width:0"><span class="v" id="st-gmail" style="overflow:hidden;text-overflow:ellipsis">—</span><button class="small" id="st-gout">登出</button></span></div>
     <div class="srow"><span>Google 試算表</span><a class="link" id="st-sheet" href="#" target="_blank" rel="noopener" style="height:auto">開啟</a></div>
     <div class="srow"><span>暫存資料</span><button class="small" id="st-clear">清除並重新讀取</button></div>
@@ -583,8 +585,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 const CHANGELOG = [
+  ['2.2.0', '2026-11-25', ['總覽標題改為「我的台股總覽」', '側邊選單顯示你的名字和 Google 大頭貼', '可在設定自訂顯示名稱（暱稱），預設用 Google 帳號名稱']],
   ['2.1.0', '2026-11-25', ['App 改名為「韭菜紀錄」，換上紅漲綠跌 K 線新圖示', '每筆交易可以寫進出場理由，交易紀錄列表會顯示', 'Google 登入按鈕改成官方樣式「使用 Google 登入繼續」', '移除舊版（Apps Script）的密碼、後端網址與搬家介面', '設定頁顯示版本編號與更新內容']],
   ['2.0.0', '2026-11-25', ['改用 Google 帳號登入，資料存在自己的 Google 雲端硬碟', '計算改在 App 裡完成，不再需要 Apps Script', '股價、指數、除權息改由每日自動抓取的公開資料提供', '新增示範模式、可安裝到主畫面、離線也能開啟']],
   ['1.0.0', '2026-11-24', ['舊版：Google 試算表＋Apps Script']]
@@ -633,7 +636,7 @@ if (RED && RED.ok) {
   lsSet('zqMode', 'google'); MODE = 'google';
   setTimeout(() => ZQ.whoami(), 800);
 } else if (RED && RED.error) {
-  if (MODE === 'google') { needLogin = true; loginMsg = RED.silent ? 'Google 登入已過期，請再登入一次。' : '登入沒有完成，請再試一次。'; }
+  if (MODE === 'google') { needLogin = true; loginMsg = RED.error === 'consent_required' ? '新版本會顯示你的 Google 名稱和大頭貼，需要你再同意一次。' : RED.silent ? 'Google 登入已過期，請再登入一次。' : '登入沒有完成，請再試一次。'; }
 }
 const G_LOGO = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 // Google 登入按鈕（依 Google 品牌規範的深色樣式）
@@ -680,7 +683,7 @@ async function rawCall(fn, args, acct) {
 }
 // 快取：讀過的資料先立刻顯示，背景再向試算表拿最新的；有變動才重畫。
 // 資料存在手機裡，下次打開 App 也能馬上看到上次的畫面。
-const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup|Settings|CorpActions|Dividends|Prices|Accounts)$/;
+const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup|Settings|CorpActions|Dividends|Prices|Accounts|Profile)$/;
 const CK = 'zqCache2', inflight = {};
 let cache = {};
 if (!DEMO) { try { cache = JSON.parse(localStorage.getItem(CK) || '{}') || {}; } catch (e) { cache = {}; } }
@@ -1374,6 +1377,28 @@ $('#ov-avatar').onclick = openDrawer;
 $('#dr-bg').onclick = closeDrawer;
 $$('#drawer .di[data-pg]').forEach(b => b.onclick = () => { closeDrawer(); openPage(b.dataset.pg); });
 $('#dr-foot').textContent = '版本 ' + APP_VERSION; $('#st-ver').textContent = '版本 ' + APP_VERSION;
+// 使用者名稱與頭像：預設用 Google 帳號的名字和大頭貼，可在設定改暱稱
+let ME = null;
+function renderMe() {
+  if (!ME) return;
+  const name = ME.nick || ME.name || (ME.email ? ME.email.split('@')[0] : '');
+  if (name) $('#dr-name').textContent = name;
+  const pic = ME.picture ? '<img src="' + esc(ME.picture) + '" alt="" referrerpolicy="no-referrer">' : '';
+  if (pic) {
+    $('#dr-av').innerHTML = pic;
+    const a = $('#ov-avatar'), dot = $('#ov-dot');
+    a.innerHTML = pic; a.appendChild(dot);
+  }
+}
+async function loadMe() {
+  if (MODE !== 'google') return;
+  try { ME = await call('appProfile'); renderMe(); } catch (e) {}
+}
+$('#st-savenick').onclick = async () => {
+  const b = $('#st-savenick'); b.disabled = true;
+  try { ME = await callIn('main', 'appSaveProfile', {nick: $('#st-nick').value.trim()}); renderMe(); if (!ME.nick) $('#dr-name').textContent = ME.name || ''; toast('已儲存'); }
+  catch (e) { toast(errMsg(e)); } finally { b.disabled = false; }
+};
 $('#st-log').onclick = () => { openSheet('<h2>更新內容</h2>' + CHANGELOG.map(([v, d, l]) => '<div class="col" style="gap:4px"><b style="font-size:15px">版本 ' + v + '<span class="lbl" style="font-weight:400"> · ' + ymd(d) + '</span></b><ul style="margin:0;padding-left:1.2em;color:var(--mut);font-size:14px;line-height:1.6">' + l.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>').join('') + '<button class="primary" id="lg-ok">好</button>'); $('#lg-ok').onclick = closeSheet; };
 let pageCur = null;
 const pageLoaders = {import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
@@ -1456,7 +1481,7 @@ async function loadSettings() {
   renderStAccts();
   $('#st-autoca').checked = autoCA();
   $$('.g-only').forEach(e => e.style.display = MODE === 'google' ? '' : 'none');
-  if (MODE === 'google') ZQ.whoami().then(m => { $('#st-gmail').textContent = m || '已登入'; });
+  if (MODE === 'google') { ZQ.whoami().then(m => { $('#st-gmail').textContent = m || '已登入'; }); call('appProfile').then(p => { ME = p; $('#st-nick').value = p.nick || ''; $('#st-nick').placeholder = p.name ? '預設：' + p.name : '預設用 Google 名稱'; renderMe(); }).catch(() => {}); }
   $('#st-fees').innerHTML = '<div class="skel" style="height:60px;margin:8px 0"></div>';
   try {
     stData = await callIn(stAcct, 'appSettings');
@@ -2015,6 +2040,7 @@ loadMeta().catch(() => {});
 window.addEventListener('resize', () => { if (current === 'overview') renderOvChart(); });
 </script>
 <script>
+if (!DEMO) setTimeout(loadMe, 600);
 if (DEMO) { ACCT = 'main'; document.body.classList.add('demo'); document.getElementById('demo-exit').onclick = exitDemo; }
 // 背景程式：讓 App 可以安裝、離線也能打開畫面（資料仍要連線才會更新）
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

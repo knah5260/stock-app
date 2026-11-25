@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   const CLIENT_ID = window.ZQ_CLIENT_ID || '';
-  const SCOPE = 'https://www.googleapis.com/auth/drive.file openid email';
+  const SCOPE = 'https://www.googleapis.com/auth/drive.file openid email profile';
   const TK = 'zqGTok', FK = 'zqGFile';
   const FILE_TITLE = '韭菜紀錄（App 資料）';
   const REC_HEAD = ['帳戶', '編號', '日期', '項目', '名稱（代號）', '股數/單位', '單價', '自選費用', '金額修正', '資券成數修正', '當沖',
@@ -67,7 +67,7 @@
   function signOut() {
     const t = getTok();
     if (t && t.t) fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(t.t), {method: 'POST'}).catch(() => {});
-    LS.set(TK, null); LS.set(FK, null); DB = null; FILE = null;
+    LS.set(TK, null); LS.set(FK, null); LS.set('zqGMe', null); DB = null; FILE = null;
   }
 
   async function gapi(url, opt) {
@@ -88,14 +88,22 @@
 
   // ---------- 使用者的資料檔（Google 試算表）----------
   let FILE = null;    // {id, recSheet}
+  // Google 帳號基本資料（名稱、大頭貼），存在這台裝置
+  async function userinfo(force) {
+    let me = null; try { me = JSON.parse(LS.get('zqGMe') || 'null'); } catch (e) {}
+    if (me && !force && Date.now() - (me.at || 0) < 24 * 3600e3 && (me.name || me.picture)) return me;
+    try {
+      const u = await gapi('https://openidconnect.googleapis.com/v1/userinfo');
+      me = {email: u.email || '', name: u.name || u.given_name || '', picture: u.picture || '', at: Date.now()};
+      LS.set('zqGMe', JSON.stringify(me));
+      const o = getTok(); if (o) { o.email = me.email; LS.set(TK, JSON.stringify(o)); }
+    } catch (e) {}
+    return me || {email: '', name: '', picture: ''};
+  }
   async function whoami() {
     const t = getTok();
     if (t && t.email) return t.email;
-    try {
-      const u = await gapi('https://openidconnect.googleapis.com/v1/userinfo');
-      const o = getTok(); if (o) { o.email = u.email || ''; LS.set(TK, JSON.stringify(o)); }
-      return u.email || '';
-    } catch (e) { return ''; }
+    return (await userinfo()).email || '';
   }
   async function findFile() {
     if (FILE) return FILE;
@@ -566,6 +574,17 @@
     async appCorpActions(acct) { await load(); if (acct === '*') { const items = []; let checked = ''; for (const id of acctIds('*')) { const r = await corpActions(id); if (r.checked > checked) checked = r.checked; r.items.forEach(x => items.push(tag(x, id))); } items.sort((a, b) => a.date < b.date ? -1 : 1); return {items: items, checked: checked}; } return corpActions(acct); },
     async appDividends(acct) { await load(); return dividends(acct); },
     async appPrices(acct, code, dates) { return prices(code, dates); },
+    async appProfile() {
+      await load();
+      const u = await userinfo();
+      return {name: u.name, picture: u.picture, email: u.email, nick: DB.set.nick || ''};
+    },
+    async appSaveProfile(acct, o) {
+      const nick = String((o && o.nick) || '').trim().slice(0, 20);
+      await mutate(db => { if (nick) db.set.nick = nick; else delete db.set.nick; });
+      const u = await userinfo();
+      return {name: u.name, picture: u.picture, email: u.email, nick: nick};
+    },
     async appRefresh() { await meta(true); PUB.json = {}; await load(true); return (await daily('main')).updated; },
 
     async appAddRecord(acct, rec) {
