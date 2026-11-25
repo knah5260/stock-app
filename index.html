@@ -215,6 +215,20 @@ h2{margin:0;font-size:15px;font-weight:600}
 .srow input.inp{max-width:120px;text-align:right}
 .srow .v{color:var(--tx);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .sw{position:relative;width:51px;height:31px;flex-shrink:0}
+.sw.sm{width:42px;height:26px}
+.sw.sm span{border-radius:13px}
+.sw.sm span:after{width:22px;height:22px}
+.sw.sm input:checked + span:after{transform:translateX(16px)}
+.gtog{display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:13px;color:var(--mut);height:40px;padding:0 2px;cursor:pointer}
+.hi{display:none;width:20px;height:20px;padding:0;margin-left:6px;border:0;background:transparent;color:#6CA8FF;vertical-align:-4px;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
+body.guide .hi{display:inline-flex}
+.hpop{position:fixed;z-index:80;width:min(320px,calc(100vw - 24px));max-height:min(60vh,420px);overflow-y:auto;background:#1F232B;border:1px solid #33465F;border-radius:14px;padding:12px 14px 14px;box-shadow:0 12px 32px rgba(0,0,0,.55)}
+.hpop h3{margin:0 28px 6px 0;font-size:16px;font-weight:700;color:var(--tx)}
+.hpop .x{position:absolute;top:6px;right:6px;width:30px;height:30px;border:0;background:transparent;color:var(--mut);font-size:20px;line-height:1}
+.hpop .arw{position:absolute;width:12px;height:12px;background:#1F232B;border-left:1px solid #33465F;border-top:1px solid #33465F;transform:rotate(45deg)}
+.helpbox{font-size:14px;line-height:1.65;color:#D5D8DD}
+.helpbox b{color:var(--tx)}
+.helpbox .you{margin-top:8px;padding:10px 12px;border-radius:12px;background:#15233A;border:1px solid #24406B;color:#CFE0FF;font-size:14px}
 .sw input,.form .sw input{opacity:0;width:0;height:0;position:absolute}
 .sw span{position:absolute;inset:0;border-radius:16px;background:#39404B;transition:background .2s}
 .sw span:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:transform .2s}
@@ -233,7 +247,8 @@ h2{margin:0;font-size:15px;font-weight:600}
 .pill{align-self:flex-start;margin-top:6px;height:30px;border-radius:15px;border:1px solid #5A4520;background:#2A2110;color:#F5C04A;font-size:13px;font-weight:600;padding:0 12px;display:none;align-items:center;gap:4px}
 .pill.on{display:inline-flex}
 .pill{white-space:nowrap;max-width:100%}
-@media (max-width:374px){h1{font-size:22px}#ov-title{white-space:nowrap}.view{padding-left:14px;padding-right:14px}#demo-bar{font-size:12px}}
+@media (max-width:440px){#ov-title{font-size:23px}#v-overview .iconbtn{width:38px;height:38px}}
+@media (max-width:374px){h1{font-size:22px}#ov-title{font-size:20px}.view{padding-left:14px;padding-right:14px}#demo-bar{font-size:12px}}
 .brow{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .brow label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut);min-width:0}
 .brow .full{grid-column:1/-1}
@@ -290,7 +305,7 @@ h2{margin:0;font-size:15px;font-weight:600}
       <button class="avatar" id="ov-avatar" aria-label="開啟選單"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="dot" id="ov-dot"></span></button>
       <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的台股總覽</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button><button class="pill" id="ov-due"></button><button class="pill" id="ov-st"></button></div>
     </div>
-    <span class="row" style="gap:8px;align-self:flex-start"><button class="iconbtn" id="btn-priv" aria-label="隱藏金額"></button>
+    <span class="row" style="gap:8px;align-self:flex-start"><label class="gtog" title="引導模式"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6CA8FF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".9" fill="#6CA8FF" stroke="none"/></svg><span class="sw sm"><input type="checkbox" id="gm-sw" role="switch" aria-label="引導模式"><span></span></span></label><button class="iconbtn" id="btn-priv" aria-label="隱藏金額"></button>
     <button class="iconbtn" id="btn-refresh" aria-label="重新抓收盤價並更新">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
     </button></span>
@@ -566,7 +581,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div id="demo-bar" role="status"><span>示範模式・資料是假的</span><button id="demo-exit">離開</button></div>
+<div id="demo-bar" role="status"><span>示範模式・資料是假的</span><button id="demo-exit">登入使用</button></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="panel" id="sheet-panel"></div></div>
 </div>
 
@@ -585,8 +600,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.4.0';
 const CHANGELOG = [
+  ['2.4.0', '2026-11-25', ['新增引導模式：右上角開關打開後，各功能旁會出現 ⓘ，點開說明用途與算法，並帶入你的數字', '沒登入時直接用示範資料展示，並自動開啟引導模式；按上方「登入使用」即可用 Google 帳號登入']],
   ['2.3.0', '2026-11-25', ['當沖改成開關樣式', '匯出 CSV 改為詳細版：手續費、稅、利息、庫存、成本、已實現損益和進出場理由都會匯出', '多帳戶時，總覽只顯示目前選擇的帳戶；沒有紀錄的帳戶不會再殘留上一個帳戶的數字']],
   ['2.2.0', '2026-11-25', ['總覽標題改為「我的台股總覽」', '側邊選單顯示你的名字和 Google 大頭貼', '可在設定自訂顯示名稱（暱稱），預設用 Google 帳號名稱']],
   ['2.1.0', '2026-11-25', ['App 改名為「韭菜紀錄」，換上紅漲綠跌 K 線新圖示', '每筆交易可以寫進出場理由，交易紀錄列表會顯示', 'Google 登入按鈕改成官方樣式「使用 Google 登入繼續」', '移除舊版（Apps Script）的密碼、後端網址與搬家介面', '設定頁顯示版本編號與更新內容']],
@@ -623,15 +639,19 @@ function loadDemo() {
     document.head.appendChild(sc);
   }));
 }
-function exitDemo() { location.href = location.pathname; }
+function exitDemo() { location.href = location.pathname + '?login=1'; }
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
 // 舊版（Apps Script）已停用：清掉留在裝置上的舊密碼與網址
 ['zqAppToken', 'zqApi', 'zqMigrate'].forEach(k => lsSet(k, null));
 let MODE = DEMO ? 'demo' : lsGet('zqMode') === 'google' ? 'google' : 'new';
+const WANT_LOGIN = /[?&]login=1\b/.test(location.search);
 let needLogin = false, loginMsg = '';
 // Google 登入回來：網址帶著登入結果
 const RED = (!DEMO && window.ZQ) ? ZQ.takeRedirect() : null;
+// 還沒登入的人：直接看示範資料（引導模式會自動開啟）
+if (MODE === 'new' && !(RED && RED.ok) && !WANT_LOGIN && !(window.ZQ && ZQ.signedIn())) location.replace(location.pathname + '?demo=1');
+if (WANT_LOGIN && window.ZQ && ZQ.ready()) { history.replaceState(null, '', location.pathname); lsSet('zqMode', 'google'); ZQ.signIn({select: true}); }
 if (RED && RED.ok) {
   if (MODE !== 'google') ['zqCache2', 'zqAccts', 'zqSym'].forEach(k => lsSet(k, null));
   lsSet('zqMode', 'google'); MODE = 'google';
@@ -888,7 +908,7 @@ async function loadOverview() {
     $('#ov-rangeh').textContent = md(ovRange.from) + ' – ' + md(ovRange.to);
     call('appHoldings').then(h => {
       const cost = h.reduce((a, x) => a + (x.cost || 0), 0), pl = h.reduce((a, x) => a + (x.pl || 0), 0);
-      setRet('#ov-ret-h', cost > 0 ? pl / cost : null);
+      setRet('#ov-ret-h', cost > 0 ? pl / cost : null); HSUM = {cost: cost, pl: pl, n: h.length};
       setMaintPill(h);
       setDuePill(h);
     }).catch(() => {});
@@ -1338,6 +1358,111 @@ function renderRecords() {
   $('#re-list').innerHTML = h;
   $$('#re-list button.item').forEach(b => b.onclick = () => editRecord(reData[+b.dataset.i]));
 }
+
+// ---------- 引導模式：在各功能旁顯示 ⓘ，點開說明用途與算法 ----------
+const HI_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".9" fill="currentColor" stroke="none"/></svg>';
+let HSUM = null;   // 最近一次持股合計（給說明帶入你的數字）
+const you = h => h ? '<div class="you">' + (DEMO ? '以示範資料為例：' : '以你的資料為例：') + h + '</div>' : '';
+const HELP = {
+  mv: ['台股總資產', () => '所有持股以<b>最新收盤價</b>計算的市值合計（融資買進的股票也算進去，融券不算）。股價每個交易日 15:40、21:10 各更新一次。' +
+    you(ovData && !ovData.empty ? '目前總資產 ' + fmt(ovData.mv) + ' 元（' + md(ovData.asOf) + ' 收盤）。' : '')],
+  today: ['今日損益', () => '最近一個交易日，持股市值的漲跌加上當天已實現的損益。百分比是對前一天總資產的比例。' +
+    you(ovData && !ovData.empty ? md(ovData.asOf) + ' 損益 ' + sgn(ovData.todayPl) + ' 元（' + pct(ovData.todayR) + '）。' : '')],
+  range: ['區間累計損益', () => '下方選的期間（一週、一月、一季…）裡，帳戶總共賺或賠多少，包含已賣出的損益、股利和持股市值變化，已扣除手續費與稅。' +
+    you(ovData && !ovData.empty ? md(ovRange.from) + '～' + md(ovRange.to) + ' 累計 ' + sgn(ovData.rangePl) + ' 元。' : '')],
+  reth: ['庫存報酬', () => '只看<b>現在還持有</b>的股票：未實現損益 ÷ 持股成本。賣掉的不算在內，也不受期間影響。' +
+    you(HSUM && HSUM.cost ? '未實現損益 ' + sgn(HSUM.pl) + ' ÷ 持股成本 ' + fmt(HSUM.cost) + ' ＝ ' + pct(HSUM.pl / HSUM.cost) + '。' : '')],
+  retm: ['投入報酬', () => '區間累計損益 ÷ 區間開始時的實際本金。反映「你的錢實際賺了多少比例」，期間中途加碼、減碼都會影響結果。' +
+    you(ovData && !ovData.empty && ovData.mv - ovData.rangePl > 0 ? sgn(ovData.rangePl) + ' ÷ ' + fmt(ovData.mv - ovData.rangePl) + ' ＝ ' + pct(ovData.rangePl / (ovData.mv - ovData.rangePl)) + '。' : '')],
+  rett: ['淨值報酬', () => '把帳戶當成一檔基金，每天算漲跌幅再連乘起來（基金單位淨值法）。不受加碼、減碼的時機影響，最適合拿來和大盤比較<b>選股與操作的功力</b>。' +
+    you(ovData && !ovData.empty ? '這段期間淨值報酬 ' + pct(ovData.rangeR) + '。' : '')],
+  chart: ['資產走勢圖', () => '可切換三種圖：<b>資產</b>是每天的總市值；<b>累計損益</b>是從期間開始累積賺賠多少；<b>報酬率</b>是淨值報酬，並和加權指數、0050 畫在一起比較。手指在圖上滑動可以看每天的數字。'],
+  cmp: ['報酬率對比', () => '用同一種算法（淨值報酬）比較你、加權指數和 0050 在這段期間的表現。指數和 0050 都把配息加回去，比較才公平。' +
+    you(ovData && !ovData.empty ? '你 ' + pct(ovData.rangeR) + '，加權指數 ' + pct(ovData.tx) + '，0050 ' + pct(ovData.e50) + '。' : '')],
+  risk: ['風險指標', () => '<b>最大回撤</b>：期間內從最高點跌到最低點的最大跌幅，越小越穩。<b>波動度</b>：每天漲跌幅的年化標準差，越大代表起伏越劇烈。和大盤並排比較，可以看出你承擔的風險是否比較高。'],
+  heat: ['每月報酬', () => '每格是一個月的淨值報酬，紅色上漲、綠色下跌，顏色越深幅度越大。最右邊是全年合計。適合看出哪些月份表現特別好或特別差。'],
+  home: ['我的台股總覽', () => '首頁整理目前選擇帳戶的資產、損益和報酬率。右上角：<b>引導</b>開關控制要不要顯示 ⓘ 說明；<b>眼睛</b>可以把金額隱藏成「＊＊＊＊」；<b>重新整理</b>會重新讀取最新收盤價和你的紀錄。左上角頭像打開選單，可以切換帳戶和使用其他功能。'],
+  privacy: ['隱藏金額', () => '按右上角的眼睛，所有金額會變成「＊＊＊＊」，百分比照常顯示。適合在公共場合打開 App 時使用。'],
+  holdings: ['持股與績效', () => '<b>未實現</b>：目前持股，現價 × 股數，扣掉賣出時的手續費和稅後算出「現在賣掉能賺多少」。<br><b>已實現</b>：已經賣出的每一筆損益。<br><b>投資總績效</b>：每檔每一批從買進到現在的總成績，含股利。<br>同一檔分不同時間買賣，會用「批號」分開計算，成本採先進先出（FIFO）。' +
+    you(HSUM && HSUM.n ? '目前持有 ' + HSUM.n + ' 檔，成本 ' + fmt(HSUM.cost) + ' 元。' : '')],
+  calendar: ['報酬日曆', () => '每個交易日的損益，紅色賺、綠色賠。點某一天可以看當天的交易明細。右邊一欄是整週合計。'],
+  trade: ['新增紀錄', () => '依券商成交單填入日期、股票、股數、價格即可，手續費、交易稅、二代健保都會自動算好。<br><b>買進／賣出</b>：一般買賣，上方可切換現股、融資、融券。<br><b>股利</b>：現金股利或股票股利。<br><b>其他</b>：分割、減資、現金增資、融資現償、保證金追繳。'],
+  daytrade: ['當沖', () => '同一天買進又賣出同一檔，打開這個開關。現股當沖賣出時證交稅減半（0.15%），批號也會和一般持股分開，不影響你的庫存成本。'],
+  note: ['進出場理由', () => '寫下為什麼買、為什麼賣，例如突破季線、財報優於預期、跌破停損。之後回頭看交易紀錄時，可以檢討自己的判斷是否正確。匯出 CSV 時也會一起匯出。'],
+  est: ['預估金額', () => '依你在設定裡的手續費折數先算出成交金額、手續費、稅和淨金額，儲存後會顯示實際結果。金額和券商對帳單有小差異時，請確認設定的折數是否正確。'],
+  records: ['交易紀錄', () => '所有輸入過的紀錄，依日期排列。點任一筆可以修改或刪除，下方會顯示你寫的進出場理由。上方可以選期間、篩選買賣或股利、搜尋股票。'],
+  corp: ['除權息與股本變動', () => '比對證交所、櫃買中心公告和你的持股，找出你還沒記錄的配息、配股、分割或減資。確認金額後按「記錄」就會自動新增；券商實際入帳不同時可以先修改再記錄。'],
+  divinc: ['股利與所得', () => '依年度整理收到的現金股利、股票股利和被扣的二代健保補充保費，報稅時可以對照。'],
+  dca: ['定期定額', () => '設定好扣款日和每次金額，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存起來。'],
+  batch: ['批次新增', () => '一次輸入多筆買賣（例如一天內多筆零股），核對後一起儲存，比一筆一筆新增快。'],
+  import: ['匯入券商對帳單', () => '還在準備中：目前可以選擇券商和檔案預覽內容，之後會自動辨識成交資料。'],
+  fees: ['手續費設定', () => '手續費＝成交金額 × 0.1425% × 折數，不足最低手續費以最低計。券商折扣有變動時，新增一段「從某天開始用新折數」，舊紀錄仍用舊折數。'],
+  credit: ['信用交易設定', () => '融資成數、融券保證金成數和利率，用來計算融資金額、擔保品、保證金和利息。依你的券商實際條件填寫。'],
+  nhi: ['二代健保補充保費', () => '單筆現金股利達 2 萬元時，券商會先扣 2.11%。符合免扣資格或實際沒被扣時可以關閉，所有股利紀錄會重新計算。'],
+  accounts: ['多帳戶', () => '不同券商或不同用途可以分開記帳，各自計算庫存與成本。從左上角選單切換帳戶，或選「全部帳戶」看合計。總覽只會顯示目前選擇的帳戶。']
+};
+const HELP_AT = [
+  ['#v-overview .card .lbl', 'mv', '台股總資產'], ['#v-overview .lbl', 'today', '今日損益'], ['#v-overview .lbl', 'range', '區間累計損益'],
+  ['#v-overview .lbl', 'reth', '庫存報酬'], ['#v-overview .lbl', 'retm', '投入報酬'], ['#v-overview .lbl', 'rett', '淨值報酬'],
+  ['#v-overview h2', 'cmp', '報酬率對比'], ['#v-overview h2', 'risk', '風險指標'], ['#v-overview h2', 'heat', '每月報酬'],
+  ['#v-holdings h1', 'holdings'], ['#v-calendar h1', 'calendar'], ['#tr-title', 'trade'],
+  ['#tr-dtrow > span', 'daytrade'], ['.note-row > span', 'note'], ['#v-records h1, #v-trade ~ section h1', 'records', '交易紀錄'],
+  ['#pg-corp .phead h1', 'corp'], ['#pg-divinc .phead h1', 'divinc'], ['#pg-dca .phead h1', 'dca'], ['#pg-batch .phead h1', 'batch'], ['#pg-import .phead h1', 'import'],
+  ['#pg-settings .sec', 'accounts', '帳戶'], ['#pg-settings h2', 'fees', '手續費折扣'], ['#pg-settings .sec', 'credit', '信用交易'], ['#pg-settings .sec', 'nhi', '股利']
+];
+function setupHelp() {
+  HELP_AT.forEach(([sel, k, txt]) => {
+    const el = $$(sel).find(e => !txt || e.textContent.trim().indexOf(txt) === 0);
+    if (!el || el.querySelector('.hi')) return;
+    const b = document.createElement('button');
+    b.className = 'hi'; b.type = 'button'; b.dataset.k = k; b.setAttribute('aria-label', '說明：' + HELP[k][0]); b.innerHTML = HI_SVG;
+    el.appendChild(b);
+  });
+  const ov = $('#ov-chartseg');
+  if (ov && !ov.parentNode.querySelector('.hi[data-k="chart"]')) {
+    const b = document.createElement('button'); b.className = 'hi'; b.type = 'button'; b.dataset.k = 'chart'; b.innerHTML = HI_SVG; b.setAttribute('aria-label', '說明：資產走勢圖');
+    b.style.cssText = 'align-self:flex-end;margin:-4px 0 0'; ov.parentNode.insertBefore(b, ov);
+  }
+  const est = $('#tr-est');
+  if (est && !est.previousElementSibling?.classList?.contains('hi')) {
+    const b = document.createElement('button'); b.className = 'hi'; b.type = 'button'; b.dataset.k = 'est'; b.innerHTML = HI_SVG; b.setAttribute('aria-label', '說明：預估金額');
+    b.style.cssText = 'align-self:flex-end;margin:0 0 -8px'; est.parentNode.insertBefore(b, est);
+  }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.hi');
+  if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const h = HELP[b.dataset.k]; if (!h) return;
+  showPop(b, h);
+}, true);
+// 說明小浮窗：出現在 ⓘ 旁邊，點外面、捲動或按 × 關閉
+let popEl = null, popFor = null;
+function closePop() { if (popEl) { popEl.remove(); popEl = null; popFor = null; } }
+function showPop(btn, h) {
+  if (popFor === btn) { closePop(); return; }
+  closePop();
+  const d = document.createElement('div');
+  d.className = 'hpop'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', h[0]);
+  d.innerHTML = '<button class="x" aria-label="關閉">×</button><h3>' + esc(h[0]) + '</h3><div class="helpbox">' + h[1]() + '</div><span class="arw"></span>';
+  document.body.appendChild(d);
+  const r = btn.getBoundingClientRect(), W = d.offsetWidth, H = d.offsetHeight, vw = innerWidth, vh = innerHeight, cx = r.left + r.width / 2;
+  const left = Math.max(12, Math.min(vw - W - 12, cx - W / 2));
+  const below = r.bottom + 10 + H <= vh - 12 || r.top - 10 - H < 12;
+  const top = below ? Math.min(r.bottom + 10, vh - H - 12) : r.top - 10 - H;
+  d.style.left = left + 'px'; d.style.top = Math.max(12, top) + 'px';
+  const a = d.querySelector('.arw');
+  a.style.left = Math.max(14, Math.min(W - 26, cx - left - 6)) + 'px';
+  if (below) a.style.top = '-7px'; else { a.style.bottom = '-7px'; a.style.transform = 'rotate(225deg)'; }
+  d.querySelector('.x').onclick = closePop;
+  popEl = d; popFor = btn;
+}
+document.addEventListener('pointerdown', e => { if (popEl && !popEl.contains(e.target) && !(e.target.closest && e.target.closest('.hi'))) closePop(); }, true);
+document.addEventListener('scroll', closePop, true);
+addEventListener('resize', closePop);
+const guideOn = () => DEMO ? lsGet('zqGuide') !== '0' : lsGet('zqGuide') === '1';
+function setGuide(on) { document.body.classList.toggle('guide', on); $('#gm-sw').checked = on; }
+$('#gm-sw').onchange = e => { lsSet('zqGuide', e.target.checked ? '1' : '0'); setGuide(e.target.checked); closePop(); if (e.target.checked) toast('引導模式：點 ⓘ 看說明'); };
 
 // ---------- 底部彈窗 ----------
 function openSheet(html) { $('#sheet-panel').innerHTML = html; $('#sheet').classList.add('show'); }
@@ -2058,6 +2183,7 @@ loadMeta().catch(() => {});
 window.addEventListener('resize', () => { if (current === 'overview') renderOvChart(); });
 </script>
 <script>
+setupHelp(); setGuide(guideOn());
 if (!DEMO) setTimeout(loadMe, 600);
 if (DEMO) { ACCT = 'main'; document.body.classList.add('demo'); document.getElementById('demo-exit').onclick = exitDemo; }
 // 背景程式：讓 App 可以安裝、離線也能打開畫面（資料仍要連線才會更新）
