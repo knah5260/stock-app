@@ -573,14 +573,14 @@ body.guide .hi{display:inline-flex}
   <div class="card col" style="gap:6px;font-size:14px;line-height:1.6">
     <b>目前支援</b>
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">國泰證券</b>：國泰證券 App 匯出的「客戶交易明細表」PDF（可選一整年）。有密碼的話，App 會請你輸入身分證字號。</span>
-    <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">元大證券</b>：投資先生 App「交易 → 明細」的截圖，可一次選多張，截圖之間有重疊沒關係，重複的會自動去掉。</span>
+    <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">元大證券</b>：①「電子月對帳單」PDF（最準）：投資先生 App「明細 → 月對帳單」選月份按「補寄」，把信裡的 PDF 附件存到「檔案」再選，可一次選好幾個月；密碼通常是身分證字號。②投資先生「交易 → 明細」的截圖，可一次選多張，重疊沒關係。</span>
     <span class="lbl" style="font-size:13px">檔案、截圖和密碼只在這台裝置上讀取，不會上傳。其他券商之後陸續加入。</span>
   </div>
   <div class="form" id="im-acctrow" style="display:none"><label class="selrow"><span>寫入帳戶</span><select id="im-acct"></select></label></div>
   <label class="card col" for="im-file" style="gap:6px;align-items:center;justify-content:center;min-height:110px;border-style:dashed;cursor:pointer;text-align:center">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--acc)"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
     <span style="font-weight:600;word-break:break-all" id="im-fname">選擇對帳單 PDF 或截圖</span>
-    <span class="lbl" id="im-finfo">國泰 PDF・元大投資先生截圖（可多選）</span>
+    <span class="lbl" id="im-finfo">國泰・元大 PDF 對帳單，或元大投資先生截圖（可多選）</span>
     <input type="file" id="im-file" accept=".pdf,application/pdf,image/*" multiple style="display:none">
   </label>
   <div id="im-result" style="display:none" class="col">
@@ -623,8 +623,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.9.3';
+const APP_VERSION = '2.10.0';
 const CHANGELOG = [
+  ['2.10.0', '2026-11-25', ['新增元大「電子月對帳單」PDF 匯入：有股票代號、實際手續費和交易稅，並和對帳單合計自動比對', '可以一次選好幾個月的 PDF，密碼只要輸入一次', 'PDF 裡的特殊字形（例如「⽇」「⾦」）會先轉成一般文字再判讀']],
   ['2.9.3', '2026-11-25', ['元大截圖：股票名稱只會辨識成真的股票名稱裡有的字，減少讀錯', '名稱還是對不到時，會從你交易過的股票裡用當天收盤價找出最可能的那檔，並標示請確認']],
   ['2.9.2', '2026-11-25', ['元大截圖：日期多讀一個 0（例如 007/07）也能正確判斷', '股票名稱讀錯一個字時（例如合晶讀成合唱），用當天收盤價比對找回正確的股票']],
   ['2.9.1', '2026-11-25', ['元大截圖辨識更準：改用畫面位置切出每一筆，一個日期讀錯不會影響其他筆；讀不到的欄位會單獨再辨識一次', '修正貼著列表頂端的那筆被誤判為截斷', '比對已記過的紀錄改用股票代號，日期差 3 天內、價格差 1% 內也會標成「可能已記過」']],
@@ -2365,7 +2366,7 @@ const imAcct = () => multi() ? $('#im-acct').value : writeAcct();
 function askPdfPassword(wrong) {
   return new Promise(res => {
     openSheet('<h2>這個 PDF 有密碼</h2><span class="sub">' + (wrong ? '<b style="color:#FF6B6B">密碼不對，請再試一次。</b><br>' : '') +
-      '國泰的對帳單密碼通常是身分證字號（英文字母大寫）。密碼只用來在這台裝置上打開檔案，不會儲存或上傳。</span>' +
+      '券商對帳單的密碼通常是身分證字號（英文字母大寫）。選了多個檔案的話，只要輸入一次。密碼只用來在這台裝置上打開檔案，不會儲存或上傳。</span>' +
       '<input id="im-pw" type="password" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="身分證字號" style="height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--tx);padding:0 14px;font-size:17px">' +
       '<button class="primary" id="im-pwok">打開</button><button class="link" id="im-pwno">取消</button>');
     const i = $('#im-pw'); setTimeout(() => i.focus(), 100);
@@ -2378,30 +2379,55 @@ $('#im-file').onchange = async e => {
   const files = [...e.target.files]; e.target.value = '';
   if (!files.length) return;
   if (files.every(x => /^image\//.test(x.type) || /\.(png|jpe?g|heic|webp)$/i.test(x.name))) return importShots(files);
-  const f = files.find(x => /pdf/i.test(x.type) || /\.pdf$/i.test(x.name)) || files[0];
-  $('#im-fname').textContent = f.name;
+  const pdfs = files.filter(x => /pdf/i.test(x.type) || /\.pdf$/i.test(x.name));
+  if (!pdfs.length) { $('#im-finfo').textContent = '請選擇 PDF 對帳單，或只選截圖'; return; }
+  $('#im-fname').textContent = pdfs.length > 1 ? pdfs.length + ' 個 PDF' : pdfs[0].name;
   $('#im-finfo').textContent = '讀取中…';
   $('#im-result').style.display = 'none'; $('#im-go').disabled = true; IM = null;
-  let pw = null, wrong = false, res = null;
+  // 多個 PDF（例如元大每月一份）：密碼通常一樣，問一次就沿用
+  let pw = null;
+  const all = [];
   try {
     const sym = await loadSymbols().catch(() => SYM);
-    for (let tries = 0; tries < 5; tries++) {
-      try { res = await ZQImport.parseFile(f, pw, {symbols: sym ? sym.list : []}); break; }
-      catch (x) {
-        if (x.code !== 'NEED_PW' && x.code !== 'WRONG_PW') throw x;
-        pw = await askPdfPassword(x.code === 'WRONG_PW' || wrong); wrong = true;
-        if (!pw) { $('#im-finfo').textContent = '已取消'; return; }
+    for (let fi = 0; fi < pdfs.length; fi++) {
+      const f = pdfs[fi]; let res = null;
+      if (pdfs.length > 1) $('#im-finfo').textContent = '讀取中…（' + (fi + 1) + '／' + pdfs.length + '）';
+      for (let tries = 0; tries < 5; tries++) {
+        try { res = await ZQImport.parseFile(f, pw, {symbols: sym ? sym.list : []}); break; }
+        catch (x) {
+          if (x.code !== 'NEED_PW' && x.code !== 'WRONG_PW') { if (pdfs.length > 1) x.message = f.name + '：' + x.message; throw x; }
+          pw = await askPdfPassword(x.code === 'WRONG_PW');
+          if (!pw) { $('#im-finfo').textContent = '已取消'; return; }
+        }
       }
+      if (!res) throw new Error('打不開 ' + f.name);
+      res.file = f.name; all.push(res);
     }
     pw = null;
-    if (!res) throw new Error('打不開這個檔案');
   } catch (x) {
+    pw = null;
     $('#im-finfo').textContent = x.code === 'FORMAT' || x.code === 'UNKNOWN' ? x.message : '讀取失敗：' + errMsg(x);
     return;
   }
-  $('#im-finfo').textContent = (f.size / 1024).toFixed(0) + ' KB · ' + res.broker + '「' + res.kind + '」';
+  const res = all.length === 1 ? all[0] : imMerge(all);
+  const kb = pdfs.reduce((a, f) => a + f.size, 0) / 1024;
+  $('#im-finfo').textContent = kb.toFixed(0) + ' KB · ' + [...new Set(all.map(r => r.broker + '「' + r.kind + '」'))].join('、') + (all.length > 1 ? ' × ' + all.length : '');
   await imFinish(res);
 };
+// 多份對帳單合成一份：明細接在一起，同一筆（例如重複選了同一個月）只留一次，合計各自比對後加總
+function imMerge(all) {
+  const seen = new Set(), rows = [], warnings = [], ck = {}, used = [];
+  all.forEach(r => {
+    const sig = r.rows.map(x => [x.date, x.item, x.code || x.name, x.shares, x.price, x.net].join('|')).join(';');
+    if (r.rows.length && seen.has(sig)) { warnings.push(r.file + ' 和前面選的是同一份，略過'); return; }
+    seen.add(sig); used.push(r);
+    r.rows.forEach(x => rows.push(x));
+    r.warnings.forEach(w => warnings.push(r.file + '：' + w));
+    (r.check || []).forEach(c => { const t = ck[c.name] || (ck[c.name] = {name: c.name, file: 0, got: 0, ok: true}); t.file += c.file; t.got += c.got; t.ok = t.ok && c.ok; });
+  });
+  rows.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  return {broker: [...new Set(used.map(r => r.broker))].join('、'), kind: [...new Set(used.map(r => r.kind))].join('、'), rows, warnings, check: Object.values(ck)};
+}
 async function imFinish(res) {
   // 跟已經記過的紀錄比對（同日期、買賣、股票、股數、價格），重複的預設不勾
   const acct = imAcct();
@@ -2495,7 +2521,7 @@ $('#im-go').onclick = async () => {
     await callIn(acct, 'appImportRecords', list);
     toast('已匯入 ' + list.length + ' 筆'); afterWrite();
     if (window.zqTrack) window.zqTrack(/元大/.test(IM.res.broker) ? 'import-yuanta' : 'import-cathay', true);
-    IM = null; $('#im-result').style.display = 'none'; $('#im-fname').textContent = '選擇對帳單 PDF 或截圖'; $('#im-finfo').textContent = '國泰 PDF・元大投資先生截圖（可多選）';
+    IM = null; $('#im-result').style.display = 'none'; $('#im-fname').textContent = '選擇對帳單 PDF 或截圖'; $('#im-finfo').textContent = '國泰・元大 PDF 對帳單，或元大投資先生截圖（可多選）';
     closePage();
   } catch (e) { toast('匯入失敗：' + errMsg(e), 5000); imBtn(); }
 };

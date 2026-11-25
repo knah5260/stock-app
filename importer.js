@@ -32,7 +32,7 @@
         const y = it.transform[5], x = it.transform[4];
         let r = rows.find(z => Math.abs(z.y - y) < 2);
         if (!r) rows.push(r = {y: y, its: []});
-        r.its.push({s: it.str, l: x, r: x + it.width});
+        r.its.push({s: it.str.normalize ? it.str.normalize('NFKC') : it.str, l: x, r: x + it.width});
       });
       rows.sort((a, b) => b.y - a.y);
       pages.push(rows.map(r => {
@@ -42,7 +42,7 @@
           const t = toks[toks.length - 1];
           if (t && it.l - t.r < 1.5) { t.s += it.s; t.r = it.r; } else toks.push({s: it.s, l: it.l, r: it.r});
         });
-        return toks.map(t => ({s: t.s.trim(), l: t.l, r: t.r})).filter(t => t.s && !/^-+$/.test(t.s));
+        return toks.map(t => ({s: t.s.trim(), l: t.l, r: t.r, y: r.y})).filter(t => t.s && !/^-+$/.test(t.s));
       }).filter(l => l.length));
       page.cleanup();
     }
@@ -150,20 +150,112 @@
     rows.forEach(r => { if (r.item === '買進' && dt.has(r.date + '|' + r.code)) r.dayTrade = true; });
   }
 
+  // ================= 元大電子月對帳單（PDF）=================
+  // 每筆兩行：上行「成交日期 交易類別 幣別 買賣 代號 … 股數 單價 成交金額 手續費 交易稅 客戶淨收（付）」，下行「交割日期 股票名稱」
+  // 數字欄不一定和日期同一行（垂直置中），所以用兩個日期的高度圈出一筆的範圍
+  function isYuantaStmt(pages) {
+    const t = pages.flat().map(l => l.map(x => x.s).join('')).join('\n');
+    return /客戶淨收/.test(t) && /(代繳交易稅|代繳)/.test(t) && /(交割日期|交易明細)/.test(t);
+  }
+  function parseYuantaStmt(pages) {
+    const out = {broker: '元大證券', kind: '電子月對帳單', rows: [], warnings: [], check: null};
+    const reDate = /^(\d{4}|\d{2,3})\/(\d{1,2})\/(\d{1,2})$/;
+    const toDate = s => { const m = reDate.exec(s); if (!m) return ''; const y = m[1].length === 4 ? +m[1] : +m[1] + 1911; return y + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0'); };
+    const isNum = s => /^\(?-?[\d,]+(\.\d+)?\)?$/.test(s);
+    const nv = s => Number(String(s).replace(/[(),]/g, ''));
+    let totAmt = 0, totFee = 0, totTax = 0, hasTot = false;
+    pages.forEach((lines, pi) => {
+      const toks = lines.flat();
+      // 合計列
+      lines.forEach(l => {
+        const t = l.map(x => x.s).join('');
+        if (/合計/.test(t) && /成交金額/.test(t)) {
+          const g = re => { const m = re.exec(t); return m ? nv(m[1]) : 0; };
+          totAmt += g(/成交金額[:：]?([\d,]+)/); totFee += g(/手續費[:：]?([\d,]+)/); totTax += g(/交易稅[:：]?([\d,]+)/); hasTot = true;
+        }
+      });
+      // 左欄的日期，兩兩一組
+      const dates = toks.filter(t => reDate.test(t.s)).sort((a, b) => b.y - a.y);
+      if (!dates.length) return;
+      const minL = Math.min(...dates.map(d => d.l));
+      const left = dates.filter(d => d.l - minL < 20);
+      for (let i = 0; i < left.length; i++) {
+        const a = left[i], b = left[i + 1];
+        const lh = b ? a.y - b.y : 0;
+        if (!b || lh > 30 || lh <= 0) continue;
+        i++;
+        const lo = b.y - lh * 0.6, hi = a.y + lh * 0.6;
+        const band = toks.filter(t => t.y >= lo && t.y <= hi && t !== a && t !== b).sort((p, q) => p.l - q.l);
+        const r = {page: pi + 1, date: toDate(a.s), settle: toDate(b.s), issues: [], market: '', credit: false};
+        const bs = band.find(t => /^(資|券|沖)?(買|賣)$/.test(t.s) || /^(現沖|當沖)(買|賣)$/.test(t.s));
+        r.cd = bs ? bs.s : '';
+        r.item = !bs ? '' : /資買/.test(bs.s) ? '融資買進' : /資賣/.test(bs.s) ? '融資賣出' : /券賣/.test(bs.s) ? '融券賣出' : /券買/.test(bs.s) ? '融券買進' : /買/.test(bs.s) ? '買進' : '賣出';
+        r.credit = /資|券/.test(r.cd);
+        r.dayTrade = /沖/.test(r.cd);
+        const cat = band.find(t => /^(集中|櫃檯|櫃買|興櫃|上市|上櫃)$/.test(t.s));
+        r.market = cat ? (/集中|上市/.test(cat.s) ? '上市' : /興櫃/.test(cat.s) ? '興櫃' : '上櫃') : '';
+        const after = bs ? band.filter(t => t.l > bs.l) : band;
+        const codeT = after.find(t => /^\d{4}[0-9A-Z]{0,2}$/.test(t.s) && !/,/.test(t.s));
+        r.code = codeT ? codeT.s : '';
+        const nameT = band.filter(t => /[一-鿿]/.test(t.s) && t !== cat && t !== bs && !/^TWD$/.test(t.s) && (!codeT || Math.abs((t.l + t.r) / 2 - (codeT.l + codeT.r) / 2) < 60));
+        r.name = nameT.map(t => t.s).join('');
+        const nums = after.filter(t => t !== codeT && isNum(t.s) && (!codeT || t.l > codeT.r - 1)).sort((p, q) => p.l - q.l);
+        const v = nums.map(t => t.s);
+        // 依序：股數、單價、成交金額、手續費、(交易稅)、客戶淨收付；用金額互相驗算選出正確的對應
+        const tryMap = hasTax => {
+          if (v.length < (hasTax ? 6 : 5)) return null;
+          const shares = nv(v[0]), price = nv(v[1]), amt = nv(v[2]), fee = nv(v[3]), tax = hasTax ? nv(v[4]) : 0, netS = v[hasTax ? 5 : 4];
+          const net = nv(netS), pay = /^\(/.test(netS);
+          if (Math.abs(Math.round(shares * price) - amt) > 1) return null;
+          const buy = /買/.test(r.item);
+          const want = buy ? amt + fee : amt - fee - tax;
+          if (want !== net) return null;
+          return {shares, price, amt, fee, tax, net, pay};
+        };
+        const m = tryMap(true) || tryMap(false);
+        if (m) Object.assign(r, m);
+        else {
+          r.shares = nv(v[0]) || 0; r.price = nv(v[1]) || 0; r.amt = nv(v[2]) || 0; r.fee = nv(v[3]) || 0; r.tax = 0; r.net = nv(v[v.length - 1]) || 0;
+          r.issues.push('數字對不上，請確認（讀到：' + v.join(' ') + '）');
+        }
+        if (!r.item) r.issues.push('看不出是買還是賣');
+        if (r.credit) r.issues.push('融資融券的匯入還在測試，請確認數字');
+        if (m && /買/.test(r.item) !== m.pay && /買|賣/.test(r.item)) r.issues.push('買賣方向和收付不一致，請確認');
+        out.rows.push(r);
+      }
+    });
+    if (hasTot) {
+      const s = f => out.rows.reduce((a, r) => a + (r[f] || 0), 0);
+      out.check = [['amt', '成交金額', totAmt], ['fee', '手續費', totFee], ['tax', '交易稅', totTax]].map(([f, n, t]) => ({name: n, file: t, got: s(f), ok: t === s(f)}));
+      out.check.filter(c => !c.ok).forEach(c => out.warnings.push(c.name + '合計對不上（對帳單 ' + c.file + '，讀到 ' + c.got + '）'));
+    }
+    if (!out.rows.length) out.warnings.push('沒有讀到交易明細（這個月可能沒有交易）');
+    return out;
+  }
+
   async function parseFile(file, password, opts) {
     const o = opts || {};
-    if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { const e = new Error('目前只支援國泰證券 App 匯出的 PDF'); e.code = 'FORMAT'; throw e; }
+    if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { const e = new Error('請選擇 PDF 對帳單或投資先生截圖'); e.code = 'FORMAT'; throw e; }
     const pages = await readPdf(await file.arrayBuffer(), password, o.lib);
-    if (!isCathay(pages)) { const e = new Error('看不出是哪家券商的對帳單。目前支援國泰證券 App 匯出的「客戶交易明細表」'); e.code = 'UNKNOWN'; throw e; }
-    const res = parseCathay(pages);
-    res.rows.forEach(r => {
-      const s = o.symbols ? resolveCode(r.name, r.market, o.symbols) : null;
-      if (s) { r.code = s.code; r.fullName = s.name + '（' + s.code + '）'; if (r.market && s.market !== r.market) r.issues.push('市場別不同（對帳單：' + r.market + '，代號表：' + s.market + '）'); }
-    });
+    let res;
+    if (isCathay(pages)) {
+      res = parseCathay(pages);
+      res.rows.forEach(r => {
+        const s = o.symbols ? resolveCode(r.name, r.market, o.symbols) : null;
+        if (s) { r.code = s.code; r.fullName = s.name + '（' + s.code + '）'; if (r.market && s.market !== r.market) r.issues.push('市場別不同（對帳單：' + r.market + '，代號表：' + s.market + '）'); }
+      });
+    } else if (isYuantaStmt(pages)) {
+      res = parseYuantaStmt(pages);
+      res.rows.forEach(r => {
+        const s = r.code && o.symbols ? o.symbols.find(x => x[0] === r.code) : null;
+        if (s) r.fullName = s[1] + '（' + s[0] + '）';
+        else if (r.code) r.issues.push('代號表裡找不到 ' + r.code + '，可能已下市或改名');
+        else { const t = o.symbols ? resolveCode(r.name, r.market, o.symbols) : null; if (t) { r.code = t.code; r.fullName = t.name + '（' + t.code + '）'; } }
+      });
+    } else { const e = new Error('看不出是哪家券商的對帳單。目前支援國泰「客戶交易明細表」、元大「電子月對帳單」PDF'); e.code = 'UNKNOWN'; throw e; }
     markDayTrade(res.rows);
     return res;
   }
-
 
   // ================= 元大「投資先生」App 明細截圖 =================
   // 版面（以寬 1184 為基準的比例）：日期｜名稱（下面一行是交易類別，紅＝買、綠＝賣）｜價格／股數｜應收付／損益
@@ -443,6 +535,6 @@
     return parseYuantaShots(imgs, Object.assign({ocr: ocrStrip, priceOn: pricePxOn}, opts));
   }
 
-  const api = {readPdf, parseCathay, isCathay, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip};
+  const api = {readPdf, parseCathay, isCathay, parseYuantaStmt, isYuantaStmt, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip};
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ZQImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);
