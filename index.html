@@ -176,7 +176,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 .avatar{width:40px;height:40px;border-radius:20px;border:1px solid #2A2E36;background:linear-gradient(160deg,#2A3240,#1A1E26);display:flex;align-items:center;justify-content:center;color:#C9D6EA;position:relative;flex-shrink:0}
 .avatar .dot{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:8px;background:var(--acc);color:#1A1208;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px}
 .avatar .dot.on{display:flex}
-.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.avatar img{position:absolute;inset:0;width:100%;height:100%;max-width:none;display:block;border-radius:50%;object-fit:cover;object-position:center}
 .drawer{position:absolute;inset:0;z-index:30;pointer-events:none}
 .drawer .bg{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;transition:opacity .25s}
 .drawer .dp{position:absolute;top:0;bottom:0;left:0;width:min(320px,84%);background:#121519;border-right:1px solid #22262E;transform:translateX(-102%);transition:transform .3s cubic-bezier(.3,.9,.3,1);
@@ -609,8 +609,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.5.1';
+const APP_VERSION = '2.5.2';
 const CHANGELOG = [
+  ['2.5.2', '2026-11-25', ['修正側邊選單和總覽的大頭貼被壓扁成橢圓的問題']],
   ['2.5.1', '2026-11-25', ['加入主畫面的 Safari 步驟依實際畫面修正：頁面選單 → 分享 → 檢視較多 → 加入主畫面 → 加入']],
   ['2.5.0', '2026-11-25', ['用瀏覽器開啟時，會自動提醒加到主畫面，並分別提供 Safari 和 Chrome 的步驟', 'Android 的 Chrome 可一鍵安裝', '在 LINE、Facebook、Instagram 裡開啟時，提醒改用瀏覽器開啟', '設定 → 關於 新增「加入主畫面」按鈕']],
   ['2.4.0', '2026-11-25', ['新增引導模式：右上角開關打開後，各功能旁會出現 ⓘ，點開說明用途與算法，並帶入你的數字', '沒登入時直接用示範資料展示，並自動開啟引導模式；按上方「登入使用」即可用 Google 帳號登入']],
