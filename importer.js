@@ -164,6 +164,233 @@
     return res;
   }
 
-  const api = {readPdf, parseCathay, isCathay, resolveCode, markDayTrade, parseFile};
+
+  // ================= 元大「投資先生」App 明細截圖 =================
+  // 版面（以寬 1184 為基準的比例）：日期｜名稱（下面一行是交易類別，紅＝買、綠＝賣）｜價格／股數｜應收付／損益
+  const YT_COLS = {date: [0, 0.144], name: [0.144, 0.38], num: [0.38, 0.612], net: [0.642, 0.93]};
+  function rowMedian(img, y) {
+    const a = [];
+    for (let i = 0; i < 48; i++) { const x = Math.floor((i + 0.5) * img.w / 48), o = (y * img.w + x) * 4; a.push(Math.max(img.d[o], img.d[o + 1], img.d[o + 2])); }
+    a.sort((p, q) => p - q); return a[24];
+  }
+  // 找列表範圍：表頭是一條比底色亮的漸層帶，底部「注意事項」是純黑
+  function ytArea(img) {
+    const m = []; for (let y = 0; y < img.h; y++) m.push(rowMedian(img, y));
+    const k = img.w / 1184;
+    const bgArr = m.slice(Math.floor(img.h * 0.45), Math.floor(img.h * 0.6)).slice().sort((a, b) => a - b);
+    const bg = bgArr[Math.floor(bgArr.length / 2)];
+    let top = -1, run = 0;
+    for (let y = Math.floor(img.h * 0.15); y < img.h * 0.55; y++) {
+      if (m[y] > bg + 12) run++; else { if (run > 40 * k) top = y; run = 0; }
+      if (top > 0 && run === 0 && y > top + 5) break;
+    }
+    let bot = -1; run = 0;
+    for (let y = Math.max(top, Math.floor(img.h * 0.5)); y < img.h; y++) { if (m[y] <= 2 && bg > 4) { run++; if (run > 20 * k) { bot = y - run; break; } } else run = 0; }
+    if (top < 0) top = Math.round(img.h * 0.322);
+    if (bot < 0) bot = Math.round(img.h * 0.869);
+    return {top: top + 2, bot: bot - 2, dark: bg < 100};
+  }
+  // 白底黑字的二值化圖：彩色字取 RGB 最大值，所以紅綠字也會被當成字
+  function ytStrip(img, x0, y0, x1, y1, dark) {
+    x0 = Math.max(0, Math.round(x0)); x1 = Math.min(img.w, Math.round(x1)); y0 = Math.max(0, Math.round(y0)); y1 = Math.min(img.h, Math.round(y1));
+    const w = x1 - x0, h = y1 - y0, d = new Uint8ClampedArray(w * h * 4);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = ((y + y0) * img.w + x + x0) * 4, v = Math.max(img.d[i], img.d[i + 1], img.d[i + 2]);
+      const ink = dark ? v > 110 : v < 140, o = (y * w + x) * 4;
+      d[o] = d[o + 1] = d[o + 2] = ink ? 0 : 255; d[o + 3] = 255;
+    }
+    return {w: w, h: h, d: d, x0: x0, y0: y0};
+  }
+  function ytColor(img, x0, y0, x1, y1) {
+    let r = 0, g = 0;
+    for (let y = Math.max(0, Math.round(y0)); y < Math.min(img.h, Math.round(y1)); y += 1) for (let x = Math.max(0, Math.round(x0)); x < Math.min(img.w, Math.round(x1)); x += 2) {
+      const i = (y * img.w + x) * 4, R = img.d[i], G = img.d[i + 1], B = img.d[i + 2];
+      if (R > 120 && R > G + 50 && R > B + 30) r++; else if (G > 120 && G > R + 50) g++;
+    }
+    return r > g * 2 && r > 20 ? 'red' : g > r * 2 && g > 20 ? 'green' : '';
+  }
+  const digits = s => String(s || '').replace(/[^\d]/g, '');
+  function priceCands(t) {
+    t = String(t || '').replace(/[^\d.,]/g, '');
+    const out = new Set(), plain = digits(t);
+    if (!plain) return [];
+    if (/\./.test(t)) { const v = Number(t.replace(/,/g, '')); if (v > 0) out.add(v); }
+    [1, 10, 100].forEach(f => { const v = Number(plain) / f; if (v > 0) out.add(Math.round(v * 100) / 100); });
+    return [...out];
+  }
+  // 相似度：最長共同子序列 / 較長字串長度
+  function sim(a, b) {
+    const n = a.length, m = b.length; if (!n || !m) return 0;
+    const dp = Array.from({length: n + 1}, () => new Array(m + 1).fill(0));
+    for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++) dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    return dp[n][m] / Math.max(n, m);
+  }
+  const cleanName = s => String(s || '').replace(/[\s*＊.。、,，'"`|]/g, '').replace(/(\d)[OoQ]$/, '$1').toUpperCase();
+  async function ytResolve(name, date, price, list, priceOn) {
+    const n = cleanName(name);
+    const cands = list.map(x => ({x: x, s: sim(n, cleanName(x[1]))})).filter(c => c.s >= 0.6).sort((a, b) => b.s - a.s).slice(0, 6);
+    for (const c of cands) {
+      let ok = null;
+      if (priceOn) { try { const cl = await priceOn(date, c.x[0]); if (cl) ok = Math.abs(price / cl - 1) < 0.12; } catch (e) {} }
+      c.ok = ok;
+    }
+    const good = cands.filter(c => c.ok === true);
+    const pick = good.length ? good[0] : cands.find(c => c.ok === null && c.s >= 0.85);
+    return pick ? {code: pick.x[0], name: pick.x[1], market: pick.x[2], sure: !!good.length && pick.s >= 0.75} : null;
+  }
+  async function parseYuantaShots(imgs, o) {
+    const res = {broker: '元大證券', kind: '投資先生 App 明細截圖', rows: [], warnings: [], check: null};
+    const per = [];
+    for (let ii = 0; ii < imgs.length; ii++) {
+      const img = imgs[ii], k = img.w / 1184, A = ytArea(img);
+      if (o.progress) o.progress(ii, imgs.length);
+      const L = {};
+      for (const c of ['date', 'name', 'num', 'net']) {
+        const [a, b] = YT_COLS[c];
+        const st = ytStrip(img, a * img.w, A.top, b * img.w, A.bot, A.dark);
+        const lines = await o.ocr(st, c === 'name' ? 'text' : 'digits');
+        L[c] = lines.map(l => ({y0: l.y0 + st.y0, y1: l.y1 + st.y0, t: String(l.text || '').replace(/\s+/g, '').trim(), conf: l.conf})).filter(l => l.t).sort((p, q) => p.y0 - q.y0);
+      }
+      // 以日期欄找出每一筆：上一行「2026/」、下一行「MM/DD」
+      const anchors = []; const dl = L.date;
+      for (let i = 0; i < dl.length; i++) {
+        const y = /^(20\d\d)\/?$/.exec(dl[i].t.replace(/[^\d/]/g, ''));
+        if (!y) continue;
+        const nx = dl[i + 1], md = nx && /^(\d{1,2})\/(\d{1,2})$/.exec(nx.t.replace(/[^\d/]/g, ''));
+        if (!md || nx.y0 - dl[i].y0 > 110 * k) { res.warnings.push('第 ' + (ii + 1) + ' 張有一筆被截斷，沒有匯入'); continue; }
+        anchors.push({yT: dl[i].y0, yB: nx.y1, date: y[1] + '-' + md[1].padStart(2, '0') + '-' + md[2].padStart(2, '0')}); i++;
+      }
+      if (dl.length && /^\d{1,2}\/\d{1,2}$/.test(dl[0].t.replace(/[^\d/]/g, '')) && (!anchors.length || dl[0].y0 < anchors[0].yT)) res.warnings.push('第 ' + (ii + 1) + ' 張最上面有一筆被截斷，沒有匯入');
+      const rowsHere = [];
+      anchors.forEach((an, j) => {
+        const lo = j ? (anchors[j - 1].yB + an.yT) / 2 : an.yT - 70 * k, hi = j < anchors.length - 1 ? (an.yB + anchors[j + 1].yT) / 2 : an.yB + 60 * k;
+        const inB = arr => arr.filter(l => (l.y0 + l.y1) / 2 >= lo && (l.y0 + l.y1) / 2 < hi);
+        const nm = inB(L.name), nu = inB(L.num), ne = inB(L.net);
+        const r = {date: an.date, issues: [], img: ii + 1};
+        if (nm.length < 2 || nu.length < 2 || !ne.length) { if (j === anchors.length - 1 && hi > A.bot - 20 * k) res.warnings.push('第 ' + (ii + 1) + ' 張最下面有一筆被截斷，沒有匯入'); else { r.issues.push('有欄位讀不到'); r.name = (nm[0] || {}).t || '?'; r.raw = [nm, nu, ne].map(a => a.map(l => l.t).join(' ')).join(' | '); rowsHere.push(r); } return; }
+        const typeL = nm[nm.length - 1];
+        r.name = nm.slice(0, -1).map(l => l.t).join('');
+        r.cd = typeL.t;
+        const col = ytColor(img, YT_COLS.name[0] * img.w, typeL.y0, YT_COLS.name[1] * img.w, typeL.y1);
+        const tb = /買/.test(r.cd) ? 'buy' : /賣/.test(r.cd) ? 'sell' : '';
+        const side = col === 'red' ? 'buy' : col === 'green' ? 'sell' : tb;
+        if (!side) r.issues.push('看不出是買還是賣');
+        if (tb && col && tb !== side) r.issues.push('交易類別和顏色不一致');
+        r.item = side === 'buy' ? '買進' : side === 'sell' ? '賣出' : '';
+        r.dayTrade = /沖/.test(r.cd);
+        if (/資|券/.test(r.cd)) r.issues.push('融資融券的截圖匯入還不支援，請確認');
+        r.net = Number(digits(ne[0].t)) || 0;
+        r.pl = ne[1] ? ne[1].t : '';
+        // 價格、股數：用「價格 × 股數」和應收付互相驗證，挑出合理的組合（修正小數點、千分位被讀錯）
+        const sh = Number(digits(nu[1].t)) || 0, pcs = priceCands(nu[0].t);
+        let best = null;
+        pcs.forEach(p => {
+          const amt = Math.round(p * sh); if (!amt) return;
+          const diff = side === 'buy' ? r.net - amt : amt - r.net;
+          const max = side === 'buy' ? Math.max(20, amt * 0.001425) + 1 : amt * 0.0045 + 21;
+          if (diff >= 0 && diff <= max && (!best || diff < best.diff)) best = {p: p, amt: amt, diff: diff};
+        });
+        r.shares = sh;
+        if (best) { r.price = best.p; r.amt = best.amt; r.cost = best.diff; }
+        else { r.price = pcs[0] || 0; r.amt = Math.round(r.price * sh); r.cost = null; r.issues.push('價格 × 股數和應收付對不上，可能有數字讀錯'); }
+        rowsHere.push(r);
+      });
+      per.push(rowsHere);
+    }
+    if (o.progress) o.progress(imgs.length, imgs.length);
+    // 每張截圖裡日期應該由舊到新；跳回去的日期多半是讀錯（例如 11/23 讀成 1/23）
+    per.forEach(rows => {
+      let last = '';
+      rows.forEach((r, i) => {
+        const next = rows.slice(i + 1).find(x => x.date) || null;
+        r.dateBad = !!((last && r.date < last) || (next && r.date > next.date && (!last || next.date >= last)));
+        if (!r.dateBad) last = r.date;
+      });
+    });
+    // 重疊的截圖：同一筆（買賣、價格、股數、應收付都一樣）在多張出現只算一次；同一張裡重複的保留
+    const key = r => [r.item, r.price, r.shares, r.net].join('|');
+    const groups = {};
+    per.forEach((rows, ii) => { const c = {}; rows.forEach(r => { const kk = key(r); c[kk] = (c[kk] || 0) + 1; const g = groups[kk] || (groups[kk] = []); (g[c[kk] - 1] || (g[c[kk] - 1] = [])).push(r); }); });
+    Object.keys(groups).forEach(kk => groups[kk].forEach(same => {
+      const pick = same.find(r => !r.dateBad && !r.issues.length) || same.find(r => !r.dateBad) || same[0];
+      const dates = new Set(same.filter(r => !r.dateBad).map(r => r.date));
+      if (pick.dateBad) pick.issues.push('日期可能讀錯（讀到 ' + pick.date + '），請確認');
+      else if (dates.size > 1) pick.issues.push('不同截圖讀到的日期不一樣，請確認');
+      res.rows.push(pick);
+    }));
+    res.rows.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    // 股票代號、手續費與稅
+    for (const r of res.rows) {
+      if (!r.item || !r.price) continue;
+      const s = await ytResolve(r.name, r.date, r.price, o.symbols || [], o.priceOn);
+      if (s) { r.code = s.code; r.fullName = s.name + '（' + s.code + '）'; if (!s.sure) r.issues.push('股票名稱是推測的（讀到「' + r.name + '」），請確認'); }
+      if (r.cost === null || r.cost === undefined) { r.fee = 0; r.tax = 0; continue; }
+      if (r.item === '買進') { r.fee = r.cost; r.tax = 0; }
+      else {
+        const etf = /^0/.test(r.code || '');
+        const t = Math.floor(r.amt * (etf ? 0.001 : r.dayTrade ? 0.0015 : 0.003));
+        r.tax = Math.min(t, r.cost); r.fee = r.cost - r.tax;
+      }
+    }
+    res.rows.forEach(r => { r.market = ''; r.credit = false; });
+    return res;
+  }
+
+  // 瀏覽器：用 tesseract.js 在裝置上辨識文字（不上傳），第一次使用會下載辨識模型
+  let ocrP = null;
+  function browserOcr() {
+    if (ocrP) return ocrP;
+    ocrP = new Promise((ok, no) => {
+      if (root.Tesseract) return ok(root.Tesseract);
+      const s = document.createElement('script'); s.src = BASE + 'vendor/tesseract/tesseract.min.js';
+      s.onload = () => ok(root.Tesseract); s.onerror = () => no(new Error('辨識元件載入失敗，請確認網路')); document.head.appendChild(s);
+    }).then(async T => {
+      const simd = await (async () => { try { return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11])); } catch (e) { return false; } })();
+      const opt = {workerPath: BASE + 'vendor/tesseract/worker.min.js', corePath: BASE + 'vendor/tesseract/' + (simd ? 'tesseract-core-simd-lstm.js' : 'tesseract-core-lstm.js'),
+        langPath: BASE + 'vendor/tesseract', gzip: true, cacheMethod: 'write', workerBlobURL: false};
+      const wt = await T.createWorker('chi_tra', 1, opt), wd = await T.createWorker('chi_tra', 1, opt);
+      await wt.setParameters({tessedit_pageseg_mode: '6'});
+      await wd.setParameters({tessedit_pageseg_mode: '6', tessedit_char_whitelist: '0123456789.,-/'});
+      return {wt: wt, wd: wd};
+    });
+    ocrP.catch(() => { ocrP = null; });
+    return ocrP;
+  }
+  async function ocrStrip(st, mode) {
+    const W = await browserOcr();
+    const c = document.createElement('canvas'); c.width = st.w; c.height = st.h;
+    c.getContext('2d').putImageData(new ImageData(st.d, st.w, st.h), 0, 0);
+    const {data} = await (mode === 'text' ? W.wt : W.wd).recognize(c, {}, {blocks: true});
+    const out = [];
+    (data.blocks || []).forEach(B => B.paragraphs.forEach(p => p.lines.forEach(l => out.push({y0: l.bbox.y0, y1: l.bbox.y1, text: l.text, conf: l.confidence}))));
+    return out;
+  }
+  const pxCache = {};
+  function pricePxOn(date, code) {
+    const ym = date.slice(0, 7);
+    if (!pxCache[ym]) pxCache[ym] = fetch(BASE + 'data/px/' + ym + '.json').then(r => r.ok ? r.json() : null).catch(() => null);
+    return pxCache[ym].then(j => {
+      if (!j || !j.c || !j.c[code]) return null;
+      const i = j.d.indexOf(date), a = j.c[code];
+      if (i >= 0 && a[i]) return a[i];
+      for (let t = Math.min(a.length - 1, i < 0 ? a.length - 1 : i); t >= 0; t--) if (a[t]) return a[t];
+      return null;
+    });
+  }
+  async function fileToImg(f) {
+    const bmp = await createImageBitmap(f);
+    const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+    const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height);
+    return {w: c.width, h: c.height, d: d.data};
+  }
+  async function parseShots(files, opts) {
+    const imgs = []; for (const f of files) imgs.push(await fileToImg(f));
+    if (opts.progress) opts.progress(-1, files.length);
+    await browserOcr();
+    return parseYuantaShots(imgs, Object.assign({ocr: ocrStrip, priceOn: pricePxOn}, opts));
+  }
+
+  const api = {readPdf, parseCathay, isCathay, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip};
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ZQImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

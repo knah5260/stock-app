@@ -86,7 +86,7 @@ https://github.com/user-attachments/assets/f0cde64c-d5d7-4146-9403-ca20b7dc8336
 - 現金股利、股票股利、股票分割、減資、現金增資
 - 每筆交易可寫進出場理由
 - 批次新增、定期定額自動帶入扣款日收盤價
-- 匯入券商對帳單：目前支援國泰證券 App 匯出的「客戶交易明細表」PDF（含密碼保護），自動對應代號、判斷當沖、跳過重複，手續費和稅照對帳單實際金額（檔案只在你的裝置上讀取）
+- 匯入券商對帳單：國泰證券 App 匯出的「客戶交易明細表」PDF（含密碼保護）、元大投資先生 App「明細」截圖（在手機上文字辨識，並用價格 × 股數和應收付驗算），自動對應代號、判斷當沖、跳過重複（檔案和截圖只在你的裝置上讀取）
 - 除權息與股本變動提醒：比對證交所、櫃買中心公告，找出還沒記錄的配息配股
 
 **分析**
@@ -174,6 +174,7 @@ https://github.com/user-attachments/assets/f0cde64c-d5d7-4146-9403-ca20b7dc8336
 ## 第三方元件
 
 - [PDF.js](https://github.com/mozilla/pdf.js)（Apache License 2.0）：用來在你的裝置上讀取對帳單 PDF，放在 `vendor/pdfjs/`
+- [Tesseract.js](https://github.com/naptha/tesseract.js) 與繁體中文辨識模型（Apache License 2.0）：用來在你的裝置上辨識截圖文字，放在 `vendor/tesseract/`
 
 ## 版權
 
