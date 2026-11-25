@@ -132,7 +132,9 @@ async function runDays(key, fn) {
 
 // ---- 除權息、分割、減資 ----
 async function corpActions() {
-  const ca = readJ('ca.json', {ev: [], years: {}, detail: {}});
+  // 完整進度存在 state-ca.json；給 App 讀的 ca.json 只放最近 4 年、精簡格式
+  let ca = readJ('state-ca.json', null);
+  if (!ca) { const old = readJ('ca.json', {}); ca = old.years ? old : {ev: [], years: {}, detail: {}}; }
   const y0 = +START.slice(0, 4), y1 = +TODAY.slice(0, 4);
   const ev = ca.ev.filter(e => e.src === 'tw49' || e.src === 'tp49');
   const keepYear = (src, y) => { for (let i = ev.length - 1; i >= 0; i--) if (ev[i].src === src && ev[i].date.slice(0, 4) === String(y)) ev.splice(i, 1); };
@@ -196,7 +198,10 @@ async function corpActions() {
   }
   ca.ev = ev.concat(sp.length ? sp : old).filter(x => x.date).sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : 0);
   ca.at = new Date().toISOString();
-  writeJ('ca.json', ca);
+  writeJ('state-ca.json', ca);
+  const F = ['date', 'code', 'kind', 'mkt', 'tag', 'val', 'cash', 'perK', 'ratio', 'why'];
+  const from = (+TODAY.slice(0, 4) - 4) + TODAY.slice(4);
+  writeJ('ca.json', {at: ca.at, f: F, ev: ca.ev.filter(x => x.date >= from).map(x => F.map(k => x[k] === undefined ? null : x[k]))});
   return ca;
 }
 
