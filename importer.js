@@ -364,7 +364,12 @@
     for (const r of res.rows) {
       r.fee = r.fee || 0; r.tax = r.tax || 0;
       if (!r.item || !r.price) continue;
-      const s = await ytResolve(r.name, r.date, r.price, o.symbols || [], o.priceOn);
+      let s = await ytResolve(r.name, r.date, r.price, o.symbols || [], o.priceOn);
+      if (!s && o.known && o.known.length && o.priceOn) {
+        const hit = [];
+        for (const c of o.known) { try { const cl = await o.priceOn(r.date, c); if (cl && Math.abs(r.price / cl - 1) < 0.05) hit.push(c); } catch (e) {} }
+        if (hit.length === 1) { const x = (o.symbols || []).find(y => y[0] === hit[0]); if (x) s = {code: x[0], name: x[1], market: x[2], sure: false}; }
+      }
       if (s) { r.code = s.code; r.fullName = s.name + '（' + s.code + '）'; if (!s.sure) r.issues.push('股票名稱是推測的（讀到「' + r.name + '」），請確認'); }
       if (r.cost === null || r.cost === undefined) { r.fee = 0; r.tax = 0; continue; }
       if (r.item === '買進') { r.fee = r.cost; r.tax = 0; }
@@ -429,7 +434,12 @@
   async function parseShots(files, opts) {
     const imgs = []; for (const f of files) imgs.push(await fileToImg(f));
     if (opts.progress) opts.progress(-1, files.length);
-    await browserOcr();
+    const W = await browserOcr();
+    // 名稱欄只允許股票名稱裡出現過的字，避免讀成不存在的字（例如「合晶」讀成「合唱」）
+    if (opts.symbols && opts.symbols.length) {
+      const wl = [...new Set(opts.symbols.map(x => x[1]).join('') + '盤中零股買進賣出普通現沖資券融當日後定期*0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-&.')].join('');
+      await W.wt.setParameters({tessedit_char_whitelist: wl});
+    }
     return parseYuantaShots(imgs, Object.assign({ocr: ocrStrip, priceOn: pricePxOn}, opts));
   }
 

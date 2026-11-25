@@ -623,8 +623,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.9.2';
+const APP_VERSION = '2.9.3';
 const CHANGELOG = [
+  ['2.9.3', '2026-11-25', ['元大截圖：股票名稱只會辨識成真的股票名稱裡有的字，減少讀錯', '名稱還是對不到時，會從你交易過的股票裡用當天收盤價找出最可能的那檔，並標示請確認']],
   ['2.9.2', '2026-11-25', ['元大截圖：日期多讀一個 0（例如 007/07）也能正確判斷', '股票名稱讀錯一個字時（例如合晶讀成合唱），用當天收盤價比對找回正確的股票']],
   ['2.9.1', '2026-11-25', ['元大截圖辨識更準：改用畫面位置切出每一筆，一個日期讀錯不會影響其他筆；讀不到的欄位會單獨再辨識一次', '修正貼著列表頂端的那筆被誤判為截斷', '比對已記過的紀錄改用股票代號，日期差 3 天內、價格差 1% 內也會標成「可能已記過」']],
   ['2.9.0', '2026-11-25', ['匯入券商對帳單新增元大證券：直接選投資先生 App「交易 → 明細」的截圖（可多張、可重疊），在手機上辨識文字，並用價格 × 股數和應收付互相驗算', '自動判斷買賣、當沖，推算手續費和交易稅，對應股票代號時也會比對當天收盤價', '被截斷的那筆會提醒，不會匯入']],
@@ -2431,7 +2432,9 @@ async function importShots(files) {
   let res;
   try {
     const sym = await loadSymbols().catch(() => SYM);
-    res = await ZQImport.parseShots(files, {symbols: sym ? sym.list : [], progress: (i, n) => {
+    let known = [];
+    try { const m = await callIn(imAcct(), 'appMeta'); known = (m.stocks || []).map(x => x.code).filter(Boolean); } catch (x) {}
+    res = await ZQImport.parseShots(files, {symbols: sym ? sym.list : [], known: known, progress: (i, n) => {
       info.textContent = i < 0 ? '載入辨識模型中（第一次約需下載 7 MB，之後會記住）…' : i < n ? '辨識第 ' + (i + 1) + '／' + n + ' 張…' : '整理中…';
     }});
   } catch (x) { info.textContent = '辨識失敗：' + errMsg(x); return; }
