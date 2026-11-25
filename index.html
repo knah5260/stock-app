@@ -623,8 +623,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.9.1';
+const APP_VERSION = '2.9.2';
 const CHANGELOG = [
+  ['2.9.2', '2026-11-25', ['元大截圖：日期多讀一個 0（例如 007/07）也能正確判斷', '股票名稱讀錯一個字時（例如合晶讀成合唱），用當天收盤價比對找回正確的股票']],
   ['2.9.1', '2026-11-25', ['元大截圖辨識更準：改用畫面位置切出每一筆，一個日期讀錯不會影響其他筆；讀不到的欄位會單獨再辨識一次', '修正貼著列表頂端的那筆被誤判為截斷', '比對已記過的紀錄改用股票代號，日期差 3 天內、價格差 1% 內也會標成「可能已記過」']],
   ['2.9.0', '2026-11-25', ['匯入券商對帳單新增元大證券：直接選投資先生 App「交易 → 明細」的截圖（可多張、可重疊），在手機上辨識文字，並用價格 × 股數和應收付互相驗算', '自動判斷買賣、當沖，推算手續費和交易稅，對應股票代號時也會比對當天收盤價', '被截斷的那筆會提醒，不會匯入']],
   ['2.8.0', '2026-11-25', ['設定 → 帳戶與資料 新增「清除交易紀錄」：可清除全部、某段日期，或只清除匯入的紀錄；清除前可先下載備份，並需輸入「清除」確認']],
@@ -2442,7 +2443,7 @@ async function importShots(files) {
 function renderImport() {
   const res = IM.res, rows = res.rows;
   const n = k => rows.filter(k).length;
-  const ds = rows.map(r => r.date).sort();
+  const ds = rows.map(r => r.date).filter(Boolean).sort();
   const chk = (res.check || []).map(c => c.name + ' ' + fmtN(c.file) + (c.ok ? ' ✓' : ' ✗（讀到 ' + fmtN(c.got) + '）')).join('、');
   $('#im-sum').innerHTML = '<b>讀到 ' + rows.length + ' 筆交易</b>' +
     (ds.length ? '<span class="lbl">' + ds[0].replace(/-/g, '/') + ' – ' + ds[ds.length - 1].replace(/-/g, '/') + '　買進 ' + n(r => /買/.test(r.item)) + '・賣出 ' + n(r => /賣/.test(r.item)) + '</span>' : '') +

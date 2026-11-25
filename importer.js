@@ -243,15 +243,17 @@
   const cleanName = s => String(s || '').replace(/[\s*＊.。、,，'"`|]/g, '').replace(/(\d)[OoQ]$/, '$1').toUpperCase();
   async function ytResolve(name, date, price, list, priceOn) {
     const n = cleanName(name);
-    const cands = list.map(x => ({x: x, s: sim(n, cleanName(x[1]))})).filter(c => c.s >= 0.6).sort((a, b) => b.s - a.s).slice(0, 6);
+    const cands = list.map(x => ({x: x, s: sim(n, cleanName(x[1]))})).filter(c => c.s >= 0.5).sort((a, b) => b.s - a.s).slice(0, 12);
     for (const c of cands) {
       let ok = null;
       if (priceOn) { try { const cl = await priceOn(date, c.x[0]); if (cl) ok = Math.abs(price / cl - 1) < 0.12; } catch (e) {} }
       c.ok = ok;
     }
+    // 名稱像、而且當天收盤價也對得上的；只有一檔符合就是它（例如「合晶」讀成「合唱」）
     const good = cands.filter(c => c.ok === true);
     const pick = good.length ? good[0] : cands.find(c => c.ok === null && c.s >= 0.85);
-    return pick ? {code: pick.x[0], name: pick.x[1], market: pick.x[2], sure: !!good.length && pick.s >= 0.75} : null;
+    const sure = good.length === 1 ? pick.s >= 0.5 : good.length > 1 ? pick.s >= 0.75 && pick.s > good[1].s : false;
+    return pick ? {code: pick.x[0], name: pick.x[1], market: pick.x[2], sure: sure} : null;
   }
   async function parseYuantaShots(imgs, o) {
     const res = {broker: '元大證券', kind: '投資先生 App 明細截圖', rows: [], warnings: [], check: null};
@@ -290,8 +292,10 @@
         // 日期
         const getDate = arr => {
           const s2 = arr.map(l => l.t.replace(/[^\d/]/g, '')).join('/').replace(/\/+/g, '/');
-          const m = /(20\d\d)\/?(\d{1,2})\/(\d{1,2})/.exec(s2);
-          return m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : '';
+          const m = /(20\d\d)\/?(\d{1,3})\/(\d{1,3})/.exec(s2);
+          if (!m) return '';
+          const mo = +m[2].slice(-2), da = +m[3].slice(0, 2);
+          return mo >= 1 && mo <= 12 && da >= 1 && da <= 31 ? m[1] + '-' + String(mo).padStart(2, '0') + '-' + String(da).padStart(2, '0') : '';
         };
         r.date = getDate(dl);
         if (!r.date) { dl = await cell('date', 'digits'); r.date = getDate(dl); }
