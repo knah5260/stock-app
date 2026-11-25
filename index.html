@@ -254,8 +254,11 @@ body.guide .hi{display:inline-flex}
 .pill{align-self:flex-start;margin-top:6px;height:30px;border-radius:15px;border:1px solid #5A4520;background:#2A2110;color:#F5C04A;font-size:13px;font-weight:600;padding:0 12px;display:none;align-items:center;gap:4px}
 .pill.on{display:inline-flex}
 .pill{white-space:nowrap;max-width:100%}
+#ov-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:440px){#ov-title{font-size:23px}#v-overview .iconbtn{width:38px;height:38px}}
-@media (max-width:374px){h1{font-size:22px}#ov-title{font-size:20px}.view{padding-left:14px;padding-right:14px}#demo-bar{font-size:12px}}
+@media (max-width:430px){#ov-title{font-size:21px}#v-overview .iconbtn{width:34px;height:34px}#v-overview .gtog{height:34px}}
+@media (max-width:340px){#ov-title{font-size:17px!important}}
+@media (max-width:374px){h1{font-size:22px}#ov-title{font-size:19px}#v-overview .iconbtn{width:32px;height:32px}#v-overview .gtog svg{display:none}.view{padding-left:14px;padding-right:14px}#demo-bar{font-size:12px}}
 .brow{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .brow label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut);min-width:0}
 .brow .full{grid-column:1/-1}
@@ -609,8 +612,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.5.3';
+const APP_VERSION = '2.5.4';
 const CHANGELOG = [
+  ['2.5.4', '2026-11-25', ['修正 iPhone 12／13／14 等較窄的螢幕上，總覽標題會換成兩行的問題']],
   ['2.5.3', '2026-11-25', ['修正當沖開關有時點了沒反應、反而跳出說明的問題', '示範資料加上進出場理由範例']],
   ['2.5.2', '2026-11-25', ['修正側邊選單和總覽的大頭貼被壓扁成橢圓的問題']],
   ['2.5.1', '2026-11-25', ['加入主畫面的 Safari 步驟依實際畫面修正：頁面選單 → 分享 → 檢視較多 → 加入主畫面 → 加入']],
@@ -903,7 +907,7 @@ async function loadOverview() {
     const d = await call('appOverview', ovRange.from, ovRange.to);
     ovData = d;
     if (d.empty) {
-      $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.hasRecs ? '下個交易日收盤後就會有資產走勢' : '這個帳戶還沒有紀錄，到「交易」新增第一筆');
+      $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.hasRecs ? '下個交易日收盤後就會有資產走勢' : '還沒有紀錄，到「交易」新增第一筆');
       ['#ov-mv', '#ov-today', '#ov-range', '#ov-ret-h', '#ov-ret-m', '#ov-ret-t', '#ov-r1', '#ov-r2', '#ov-r3'].forEach(id => { $(id).textContent = '—'; $(id).className = 'zero'; });
       $('#ov-todayr').textContent = ''; $('#ov-rangeh').textContent = md(ovRange.from) + ' – ' + md(ovRange.to);
       $('#ov-chart').innerHTML = '<div class="empty">還沒有資產走勢</div>'; $('#ov-legend').innerHTML = ''; $('#ov-risk').innerHTML = ''; $('#ov-heat').innerHTML = '';
