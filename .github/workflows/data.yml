@@ -2,6 +2,7 @@ name: 每日抓公開資料
 on:
   schedule:
     - cron: '40 7 * * 1-5'   # 台北 15:40：當天收盤價
+    - cron: '30 8 * * 1-5'   # 台北 16:30：備援（GitHub 排程常延遲或跳過）
     - cron: '10 13 * * 1-5'  # 台北 21:10：上櫃、除權息資料補齊
   workflow_dispatch:
     inputs:
@@ -33,5 +34,10 @@ jobs:
           git add data
           if git diff --cached --quiet; then echo '沒有變動'; exit 0; fi
           git commit -q -m "資料更新 $(TZ=Asia/Taipei date +'%Y-%m-%d %H:%M')"
-          git pull -q --rebase origin main
-          git push -q
+          # 跑的期間 repo 可能有新的提交：以這次抓到的資料為準重試幾次
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase -X theirs origin main && git push -q && exit 0
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 10))
+          done
+          exit 1
