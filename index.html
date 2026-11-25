@@ -105,6 +105,9 @@ h2{margin:0;font-size:15px;font-weight:600}
 .form label:last-child{border-bottom:0}
 .form label>span:first-child{color:var(--mut);flex-shrink:0}
 .form input[type=text],.form input[type=number],.form input[type=date]{flex:1;min-width:0;text-align:right;background:transparent;border:0;color:var(--tx);font-size:16px;-webkit-appearance:none;appearance:none}
+.form label.note-row{flex-direction:column;align-items:stretch;gap:6px;padding:12px 0}
+.form textarea{width:100%;min-height:64px;resize:vertical;background:var(--card2);border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:16px;font-family:inherit;line-height:1.5;padding:8px 10px;box-sizing:border-box}
+.rnote{font-size:13px;color:var(--mut);margin-top:3px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .form input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
 .primary{height:52px;border:0;border-radius:14px;background:var(--acc);color:#1A1208;font-size:17px;font-weight:700;flex-shrink:0}
 .primary:disabled{opacity:.5}
@@ -380,6 +383,7 @@ h2{margin:0;font-size:15px;font-weight:600}
     <label><span id="tr-unitslbl">股數</span><input type="number" inputmode="numeric" id="tr-units" placeholder="0"></label>
     <label id="tr-pricerow"><span id="tr-pricelbl">成交價</span><input type="number" inputmode="decimal" step="any" id="tr-price" placeholder="0"></label>
     <label id="tr-dtrow"><span>當沖</span><input type="checkbox" id="tr-dt"></label>
+    <label class="note-row"><span>進出場理由（選填）</span><textarea id="tr-note" maxlength="500" rows="2" placeholder="為什麼買、為什麼賣？例如：突破季線、財報優於預期、跌破停損"></textarea></label>
   </div>
   <datalist id="tr-stocks"></datalist>
   <div id="tr-side" style="display:contents">
@@ -497,8 +501,8 @@ h2{margin:0;font-size:15px;font-weight:600}
 
   <span class="sec">關於</span>
   <div class="card col" style="gap:6px">
-    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；盤中現價來自 Google 財經（最多延遲 20 分鐘）。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
-    <span class="lbl" id="st-ver">版本 2.0</span>
+    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；股價為每個交易日收盤價（15:40、21:10 更新）。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
+    <div class="row" style="justify-content:space-between"><span class="lbl" id="st-ver">版本</span><button class="small" id="st-log">更新內容</button></div>
   </div>
 </section>
 
@@ -578,6 +582,13 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script src="localapi.js"></script>
 <script>
 // ---------- 共用 ----------
+// 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
+const APP_VERSION = '2.1.0';
+const CHANGELOG = [
+  ['2.1.0', '2026-11-25', ['App 改名為「韭菜紀錄」，換上紅漲綠跌 K 線新圖示', '每筆交易可以寫進出場理由，交易紀錄列表會顯示', 'Google 登入按鈕改成官方樣式「使用 Google 登入繼續」', '移除舊版（Apps Script）的密碼、後端網址與搬家介面', '設定頁顯示版本編號與更新內容']],
+  ['2.0.0', '2026-11-25', ['改用 Google 帳號登入，資料存在自己的 Google 雲端硬碟', '計算改在 App 裡完成，不再需要 Apps Script', '股價、指數、除權息改由每日自動抓取的公開資料提供', '新增示範模式、可安裝到主畫面、離線也能開啟']],
+  ['1.0.0', '2026-11-24', ['舊版：Google 試算表＋Apps Script']]
+];
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 const M = '−';
@@ -1174,7 +1185,7 @@ function estimate() {
   const name = $('#tr-name').value, code = (name.match(/（(.+)）$/) || [])[1] || '';
   const disc = meta ? discAt($('#tr-date').value || TODAY) / 10 : 0.6, minFee = meta ? (u >= 1000 ? meta.minFee : meta.minOdd) : 20;
   const amt = Math.floor(u * p);
-  let rows = [], tot = '', totLbl = '淨金額', note = '預估（儲存後會顯示試算表實際計算結果）';
+  let rows = [], tot = '', totLbl = '淨金額', note = '預估（儲存後會顯示實際計算結果）';
   const it = formRecord().item, cr = meta && meta.credit || {mp: 6, ss: 9, sf: 0.0008};
   if (kind === 'split' && spType === 'cap') {
     rows = [['認購金額', fmt(amt)], ['手續費', '0'], ['交易稅', '0']]; totLbl = '應繳股款'; tot = sgn(-amt);
@@ -1219,12 +1230,12 @@ function formRecord() {
   const item = CR[kind] ? CR[kind][crType] : kind === 'split' ? SP[spType] : divType === 'cash' ? '現金股利' : '股票股利';
   const noPrice = ['股票股利', '股票分割', '股票反分割', '融資現償'].indexOf(item) >= 0;
   return {date: $('#tr-date').value, item: item, name: $('#tr-name').value.trim(), units: item === '保證金追繳' ? 1 : +$('#tr-units').value, price: noPrice ? 0 : +$('#tr-price').value,
-    dayTrade: !!CR[kind] && $('#tr-dt').checked, acct: multi() ? $('#tr-acct').value : writeAcct()};
+    dayTrade: !!CR[kind] && $('#tr-dt').checked, note: $('#tr-note').value.trim().slice(0, 500), acct: multi() ? $('#tr-acct').value : writeAcct()};
 }
 function resetForm() {
   editing = null;
   $('#tr-title').textContent = '新增紀錄';
-  $('#tr-date').value = TODAY; $('#tr-name').value = ''; $('#tr-units').value = ''; $('#tr-price').value = ''; $('#tr-dt').checked = false;
+  $('#tr-date').value = TODAY; $('#tr-name').value = ''; $('#tr-units').value = ''; $('#tr-price').value = ''; $('#tr-dt').checked = false; $('#tr-note').value = '';
   $('#tr-delete').style.display = 'none'; $('#tr-cancel').style.display = 'none'; $('#tr-save').textContent = '儲存';
   crType = 'cash'; $$('#tr-crseg button').forEach(b => b.classList.toggle('on', b.dataset.k === 'cash'));
   setKind('buy');
@@ -1276,7 +1287,7 @@ function editRecord(x) {
   setKind(/^(買進|融資買進|融券買進)$/.test(x.item) ? 'buy' : /^(賣出|融資賣出|融券賣出)$/.test(x.item) ? 'sell' : /分割|現償|追繳|增資/.test(x.item) ? 'split' : 'div');
   renderAcctUI();
   $('#tr-title').textContent = '修改紀錄';
-  $('#tr-date').value = x.d; $('#tr-name').value = x.name; $('#tr-units').value = x.units; $('#tr-price').value = x.price || ''; $('#tr-dt').checked = !!x.dayTrade;
+  $('#tr-date').value = x.d; $('#tr-name').value = x.name; $('#tr-units').value = x.units; $('#tr-price').value = x.price || ''; $('#tr-dt').checked = !!x.dayTrade; $('#tr-note').value = x.note || '';
   $('#tr-delete').style.display = ''; $('#tr-cancel').style.display = 'flex'; $('#tr-save').textContent = '儲存修改';
   estimate();
   show('trade');
@@ -1310,7 +1321,7 @@ function renderRecords() {
     const desc = (ACCT === '*' && x.acctName ? x.acctName + ' · ' : '') + (x.item === '保證金追繳' ? '補繳 ' + fmt(x.price) + ' 元' : x.item === '融資現償' ? '償還 ' + fmt(x.units) + ' 股' : x.item === '現金增資' ? '認購 ' + fmt(x.units) + ' 股 @' + x.price : /分割/.test(x.item) ? (x.item === '股票分割' ? '1 股 → ' + x.units + ' 股' : x.units + ' 股 → 1 股') : /股利/.test(x.item) ? (x.item === '現金股利' ? fmt(x.units) + ' 股 × ' + x.price + ' 元' : '配發 ' + fmt(x.units) + ' 股') : fmt(x.units) + ' 股 @' + x.price + (x.dayTrade ? ' · 當沖' : ''));
     h += '<button class="item row" data-i="' + reData.indexOf(x) + '" style="text-align:left;width:100%;color:inherit;padding:10px 12px" aria-label="修改 ' + esc(shortName(x.name)) + ' ' + esc(x.item) + '">' +
       '<span class="badge ' + b + '">' + esc(({融資買進: '資買', 融資賣出: '資賣', 融券賣出: '券賣', 融券買進: '券買', 融資現償: '現償', 保證金追繳: '追繳', 股票反分割: '減資', 股票分割: '分割', 現金增資: '增資', 股票股利: '配股', 現金股利: '股利'})[x.item] || x.item) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(shortName(x.name)) +
-      '</span><span class="lbl">' + desc + '</span></span><span style="font-size:14px;font-weight:700">' + (x.net === null ? '—' : sgn(x.net)) + '</span>' +
+      '</span><span class="lbl">' + desc + '</span>' + (x.note ? '<span class="rnote">' + esc(x.note) + '</span>' : '') + '</span><span style="font-size:14px;font-weight:700">' + (x.net === null ? '—' : sgn(x.net)) + '</span>' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3A9B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>';
   });
   $('#re-list').innerHTML = h;
@@ -1320,7 +1331,7 @@ function renderRecords() {
 // ---------- 底部彈窗 ----------
 function openSheet(html) { $('#sheet-panel').innerHTML = html; $('#sheet').classList.add('show'); }
 function closeSheet() { $('#sheet').classList.remove('show'); }
-$('#sheet').onclick = e => { if (e.target.id === 'sheet' && !askP) closeSheet(); };
+$('#sheet').onclick = e => { if (e.target.id === 'sheet') closeSheet(); };
 
 // ---------- 畫面尺寸檢查（點標題 3 下）----------
 (function () {
@@ -1354,7 +1365,6 @@ $('#sheet').onclick = e => { if (e.target.id === 'sheet' && !askP) closeSheet();
 
 
 // ---------- 側邊欄與子頁 ----------
-const APP_VER = '2.0';
 const ymd = s => s ? +s.slice(0, 4) + '/' + +s.slice(5, 7) + '/' + +s.slice(8, 10) : '';
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
 const autoCA = () => { try { return localStorage.getItem('zqAutoCA') !== '0'; } catch (e) { return true; } };
@@ -1363,7 +1373,8 @@ function closeDrawer() { $('#drawer').classList.remove('show'); $('#drawer').set
 $('#ov-avatar').onclick = openDrawer;
 $('#dr-bg').onclick = closeDrawer;
 $$('#drawer .di[data-pg]').forEach(b => b.onclick = () => { closeDrawer(); openPage(b.dataset.pg); });
-$('#dr-foot').textContent = '版本 ' + APP_VER; $('#st-ver').textContent = '版本 ' + APP_VER;
+$('#dr-foot').textContent = '版本 ' + APP_VERSION; $('#st-ver').textContent = '版本 ' + APP_VERSION;
+$('#st-log').onclick = () => { openSheet('<h2>更新內容</h2>' + CHANGELOG.map(([v, d, l]) => '<div class="col" style="gap:4px"><b style="font-size:15px">版本 ' + v + '<span class="lbl" style="font-weight:400"> · ' + ymd(d) + '</span></b><ul style="margin:0;padding-left:1.2em;color:var(--mut);font-size:14px;line-height:1.6">' + l.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>').join('') + '<button class="primary" id="lg-ok">好</button>'); $('#lg-ok').onclick = closeSheet; };
 let pageCur = null;
 const pageLoaders = {import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
 function openPage(p) {

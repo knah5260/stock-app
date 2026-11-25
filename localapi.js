@@ -9,7 +9,7 @@
   const TK = 'zqGTok', FK = 'zqGFile';
   const FILE_TITLE = '韭菜紀錄（App 資料）';
   const REC_HEAD = ['帳戶', '編號', '日期', '項目', '名稱（代號）', '股數/單位', '單價', '自選費用', '金額修正', '資券成數修正', '當沖',
-    '成交金額', '手續費', '交易稅', '二代健保', '淨金額', '批號'];
+    '成交金額', '手續費', '交易稅', '二代健保', '淨金額', '批號', '進出場理由'];
   const ITEMS = ['買進', '賣出', '現金股利', '股票股利', '股票分割', '股票反分割', '融資買進', '融資賣出', '融資現償', '融券賣出', '融券買進', '保證金追繳', '現金增資'];
   const FEE_FLOOR = '1990-01-01';
   const LS = {get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -144,7 +144,7 @@
       if (!F) F = await createFile();
       let r;
       try {
-        r = await gapi('https://sheets.googleapis.com/v4/spreadsheets/' + F.id + '/values:batchGet?ranges=' + encodeURIComponent('紀錄!A2:K') +
+        r = await gapi('https://sheets.googleapis.com/v4/spreadsheets/' + F.id + '/values:batchGet?ranges=' + encodeURIComponent('紀錄!A2:R') +
           '&ranges=' + encodeURIComponent('設定!A2:B') + '&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING', {file: true});
       } catch (e) {
         if (!LS.get(FK)) { FILE = null; const G = await findFile(); if (!G) await createFile(); return load(true); }
@@ -160,7 +160,7 @@
         if (!d && !x[3] && !x[4]) return;
         let id = N(x[1]);
         recs.push({acct: String(x[0] || 'main'), id: id, d: d, item: String(x[3] || '').trim(), name: String(x[4] || '').trim(), units: N(x[5]), price: N(x[6]),
-          custom: String(x[7] || ''), adj: N(x[8]), cr: N(x[9]), dt: x[10] === true || String(x[10]).toUpperCase() === 'TRUE'});
+          custom: String(x[7] || ''), adj: N(x[8]), cr: N(x[9]), dt: x[10] === true || String(x[10]).toUpperCase() === 'TRUE', note: String(x[17] || '')});
         if (id > maxId) maxId = id;
       });
       recs.forEach(x => { if (!x.id) x.id = ++maxId; });   // 在試算表手動加的列，補上編號
@@ -186,7 +186,7 @@
     const rows = db.recs.map(x => {
       const c = calc[x.acct + '|' + x.id];
       return [x.acct, x.id, x.d, x.item, x.name, x.units, x.price, x.custom || '', x.adj || '', x.cr || '', !!x.dt,
-        c ? c.O : '', c ? c.S : '', c ? c.U : '', c ? c.V : '', c ? c.AD : '', c ? c.J : ''];
+        c ? c.O : '', c ? c.S : '', c ? c.U : '', c ? c.V : '', c ? c.AD : '', c ? c.J : '', x.note || ''];
     });
     const prevRows = db.loadedRows || 0;
     while (rows.length < prevRows) rows.push(new Array(REC_HEAD.length).fill(''));
@@ -195,6 +195,7 @@
     const prevSet = db.loadedSet || 0;
     while (setRows.length < prevSet) setRows.push(['', '']);
     await gapi('https://sheets.googleapis.com/v4/spreadsheets/' + FILE.id + '/values:batchUpdate', {method: 'POST', file: true, body: {valueInputOption: 'RAW', data: [
+      {range: '紀錄!A1', values: [REC_HEAD]},
       {range: '紀錄!A2', values: rows.length ? rows : [new Array(REC_HEAD.length).fill('')]},
       {range: '設定!A2', values: setRows}]}});
     db.loadedRows = db.recs.length; db.loadedSet = setRows.length;
@@ -330,10 +331,11 @@
   }
   function records(acct, from, to) {
     const out = each(acct, id => compute(id).res.ok.map(c => ({row: c.row, d: keyOf(c.d), item: c.item, name: c.name, units: c.units, price: c.price,
-      amt: c.O, fee: c.S, tax: c.U, net: c.AD, batch: c.J, dayTrade: !!c.dt})).filter(x => x.d >= from && x.d <= to));
+      amt: c.O, fee: c.S, tax: c.U, net: c.AD, batch: c.J, dayTrade: !!c.dt, note: noteOf(id, c.row)})).filter(x => x.d >= from && x.d <= to));
     out.sort(byDateDesc);
     return out;
   }
+  const noteOf = (id, row) => { const r = DB.recs.find(x => x.acct === id && x.id === row); return r ? r.note || '' : ''; };
   function dividends(acct) {
     const out = each(acct, id => compute(id).res.ok.filter(c => c.item === '現金股利' || c.item === '股票股利').map(c => ({row: c.row, d: keyOf(c.d), item: c.item,
       name: c.name, units: c.units, price: c.price, amt: c.O || 0, fee: c.S || 0, nhi: c.V || 0, net: c.AD || 0})));
@@ -497,7 +499,7 @@
   const NO_PRICE = ['股票股利', '股票分割', '股票反分割', '融資現償'];
   const toRec = (rec, id, nid) => ({acct: id, id: nid, d: rec.date, item: rec.item, name: rec.name, units: Number(rec.units),
     price: NO_PRICE.indexOf(rec.item) >= 0 ? 0 : Number(rec.price), custom: rec.custom || '', adj: Number(rec.adj) || 0, cr: Number(rec.cr) || 0,
-    dt: !!rec.dayTrade && DT_ITEMS.indexOf(rec.item) >= 0});
+    dt: !!rec.dayTrade && DT_ITEMS.indexOf(rec.item) >= 0, note: String(rec.note || '').trim().slice(0, 500)});
   const engRow = (id, rowId) => { const c = compute(id).res.ok.find(x => x.row === rowId); return c ? {row: c.row, item: c.item, name: c.name, amt: c.O, fee: c.S, tax: c.U, net: c.AD, batch: c.J} : {row: rowId}; };
   const writeOnly = acct => { if (acct === '*') err('「全部帳戶」只能查看，請先在選單選擇一個帳戶'); return acctIds(acct)[0]; };
   function verify(x, expect) {
