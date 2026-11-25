@@ -530,6 +530,7 @@ body.guide .hi{display:inline-flex}
     <div class="srow g-only"><span>Google 帳號</span><span class="row" style="gap:10px;min-width:0"><span class="v" id="st-gmail" style="overflow:hidden;text-overflow:ellipsis">—</span><button class="small" id="st-gout">登出</button></span></div>
     <div class="srow"><span>Google 試算表</span><a class="link" id="st-sheet" href="#" target="_blank" rel="noopener" style="height:auto">開啟</a></div>
     <div class="srow"><span>暫存資料</span><button class="small" id="st-clear">清除並重新讀取</button></div>
+    <div class="srow"><span>交易紀錄</span><button class="small" id="st-wipe" style="color:#FF6B6B">清除交易紀錄</button></div>
   </div>
 
   <span class="sec">關於</span>
@@ -621,8 +622,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.8.0';
 const CHANGELOG = [
+  ['2.8.0', '2026-11-25', ['設定 → 帳戶與資料 新增「清除交易紀錄」：可清除全部、某段日期，或只清除匯入的紀錄；清除前可先下載備份，並需輸入「清除」確認']],
   ['2.7.0', '2026-11-25', ['新增匯入券商對帳單：支援國泰證券 App 匯出的「客戶交易明細表」PDF（含密碼保護的檔案），自動對應股票代號、判斷當沖、跳過已記過的交易', '匯入的手續費和稅照對帳單實際金額記錄', '檔案和密碼只在你的裝置上讀取，不會上傳']],
   ['2.6.0', '2026-11-25', ['加入匿名使用統計（GoatCounter）：只計算打開次數、登入次數和新使用者人數，不含帳號或交易資料，詳見隱私權政策']],
   ['2.5.4', '2026-11-25', ['修正 iPhone 12／13／14 等較窄的螢幕上，總覽標題會換成兩行的問題']],
@@ -734,7 +736,7 @@ async function rawCall(fn, args, acct) {
   if (DEMO) {
     await loadDemo();
     await new Promise(r => setTimeout(r, 120));
-    if (!READS.test(fn) && fn !== 'appSymbols') setTimeout(() => toast('示範模式：這個變更不會儲存'), 50);
+    if (!READS.test(fn) && fn !== 'appSymbols' && fn !== 'appClearPreview') setTimeout(() => toast('示範模式：這個變更不會儲存'), 50);
     try { return JSON.parse(JSON.stringify(window.demoCall(fn, args || []))); } catch (e) { throw new Error(errMsg(e)); }
   }
   if (MODE === 'new') { await welcome(); return rawCall(fn, args, acct); }
@@ -2273,6 +2275,76 @@ async function exportCSV() {
   } catch (e) { toast('匯出失敗：' + errMsg(e), 4000); }
 }
 $('#dr-export').onclick = () => { closeDrawer(); exportCSV(); };
+// ---------- 清除交易紀錄 ----------
+// 可選範圍（全部／日期區間／只有匯入的），先下載備份，再輸入「清除」才會刪
+function wipeSheet() {
+  const acct0 = writeAcct();
+  let W = {acct: acct0, scope: 'all', from: '', to: TODAY, prev: null, backed: false};
+  const opts = () => ({from: W.scope === 'range' ? W.from : '', to: W.scope === 'range' ? W.to : '', imported: W.scope === 'imported'});
+  openSheet('<h2>清除交易紀錄</h2>' +
+    '<span class="sub">刪除後無法復原。建議先下載備份；備份的 CSV 也是你的完整紀錄。</span>' +
+    (multi() ? '<label class="selrow" style="padding:0"><span>帳戶</span><select id="wp-acct">' + acctOptions(acct0) + '</select></label>' : '') +
+    '<div class="seg" id="wp-scope" style="margin:4px 0;grid-template-columns:repeat(3,minmax(0,1fr))"><button data-k="all" class="on">全部</button><button data-k="range">日期區間</button><button data-k="imported">匯入的</button></div>' +
+    '<div class="row" id="wp-range" style="gap:8px;display:none"><input type="date" id="wp-from" class="inp" style="flex:1"><span class="lbl">到</span><input type="date" id="wp-to" class="inp" style="flex:1" value="' + TODAY + '"></div>' +
+    '<div class="card col" id="wp-info" style="gap:4px;font-size:14px"><span class="lbl">計算中…</span></div>' +
+    '<button class="small" id="wp-backup" disabled style="height:44px;width:100%">下載備份（CSV）</button>' +
+    '<label class="col" style="gap:6px"><span class="lbl">確認要刪除，請輸入「清除」</span><input id="wp-word" class="inp" autocomplete="off" placeholder="清除" style="height:44px"></label>' +
+    '<button class="primary" id="wp-go" disabled style="background:#E5484D;color:#fff">清除</button><button class="link" id="wp-no">取消</button>');
+  const refresh = async () => {
+    W.prev = null; W.sure = false; $('#wp-go').disabled = true; $('#wp-go').textContent = '清除'; $('#wp-backup').disabled = true;
+    $('#wp-info').innerHTML = '<span class="lbl">計算中…</span>';
+    if (W.scope === 'range' && (!W.from || !W.to || W.from > W.to)) { $('#wp-info').innerHTML = '<span class="lbl">請選擇日期區間</span>'; return; }
+    try {
+      const p = await callIn(W.acct, 'appClearPreview', opts());
+      W.prev = p; W.backed = false;
+      const ds = p.rows.map(r => r.d).sort();
+      $('#wp-info').innerHTML = p.count ? '<b style="color:#FF6B6B">會刪除 ' + p.count + ' 筆紀錄</b>' +
+        '<span class="lbl">' + acctName(W.acct) + '　' + ds[0].replace(/-/g, '/') + ' – ' + ds[ds.length - 1].replace(/-/g, '/') + '</span>' +
+        (W.scope === 'imported' ? '<span class="lbl">只刪除用「匯入券商對帳單」匯入的紀錄，手動輸入的會保留。</span>' : '') :
+        '<span class="lbl">這個範圍沒有紀錄</span>';
+      $('#wp-backup').disabled = !p.count;
+      check();
+    } catch (e) { $('#wp-info').innerHTML = '<span class="lbl">讀取失敗：' + esc(errMsg(e)) + '</span>'; }
+  };
+  const check = () => { $('#wp-go').disabled = !(W.prev && W.prev.count && $('#wp-word').value.trim() === '清除'); };
+  if ($('#wp-acct')) $('#wp-acct').onchange = e => { W.acct = e.target.value; refresh(); };
+  $$('#wp-scope button').forEach(b => b.onclick = () => {
+    $$('#wp-scope button').forEach(x => x.classList.toggle('on', x === b)); W.scope = b.dataset.k;
+    $('#wp-range').style.display = W.scope === 'range' ? '' : 'none'; refresh();
+  });
+  $('#wp-from').onchange = e => { W.from = e.target.value; refresh(); };
+  $('#wp-to').onchange = e => { W.to = e.target.value; refresh(); };
+  $('#wp-word').oninput = check;
+  $('#wp-no').onclick = closeSheet;
+  $('#wp-backup').onclick = async () => {
+    if (!W.prev || !W.prev.count) return;
+    const q = v => { v = v === null || v === undefined ? '' : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const head = ['帳戶', '日期', '項目', '名稱（代號）', '股數/單位', '單價', '當沖', '手續費', '交易稅', '淨金額', '自選費用', '進出場理由'];
+    const lines = [head.join(',')].concat(W.prev.rows.map(r => [acctName(W.acct), r.d, r.item, r.name, r.units, r.price, r.dt ? 'Y' : '', r.fee, r.tax, r.net, r.custom, r.note].map(q).join(',')));
+    const name = '清除前備份_' + acctName(W.acct) + '_' + TODAY + '.csv';
+    const file = new File(['﻿' + lines.join('\r\n')], name, {type: 'text/csv'});
+    try {
+      if (navigator.canShare && navigator.canShare({files: [file]})) await navigator.share({files: [file], title: name});
+      else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+      W.backed = true; $('#wp-backup').textContent = '已下載備份 ✓';
+    } catch (e) { if (e.name !== 'AbortError') toast('備份失敗：' + errMsg(e)); }
+  };
+  $('#wp-go').onclick = async () => {
+    if (!W.prev || !W.prev.count) return;
+    if (!W.backed && !W.sure) { W.sure = true; $('#wp-go').textContent = '還沒下載備份，再按一次直接清除'; return; }
+    const b = $('#wp-go'); b.disabled = true; b.textContent = '清除中…';
+    try {
+      const r = await callIn(W.acct, 'appClearRecords', Object.assign(opts(), {expect: W.prev.count}), true);
+      closeSheet(); toast('已清除 ' + r.removed + ' 筆'); afterWrite(); show(current);
+    } catch (e) { toast('清除失敗：' + errMsg(e), 5000); b.disabled = false; b.textContent = '清除'; }
+  };
+  refresh();
+}
+$('#st-wipe').onclick = () => {
+  if (ACCT === '*' && !multi()) return;
+  wipeSheet();
+};
+
 
 // ---------- 匯入對帳單 ----------
 // 檔案在這台裝置上解析（importer.js + pdf.js），密碼只用來打開檔案，不會存起來

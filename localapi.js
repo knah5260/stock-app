@@ -639,6 +639,28 @@
       });
       return {added: list.length};
     },
+    // 清除交易紀錄：先預覽（go=false 回傳筆數和備份用的明細），確認後再刪（go=true，筆數要和預覽一致）
+    async appClearPreview(acct, o) { return API.appClearRecords(acct, o, false); },
+    async appClearRecords(acct, o, go) {
+      o = o || {};
+      const id = writeOnly(acct);
+      if (o.from && !isKey(o.from) || o.to && !isKey(o.to)) err('日期格式錯誤');
+      await load();
+      const pick = x => x.acct === id && (!o.from || x.d >= o.from) && (!o.to || x.d <= o.to) && (!o.imported || /^匯入：/.test(x.custom || ''));
+      if (!go) {
+        const calc = {}; try { compute(id).res.ok.forEach(c => calc[c.row] = c); } catch (e) {}
+        const rows = DB.recs.filter(pick).map(x => { const c = calc[x.id] || {};
+          return {d: x.d, item: x.item, name: x.name, units: x.units, price: x.price, dt: !!x.dt, fee: c.S, tax: c.U, net: c.AD, custom: x.custom || '', note: x.note || ''}; });
+        return {count: rows.length, rows: rows};
+      }
+      let n = 0;
+      await mutate(db => {
+        n = db.recs.filter(pick).length;
+        if (o.expect !== undefined && n !== o.expect) err('紀錄剛剛有變動，請關掉重新開啟再試一次');
+        db.recs = db.recs.filter(x => !pick(x));
+      });
+      return {removed: n};
+    },
     async appUpdateRecord(acct, row, expect, rec) {
       const id = writeOnly(acct); check(rec); await load(); await register(rec.name, id);
       await mutate(db => {

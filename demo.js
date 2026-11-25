@@ -145,6 +145,11 @@
       }
       case 'appAddRecords': return a[0].map(r => window.demoCall('appAddRecord', [r]));
       case 'appImportRecords': return {added: a[0].length};
+      case 'appClearPreview': return window.demoCall('appClearRecords', [a[0], false]);
+      case 'appClearRecords': {
+        const o = a[0] || {}, rs = records.filter(r => (!o.from || r.d >= o.from) && (!o.to || r.d <= o.to) && !o.imported);
+        return a[1] ? {removed: rs.length} : {count: rs.length, rows: rs.map(r => ({d: r.d, item: r.item, name: r.name, units: r.units, price: r.price, dt: r.dayTrade, fee: r.fee, tax: r.tax, net: r.net, custom: '', note: r.note || ''}))};
+      }
       case 'appUpdateRecord': return window.demoCall('appAddRecord', [a[2]]);
       case 'appDeleteRecord': case 'appDismissAction': return true;
       case 'appSaveFees': FEES = a[0]; return SETTINGS();
