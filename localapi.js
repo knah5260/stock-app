@@ -54,7 +54,7 @@
     if (h.get('error')) return {error: h.get('error'), silent: st.silent, back: st.back};
     const old = getTok();
     LS.set(TK, JSON.stringify({t: h.get('access_token'), exp: Date.now() + (+h.get('expires_in') || 3600) * 1000 - 60e3, email: old ? old.email : ''}));
-    return {ok: true, back: st.back};
+    return {ok: true, back: st.back, silent: !!st.silent};
   }
   function tokenOk() { const t = getTok(); return !!(t && t.exp > Date.now()); }
   function signedIn() { return !!getTok(); }
@@ -132,6 +132,7 @@
         ['不要改分頁名稱、不要刪掉第一列標題。'],
         ['App 只能存取它自己建立的檔案，看不到你雲端硬碟裡的其他東西。']]}]}});
     FILE = {id: f.id}; LS.set(FK, f.id);
+    try { if (window.zqTrack) window.zqTrack('signup', true); } catch (e) {}
     return FILE;
   }
 
