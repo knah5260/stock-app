@@ -26,6 +26,8 @@
     ['2026-10-21', '現金股利', '2330', 200, 5.0, false, 1], ['2026-11-04', '買進', '2454', 100, 1255, false, 2],
     ['2026-11-12', '賣出', '2454', 100, 1198, false, 2], ['2026-11-18', '買進', '3189', 1000, 505, true, 2],
     ['2026-11-18', '賣出', '3189', 1000, 512, true, 2], ['2026-11-20', '買進', '0050', 500, 188.6, false, 1]];
+  const NOTES = {4: '看好天璣新晶片，法說會前先布局', 7: '跌破季線，照停利計畫出場', 15: '法說會前布局', 16: '跌破停損價 1,200，紀律出場',
+    17: '開盤爆量突破前高，當沖', 18: '量縮拉回，獲利了結', 19: '大盤回檔到月線，加碼'};
   const records = T.map((t, i) => {
     const [d, item, code, u, p, dtf, b] = t;
     const etf = code.startsWith('00');
@@ -34,7 +36,7 @@
     if (item === '買進') { f = fee(amt); net = -(amt + f); }
     else if (item === '賣出') { f = fee(amt); tx = Math.floor(amt * (etf ? 0.001 : dtf ? 0.0015 : 0.003)); net = amt - f - tx; }
     else net = Math.floor(u * p);
-    return {row: 3 + i, d: sh(d), item: item, name: S[code], units: u, price: p, amt: amt || null, fee: amt ? f : null, tax: amt ? tx : null, net: net, batch: b, dayTrade: dtf};
+    return {row: 3 + i, d: sh(d), item: item, name: S[code], units: u, price: p, amt: amt || null, fee: amt ? f : null, tax: amt ? tx : null, net: net, batch: b, dayTrade: dtf, note: NOTES[i] || ''};
   });
   const realized = records.filter(r => r.item === '賣出').map(r => {
     const buy = records.filter(x => x.name === r.name && x.item === '買進' && x.d <= r.d && x.batch === r.batch).pop();
@@ -138,8 +140,8 @@
         price: r.price, amt: r.net, fee: 0, nhi: 0, net: r.net})).reverse();
       case 'appPrices': { const o = {}; (a[1] || []).forEach(d => o[d] = {d: d, p: 196.2}); return o; }
       case 'appAddRecord': {
-        const r = a[0], amt = Math.floor(r.units * r.price), f = /買進|賣出/.test(r.item) ? fee(amt) : 0;
-        return {row: 99, d: r.date || r.d, units: r.units, price: r.price, dayTrade: false, item: r.item, name: r.name, amt: amt, fee: f, tax: 0, net: /買進/.test(r.item) ? -(amt + f) : amt - f, batch: 1};
+        const r = a[0], amt = Math.floor(r.units * r.price), f = /買進|賣出/.test(r.item) ? Math.max(20, Math.floor(amt * 0.001425 * 0.28)) : 0;
+        return {row: 99, d: r.date || r.d, units: r.units, price: r.price, dayTrade: false, item: r.item, name: r.name, amt: amt, fee: f, tax: 0, net: /買進/.test(r.item) ? -(amt + f) : amt - f, batch: 1, note: r.note || ''};
       }
       case 'appAddRecords': return a[0].map(r => window.demoCall('appAddRecord', [r]));
       case 'appUpdateRecord': return window.demoCall('appAddRecord', [a[2]]);

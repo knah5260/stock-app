@@ -609,8 +609,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.5.2';
+const APP_VERSION = '2.5.3';
 const CHANGELOG = [
+  ['2.5.3', '2026-11-25', ['修正當沖開關有時點了沒反應、反而跳出說明的問題', '示範資料加上進出場理由範例']],
   ['2.5.2', '2026-11-25', ['修正側邊選單和總覽的大頭貼被壓扁成橢圓的問題']],
   ['2.5.1', '2026-11-25', ['加入主畫面的 Safari 步驟依實際畫面修正：頁面選單 → 分享 → 檢視較多 → 加入主畫面 → 加入']],
   ['2.5.0', '2026-11-25', ['用瀏覽器開啟時，會自動提醒加到主畫面，並分別提供 Safari 和 Chrome 的步驟', 'Android 的 Chrome 可一鍵安裝', '在 LINE、Facebook、Instagram 裡開啟時，提醒改用瀏覽器開啟', '設定 → 關於 新增「加入主畫面」按鈕']],
@@ -1429,6 +1430,9 @@ function setupHelp() {
     const b = document.createElement('button');
     b.className = 'hi'; b.type = 'button'; b.dataset.k = k; b.setAttribute('aria-label', '說明：' + HELP[k][0]); b.innerHTML = HI_SVG;
     el.appendChild(b);
+    // ⓘ 放在 label 裡會變成 label 的對象，點開關反而開說明；把 label 綁回原本的輸入欄
+    const lab = b.closest('label');
+    if (lab && !lab.htmlFor) { const c = lab.querySelector('input,textarea,select'); if (c && c.id) lab.htmlFor = c.id; }
   });
   const ov = $('#ov-chartseg');
   if (ov && !ov.parentNode.querySelector('.hi[data-k="chart"]')) {
