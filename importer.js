@@ -492,8 +492,37 @@
     if (/[.,]\d{4}$/.test(t)) return Number(t.slice(0, -5).replace(/[.,]/g, '') + '.' + t.slice(-4));
     return Number(t.replace(/[.,]/g, ''));
   }
+  // 切橫條的位置：找沒有字的那一行像素（底色一致），避免把字切成兩半
+  function stripCuts(img, maxH) {
+    const ink = new Float32Array(img.h);
+    for (let y = 0; y < img.h; y++) {
+      let n = 0; const i0 = y * img.w * 4, b = img.d[i0] + img.d[i0 + 1] + img.d[i0 + 2];
+      for (let x = 0; x < img.w; x += 2) { const i = i0 + x * 4; if (Math.abs(img.d[i] + img.d[i + 1] + img.d[i + 2] - b) > 90) n++; }
+      ink[y] = n;
+    }
+    const cuts = [0];
+    while (img.h - cuts[cuts.length - 1] > maxH) {
+      const last = cuts[cuts.length - 1], t = last + maxH;
+      // 在範圍內找最寬的空白帶，切在它正中間
+      let best = t, bl = -1, run = 0;
+      for (let y = Math.floor(last + maxH * 0.5); y <= t; y++) {
+        if (ink[y] === 0) { run++; if (run > bl) { bl = run; best = y - (run >> 1); } } else run = 0;
+      }
+      if (bl < 0) { let bv = 1e9; for (let y = Math.floor(last + maxH * 0.5); y <= t; y++) if (ink[y] < bv) { bv = ink[y]; best = y; } }
+      cuts.push(best);
+    }
+    cuts.push(img.h);
+    return cuts;
+  }
   function parseStmtWords(words, imgH) {
-    const W = words.map(w => ({s: String(w.s).trim(), x0: w.x0, x1: w.x1, y0: w.y0, y1: w.y1, yc: (w.y0 + w.y1) / 2})).filter(w => w.s);
+    // 數字前後常多讀到雜訊（引號、書名號），括號也可能讀成別的符號
+    const clean = t => {
+      t = String(t).trim().replace(/[《（【〔\[{]/g, '(').replace(/[》）】〕\]}]/g, ')');
+      const d = (t.match(/\d/g) || []).length;
+      if (d >= 2 && d >= t.replace(/[.,\/()]/g, '').length * 0.6) t = t.replace(/^[^\d(]+/, '').replace(/[^\d)]+$/, '');
+      return t;
+    };
+    const W = words.map(w => ({s: clean(w.s), x0: w.x0, x1: w.x1, y0: w.y0, y1: w.y1, yc: (w.y0 + w.y1) / 2})).filter(w => w.s);
     const reD = /^(20\d\d)\/(\d{1,2})\/(\d{1,2})$/, reC = /^\d{4}[0-9A-Z]{0,2}$/;
     const isN = s => /^\(?[\d.,]*\d\)?$/.test(s);
     const toD = s => { const m = reD.exec(s); return m ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : ''; };
@@ -510,13 +539,15 @@
     if (!mids.length) return out;
     const dates = W.filter(w => reD.test(w.s));
     const left = dates.length ? Math.min(...dates.map(d => d.x0)) : 0;
-    const near = (m, above, re) => W.filter(w => re.test(w.s) && (above ? w.yc < m.yc - 0.25 * h && w.yc > m.yc - 2.2 * h : w.yc > m.yc + 0.25 * h && w.yc < m.yc + 2.2 * h) && w.x1 < m.ws[m.pi - 1].x0)
+    let lim = 2.2 * h;
+    const near = (m, above, re) => W.filter(w => re.test(w.s) && (above ? w.yc < m.yc - 0.25 * h && w.yc > m.yc - lim : w.yc > m.yc + 0.25 * h && w.yc < m.yc + lim) && w.x1 < m.ws[m.pi - 1].x0)
       .sort((p, q) => Math.abs(p.yc - m.yc) - Math.abs(q.yc - m.yc));
     // 日期、代號離數字列的距離（讀不到時用來圈出要重新辨識的位置）
     const dd = [], cx = [];
     mids.forEach(m => { const t = near(m, true, reD)[0]; if (t) dd.push(m.yc - t.yc); const c = near(m, true, reC).filter(w => !reD.test(w.s))[0]; if (c) cx.push([c.x0, c.x1]); });
     const med = (a, d) => a.length ? a.slice().sort((p, q) => p - q)[a.length >> 1] : d;
-    const off = med(dd, 1.1 * h), dW = dates.length ? med(dates.map(d => d.x1 - d.x0), 6 * h) : 6 * h;
+    const off = med(dd, 1.1 * h); lim = Math.min(lim, off * 1.6);
+    const dW = dates.length ? med(dates.map(d => d.x1 - d.x0), 6 * h) : 6 * h;
     const cX0 = med(cx.map(c => c[0]), left + dW * 3), cX1 = med(cx.map(c => c[1]), left + dW * 3.6);
     let lastY = -1;
     mids.forEach(m => {
@@ -575,7 +606,7 @@
     const seen = new Set(), tots = {};
     for (let i = 0; i < imgs.length; i++) {
       if (o.progress) o.progress(i, imgs.length);
-      const r = parseStmtWords(await o.ocrPage(imgs[i]), imgs[i].h);
+      const r = parseStmtWords(await o.ocrPage(imgs[i], f => o.progress && o.progress(i, imgs.length, f)), imgs[i].h);
       if (!r.rows.length) { res.warnings.push('第 ' + (i + 1) + ' 張沒有讀到交易明細'); continue; }
       // 日期或代號讀不到的，單獨把那一格放大再辨識一次
       for (const n of r.need) {
@@ -626,7 +657,7 @@
       const wt = await T.createWorker('chi_tra', 1, opt), wd = await T.createWorker('chi_tra', 1, opt);
       await wt.setParameters({tessedit_pageseg_mode: '6'});
       await wd.setParameters({tessedit_pageseg_mode: '6', tessedit_char_whitelist: '0123456789.,-/'});
-      return {wt: wt, wd: wd, make: () => T.createWorker('chi_tra', 1, opt)};
+      return {wt: wt, wd: wd};
     });
     ocrP.catch(() => { ocrP = null; });
     return ocrP;
@@ -640,30 +671,38 @@
     (data.blocks || []).forEach(B => B.paragraphs.forEach(p => p.lines.forEach(l => out.push({y0: l.bbox.y0, y1: l.bbox.y1, text: l.text, conf: l.confidence}))));
     return out;
   }
-  async function ocrPage(img) {
+  async function ocrPage(img, onPart) {
     const W = await browserOcr();
-    if (!W.wp) { W.wp = await W.make(); await W.wp.setParameters({tessedit_pageseg_mode: '6', preserve_interword_spaces: '1'}); }
-    // 放大到字夠大再辨識（iPhone 畫布上限約 1600 萬像素）
-    const k = Math.max(1, Math.min(2, Math.sqrt(15e6 / (img.w * img.h)), 2600 / img.w));
+    // 共用文字辨識的 worker（iPhone 記憶體有限，不多開一個），先清掉名稱用的字元限制
+    await W.wt.setParameters({tessedit_pageseg_mode: '6', tessedit_char_whitelist: '', preserve_interword_spaces: '1'});
+    // 放大 2 倍字才讀得準；整張放大在 iPhone 上太吃記憶體，所以從沒有字的地方切成橫條，一段一段辨識
+    const k = Math.max(1, Math.min(2, 2600 / img.w));
     const src = document.createElement('canvas'); src.width = img.w; src.height = img.h;
     src.getContext('2d').putImageData(new ImageData(img.d, img.w, img.h), 0, 0);
-    const c = document.createElement('canvas'); c.width = Math.round(img.w * k); c.height = Math.round(img.h * k);
-    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.filter = 'grayscale(1)'; g.drawImage(src, 0, 0, c.width, c.height);
-    const {data} = await W.wp.recognize(c, {}, {blocks: true});
+    const cuts = stripCuts(img, Math.max(300, Math.floor(1400 / k)));
     const out = [];
-    (data.blocks || []).forEach(B => B.paragraphs.forEach(p => p.lines.forEach(l => l.words.forEach(w => out.push({s: w.text, x0: w.bbox.x0 / k, x1: w.bbox.x1 / k, y0: w.bbox.y0 / k, y1: w.bbox.y1 / k})))));
+    for (let j = 0; j + 1 < cuts.length; j++) {
+      const y = cuts[j], h = cuts[j + 1] - y;
+      const c = document.createElement('canvas'); c.width = Math.round(img.w * k); c.height = Math.round(h * k);
+      const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, y, img.w, h, 0, 0, c.width, c.height);
+      const {data} = await W.wt.recognize(c, {}, {blocks: true});
+      c.width = c.height = 0;
+      (data.blocks || []).forEach(B => B.paragraphs.forEach(p => p.lines.forEach(l => l.words.forEach(w => out.push({s: w.text, x0: w.bbox.x0 / k, x1: w.bbox.x1 / k, y0: y + w.bbox.y0 / k, y1: y + w.bbox.y1 / k})))));
+      if (onPart) onPart(cuts[j + 1] / img.h);
+    }
+    src.width = src.height = 0;
     return out;
   }
   async function ocrCell(img, box) {
     const W = await browserOcr();
     const x0 = Math.max(0, Math.floor(box[0])), y0 = Math.max(0, Math.floor(box[1])), x1 = Math.min(img.w, Math.ceil(box[2])), y1 = Math.min(img.h, Math.ceil(box[3]));
     if (x1 - x0 < 4 || y1 - y0 < 4) return '';
-    const src = document.createElement('canvas'); src.width = img.w; src.height = img.h;
-    src.getContext('2d').putImageData(new ImageData(img.d, img.w, img.h), 0, 0);
+    const src = document.createElement('canvas'); src.width = x1 - x0; src.height = y1 - y0;
+    src.getContext('2d').putImageData(new ImageData(img.d, img.w, img.h), -x0, -y0);
     const k = Math.max(1, 64 / (y1 - y0));
     const c = document.createElement('canvas'); c.width = Math.round((x1 - x0) * k) + 40; c.height = Math.round((y1 - y0) * k) + 40;
-    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = 'high'; g.filter = 'grayscale(1)';
-    g.drawImage(src, x0, y0, x1 - x0, y1 - y0, 20, 20, c.width - 40, c.height - 40);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = 'high';
+    g.drawImage(src, 0, 0, x1 - x0, y1 - y0, 20, 20, c.width - 40, c.height - 40);
     const {data} = await W.wd.recognize(c);
     return data.text || '';
   }
@@ -709,6 +748,6 @@
       warnings: a.warnings.concat(b.warnings), check: a.check};
   }
 
-  const api = {readPdf, parseCathay, isCathay, parseYuantaStmt, isYuantaStmt, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip, isStmtShot, parseStmtWords, parseStmtShots, stmtNum};
+  const api = {readPdf, parseCathay, isCathay, parseYuantaStmt, isYuantaStmt, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip, isStmtShot, parseStmtWords, parseStmtShots, stmtNum, stripCuts};
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ZQImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

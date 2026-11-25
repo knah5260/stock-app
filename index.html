@@ -623,8 +623,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.11.0';
+const APP_VERSION = '2.11.1';
 const CHANGELOG = [
+  ['2.11.1', '2026-11-25', ['月對帳單截圖改成一段一段辨識，iPhone 上不會因為記憶體不足而讀不出來', '辨識進度顯示百分比', '數字前後多讀到的符號會先去掉，讀得更準']],
   ['2.11.0', '2026-11-25', ['新增元大「月對帳單」截圖匯入：在投資先生按「開啟」後直接截圖，不用補寄、不用密碼', '有股票代號和實際手續費、交易稅，每筆都會驗算，截到「合計」那行還會核對總數', '放大截圖、多張重疊、淨收付欄被切掉都可以；讀不清楚的日期或代號會單獨再辨識一次']],
   ['2.10.0', '2026-11-25', ['新增元大「電子月對帳單」PDF 匯入：有股票代號、實際手續費和交易稅，並和對帳單合計自動比對', '可以一次選好幾個月的 PDF，密碼只要輸入一次', 'PDF 裡的特殊字形（例如「⽇」「⾦」）會先轉成一般文字再判讀']],
   ['2.9.3', '2026-11-25', ['元大截圖：股票名稱只會辨識成真的股票名稱裡有的字，減少讀錯', '名稱還是對不到時，會從你交易過的股票裡用當天收盤價找出最可能的那檔，並標示請確認']],
@@ -2461,8 +2462,8 @@ async function importShots(files) {
     const sym = await loadSymbols().catch(() => SYM);
     let known = [];
     try { const m = await callIn(imAcct(), 'appMeta'); known = (m.stocks || []).map(x => x.code).filter(Boolean); } catch (x) {}
-    res = await ZQImport.parseShots(files, {symbols: sym ? sym.list : [], known: known, progress: (i, n) => {
-      info.textContent = i < 0 ? '載入辨識模型中（第一次約需下載 7 MB，之後會記住）…' : i < n ? '辨識第 ' + (i + 1) + '／' + n + ' 張…' : '整理中…';
+    res = await ZQImport.parseShots(files, {symbols: sym ? sym.list : [], known: known, progress: (i, n, f) => {
+      info.textContent = i < 0 ? '載入辨識模型中（第一次約需下載 7 MB，之後會記住）…' : i < n ? '辨識第 ' + (i + 1) + '／' + n + ' 張…' + (f ? Math.round(f * 100) + '%' : '') : '整理中…';
     }});
   } catch (x) { info.textContent = '辨識失敗：' + errMsg(x); return; }
   if (!res.rows.length) { info.textContent = '沒有辨識到交易。請確認是投資先生「月對帳單」或「交易 → 明細」的畫面'; return; }
