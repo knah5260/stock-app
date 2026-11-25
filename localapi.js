@@ -7,7 +7,7 @@
   const CLIENT_ID = window.ZQ_CLIENT_ID || '';
   const SCOPE = 'https://www.googleapis.com/auth/drive.file openid email';
   const TK = 'zqGTok', FK = 'zqGFile';
-  const FILE_TITLE = '我的證券資產（App 資料）';
+  const FILE_TITLE = '韭菜紀錄（App 資料）';
   const REC_HEAD = ['帳戶', '編號', '日期', '項目', '名稱（代號）', '股數/單位', '單價', '自選費用', '金額修正', '資券成數修正', '當沖',
     '成交金額', '手續費', '交易稅', '二代健保', '淨金額', '批號'];
   const ITEMS = ['買進', '賣出', '現金股利', '股票股利', '股票分割', '股票反分割', '融資買進', '融資賣出', '融資現償', '融券賣出', '融券買進', '保證金追繳', '現金增資'];
@@ -118,7 +118,7 @@
     await gapi('https://sheets.googleapis.com/v4/spreadsheets/' + f.id + '/values:batchUpdate', {method: 'POST', body: {valueInputOption: 'RAW', data: [
       {range: '紀錄!A1', values: [REC_HEAD]},
       {range: '設定!A1', values: [['項目', '內容（JSON）'], ['rev', '1'], ['accounts', JSON.stringify([{id: 'main', name: '主帳戶'}])]]},
-      {range: '說明!A1', values: [['這份試算表由「我的證券資產」App 建立，用來存你的交易紀錄與設定。'],
+      {range: '說明!A1', values: [['這份試算表由「韭菜紀錄」App 建立，用來存你的交易紀錄與設定。'],
         ['「紀錄」分頁的 A～K 欄是你輸入的資料，L 欄以後是 App 算好寫回來給你看的。'],
         ['可以直接在這裡看或匯出；要修改請盡量在 App 裡改，直接改這裡也可以，App 下次讀取時會用新的內容重算。'],
         ['不要改分頁名稱、不要刪掉第一列標題。'],

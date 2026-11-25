@@ -6,13 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="證券資產">
+<meta name="apple-mobile-web-app-title" content="韭菜紀錄">
 <meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
-<title>我的證券資產</title>
+<title>韭菜紀錄</title>
 <style>
 :root{--bg:#000000;--card:#171A20;--card2:#1F232B;--line:#262A32;--bd:#23272F;--tx:#F2F3F5;--mut:#A3A9B2;--dim:#6B717B;--acc:#F59A4A;--up:#FF6B6B;--dn:#4ADE95}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -284,7 +284,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="row">
     <div class="row" style="gap:12px;justify-content:flex-start;min-width:0;align-items:flex-start">
       <button class="avatar" id="ov-avatar" aria-label="開啟選單"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="dot" id="ov-dot"></span></button>
-      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的證券資產</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button><button class="pill" id="ov-due"></button><button class="pill" id="ov-st"></button></div>
+      <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">韭菜紀錄</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button><button class="pill" id="ov-due"></button><button class="pill" id="ov-st"></button></div>
     </div>
     <span class="row" style="gap:8px;align-self:flex-start"><button class="iconbtn" id="btn-priv" aria-label="隱藏金額"></button>
     <button class="iconbtn" id="btn-refresh" aria-label="重新抓收盤價並更新">
@@ -425,7 +425,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <nav class="dp" aria-label="選單">
     <div class="who">
       <span class="avatar" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
-      <div class="col" style="gap:2px;min-width:0"><b style="font-size:17px">我的證券資產</b><span class="lbl" id="dr-status">已連線到 Google 試算表</span></div>
+      <div class="col" style="gap:2px;min-width:0"><b style="font-size:17px">韭菜紀錄</b><span class="lbl" id="dr-status">已連線到 Google 試算表</span></div>
     </div>
     <span class="sec2" id="dr-acctlbl" style="display:none">帳戶</span>
     <div class="col" style="gap:2px" id="dr-accts"></div>
@@ -624,10 +624,13 @@ if (RED && RED.ok) {
 } else if (RED && RED.error) {
   if (MODE === 'google') { needLogin = true; loginMsg = RED.silent ? 'Google 登入已過期，請再登入一次。' : '登入沒有完成，請再試一次。'; }
 }
+const G_LOGO = '<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+// Google 登入按鈕（依 Google 品牌規範的深色樣式）
+const gBtn = (id, dis) => '<button id="' + id + '"' + (dis ? ' disabled' : '') + ' style="height:48px;border-radius:24px;border:1px solid #8E918F;background:#131314;color:#E3E3E3;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;' + (dis ? 'opacity:.5' : '') + '">' + G_LOGO + '<span>使用 Google 登入繼續</span></button>';
 function loginSheet(msg) {
   return new Promise(() => {
     openSheet('<h2>用 Google 帳號登入</h2><span class="sub">' + esc(msg || '你的交易紀錄存在自己的 Google 雲端硬碟。') + '</span>' +
-      '<button class="primary" id="g-in">用 Google 帳號登入</button>');
+      gBtn('g-in'));
     $('#g-in').onclick = () => ZQ.signIn({});
   });
 }
@@ -636,9 +639,9 @@ function welcome() {
   if (welP) return welP;
   welP = new Promise(res => {
     const ready = window.ZQ && ZQ.ready();
-    openSheet('<h2>歡迎使用我的證券資產</h2>' +
+    openSheet('<h2>歡迎使用韭菜紀錄</h2>' +
       '<span class="sub">記錄台股交易，自動算出損益、報酬率和除權息。資料存在你自己的 Google 雲端硬碟，App 只能看到它自己建立的那一份檔案。</span>' +
-      '<button class="primary" id="w-google"' + (ready ? '' : ' disabled') + '>用 Google 帳號開始</button>' +
+      gBtn('w-google', !ready) +
       (ready ? '' : '<span class="note">Google 登入準備中，先看看示範資料吧。</span>') +
       '<button id="w-demo" style="height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:15px">先看示範資料</button>' +
       '<span class="note" style="text-align:center"><a class="link" href="privacy.html" target="_blank" rel="noopener" style="height:auto;font-size:12px">隱私權政策</a>　<a class="link" href="terms.html" target="_blank" rel="noopener" style="height:auto;font-size:12px">使用條款</a></span>');
