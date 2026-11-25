@@ -492,18 +492,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="card" style="padding:2px 16px">
     <div class="srow g-only"><span>Google 帳號</span><span class="row" style="gap:10px;min-width:0"><span class="v" id="st-gmail" style="overflow:hidden;text-overflow:ellipsis">—</span><button class="small" id="st-gout">登出</button></span></div>
     <div class="srow"><span>Google 試算表</span><a class="link" id="st-sheet" href="#" target="_blank" rel="noopener" style="height:auto">開啟</a></div>
-    <div class="srow l-only"><span>App 密碼</span><button class="small" id="st-tok">重新輸入</button></div>
     <div class="srow"><span>暫存資料</span><button class="small" id="st-clear">清除並重新讀取</button></div>
-    <div class="srow l-only" style="flex-wrap:wrap;padding:10px 0;gap:8px"><span>後端網址</span><input class="inp" type="url" id="st-api" style="flex:1 1 100%;font-size:13px" spellcheck="false" autocapitalize="off"><span class="note" style="flex:1 1 100%">舊版專用：Apps Script 的網址。</span><button class="small" id="st-saveapi">儲存網址</button></div>
-  </div>
-  <div class="card col l-only" id="st-migcard" style="gap:8px">
-    <h2>改用 Google 帳號存資料</h2>
-    <span class="note">新版不再需要 Apps Script 和密碼：交易紀錄改存在你 Google 雲端硬碟裡一份新的試算表，計算都在 App 裡完成。按下面的按鈕，用 Google 登入後會把舊版的紀錄和設定全部複製過去（舊版試算表不會被改動）。</span>
-    <button class="primary" id="st-mig">登入 Google 並搬資料</button>
-  </div>
-  <div class="card col g-only" id="st-oldcard" style="gap:8px;display:none">
-    <span class="note">這台裝置還留著舊版的密碼。新版確認沒問題後，可以清掉它。</span>
-    <div class="row" style="gap:8px"><button class="small" id="st-toold">暫時切回舊版</button><button class="small" id="st-forget">清掉舊版密碼</button></div>
   </div>
 
   <span class="sec">關於</span>
@@ -517,7 +506,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 <section class="page" id="pg-corp" aria-label="除權息與股本變動">
   <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">除權息與股本變動</h1>
     <button class="iconbtn" id="ca-re" aria-label="重新檢查"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button></div>
-  <span class="note" id="ca-head">依你在 LOG 的持股，比對證交所、櫃買中心公告的除權息、分割與減資。請由舊到新確認，金額以券商實際入帳為準。</span>
+  <span class="note" id="ca-head">依你的持股，比對證交所、櫃買中心公告的除權息、分割與減資。請由舊到新確認，金額以券商實際入帳為準。</span>
   <div class="row" id="ca-allrow" style="display:none"><span class="lbl" id="ca-count"></span><button class="small pri" id="ca-all">全部記錄</button></div>
   <div id="ca-list" class="list"></div>
 </section>
@@ -536,7 +525,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div id="dc-pend"></div>
   <span class="sec">我的定期定額</span>
   <div id="dc-list" class="list"></div>
-  <span class="note" style="padding:0 4px">設定好扣款日和金額後，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存進 LOG。</span>
+  <span class="note" style="padding:0 4px">設定好扣款日和金額後，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存起來。</span>
 </section>
 
 <!-- 匯入對帳單（畫面先做，解析規則之後再加）-->
@@ -563,7 +552,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 <!-- 批次新增 -->
 <section class="page" id="pg-batch" aria-label="批次新增紀錄">
   <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 id="bt-title">批次新增紀錄</h1></div>
-  <span class="note" id="bt-note">一次輸入多筆買賣（例如零股、定期定額），核對後一起存進 LOG。</span>
+  <span class="note" id="bt-note">一次輸入多筆買賣（例如零股、定期定額），核對後一起儲存。</span>
   <div class="form" id="bt-acctrow" style="display:none"><label class="selrow"><span>寫入帳戶</span><select id="bt-acct"></select></label></div>
   <div id="bt-list" class="list"></div>
   <button class="addbtn" id="bt-addrow">＋ 再加一筆</button>
@@ -610,10 +599,7 @@ const md = s => +s.slice(5, 7) + '/' + +s.slice(8, 10);
 const shortName = n => String(n).replace(/（.*）$/, '');
 const TODAY = iso(new Date());
 
-const API_DEF = 'https://script.google.com/macros/s/AKfycbwEQLYI55021drkDDC_9Mdy1xjuJvIJi3dd2CMo4fu_FOVVFFDn21kGfliqnU0roEx2/exec';
-let API = (() => { try { return localStorage.getItem('zqApi') || API_DEF; } catch (e) { return API_DEF; } })();
-const TK = 'zqAppToken';
-// 示範模式：網址加 ?demo=1，或在密碼畫面點「先看示範資料」。資料在瀏覽器裡產生，不連後端、不存檔。
+// 示範模式：網址加 ?demo=1，或在歡迎畫面點「先看示範資料」。資料在瀏覽器裡產生，不連後端、不存檔。
 const DEMO = /[?&]demo=1\b/.test(location.search);
 let demoReady = null;
 function loadDemo() {
@@ -625,7 +611,9 @@ function loadDemo() {
 function exitDemo() { location.href = location.pathname; }
 const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
-let MODE = DEMO ? 'demo' : lsGet('zqMode') === 'google' ? 'google' : lsGet('zqAppToken') ? 'legacy' : 'new';
+// 舊版（Apps Script）已停用：清掉留在裝置上的舊密碼與網址
+['zqAppToken', 'zqApi', 'zqMigrate'].forEach(k => lsSet(k, null));
+let MODE = DEMO ? 'demo' : lsGet('zqMode') === 'google' ? 'google' : 'new';
 let needLogin = false, loginMsg = '';
 // Google 登入回來：網址帶著登入結果
 const RED = (!DEMO && window.ZQ) ? ZQ.takeRedirect() : null;
@@ -653,31 +641,11 @@ function welcome() {
       '<button class="primary" id="w-google"' + (ready ? '' : ' disabled') + '>用 Google 帳號開始</button>' +
       (ready ? '' : '<span class="note">Google 登入準備中，先看看示範資料吧。</span>') +
       '<button id="w-demo" style="height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:15px">先看示範資料</button>' +
-      '<button id="w-legacy" style="height:36px;border:0;background:transparent;color:var(--dim);font-size:13px">我有舊版的 App 密碼</button>' +
       '<span class="note" style="text-align:center"><a class="link" href="privacy.html" target="_blank" rel="noopener" style="height:auto;font-size:12px">隱私權政策</a>　<a class="link" href="terms.html" target="_blank" rel="noopener" style="height:auto;font-size:12px">使用條款</a></span>');
     $('#w-google').onclick = () => { lsSet('zqMode', 'google'); ZQ.signIn({select: true}); };
     $('#w-demo').onclick = () => { location.href = location.pathname + '?demo=1'; };
-    $('#w-legacy').onclick = () => { MODE = 'legacy'; closeSheet(); welP = null; res(); };
   });
   return welP;
-}
-function getTok() { try { return localStorage.getItem(TK) || ''; } catch (e) { return window.__tok || ''; } }
-function setTok(v) { window.__tok = v; try { if (v) localStorage.setItem(TK, v); else localStorage.removeItem(TK); } catch (e) {} }
-let askP = null;
-function askToken(msg) {
-  if (askP) return askP;
-  askP = new Promise(res => {
-    openSheet('<h2>輸入 App 密碼</h2><span class="sub">' + esc(msg || '第一次使用請輸入密碼，之後會記住。') + '</span>' +
-      '<input id="tok-in" type="password" autocomplete="current-password" placeholder="密碼" style="height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card2);padding:0 14px;font-size:16px">' +
-      '<button class="primary" id="tok-ok">確定</button>' +
-      '<button id="tok-demo" style="height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--mut);font-size:15px">先看示範資料</button>');
-    $('#tok-demo').onclick = () => { location.href = location.pathname + '?demo=1'; };
-    const go = () => { const v = $('#tok-in').value.trim(); if (!v) return; setTok(v); closeSheet(); askP = null; res(v); };
-    $('#tok-ok').onclick = go;
-    $('#tok-in').onkeydown = e => { if (e.key === 'Enter') go(); };
-    setTimeout(() => $('#tok-in').focus(), 300);
-  });
-  return askP;
 }
 async function rawCall(fn, args, acct) {
   if (DEMO) {
@@ -694,19 +662,7 @@ async function rawCall(fn, args, acct) {
     try { r = await ZQ.call(fn, args || [], acct === undefined ? ACCT : acct); } catch (e) { throw new Error(errMsg(e)); }
     return r === undefined ? r : JSON.parse(JSON.stringify(r));
   }
-  let tok = getTok();
-  if (!tok) tok = await askToken();
-  for (let i = 0; i < 3; i++) {
-    let j;
-    try {
-      const r = await fetch(API, {method: 'POST', body: JSON.stringify({token: tok, fn: fn, args: args, acct: acct === undefined ? ACCT : acct})});
-      j = await r.json();
-    } catch (e) { throw new Error('連線失敗，請檢查網路'); }
-    if (j.ok) return j.data;
-    if (j.auth) { setTok(''); tok = await askToken('密碼不正確，請重新輸入。'); continue; }
-    throw new Error(j.error || '發生錯誤');
-  }
-  throw new Error('密碼不正確');
+  throw new Error('請先登入');
 }
 // 快取：讀過的資料先立刻顯示，背景再向試算表拿最新的；有變動才重畫。
 // 資料存在手機裡，下次打開 App 也能馬上看到上次的畫面。
@@ -895,7 +851,7 @@ async function loadOverview() {
   try {
     const d = await call('appOverview', ovRange.from, ovRange.to);
     ovData = d;
-    if (d.empty) { $('#ov-sub').textContent = MODE === 'legacy' ? '還沒有資產歷史，請按右上角更新' : d.hasRecs ? '下個交易日收盤後就會有資產走勢' : '還沒有紀錄，到「交易」新增第一筆'; return; }
+    if (d.empty) { $('#ov-sub').textContent = d.hasRecs ? '下個交易日收盤後就會有資產走勢' : '還沒有紀錄，到「交易」新增第一筆'; return; }
     $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : '');
     $('#ov-mv').textContent = fmt(d.mv);
     setNum('#ov-today', d.todayPl, true);
@@ -1273,8 +1229,8 @@ function resetForm() {
 }
 function resultSheet(r, title) {
   const rows = [['成交金額', fmt(r.amt)], ['手續費', fmt(r.fee)], ['交易稅', fmt(r.tax)], ['淨金額', sgn(r.net)], ['批號', r.batch === '' ? '—' : r.batch]];
-  openSheet('<h2>' + title + '</h2><span class="lbl">' + esc(shortName(r.name)) + ' ' + esc(r.item) + (MODE === 'legacy' ? '（LOG 第 ' + r.row + ' 列）' : '') + '</span><div class="card est col" style="gap:8px">' +
-    rows.map(x => '<div><span style="color:#D5D8DD">' + x[0] + '</span><span>' + x[1] + '</span></div>').join('') + '</div>' + (MODE === 'legacy' ? '<span class="lbl">若數字顯示「—」，是試算表還在計算，稍後到交易紀錄查看即可。</span>' : '') + '<button class="primary" id="sh-ok">好</button>');
+  openSheet('<h2>' + title + '</h2><span class="lbl">' + esc(shortName(r.name)) + ' ' + esc(r.item) + '</span><div class="card est col" style="gap:8px">' +
+    rows.map(x => '<div><span style="color:#D5D8DD">' + x[0] + '</span><span>' + x[1] + '</span></div>').join('') + '</div>' + '<button class="primary" id="sh-ok">好</button>');
   $('#sh-ok').onclick = closeSheet;
 }
 $('#tr-save').onclick = async () => {
@@ -1485,11 +1441,7 @@ async function loadSettings() {
   loadAccts().then(renderStAccts);
   renderStAccts();
   $('#st-autoca').checked = autoCA();
-  $('#st-api').value = API;
   $$('.g-only').forEach(e => e.style.display = MODE === 'google' ? '' : 'none');
-  $$('.l-only').forEach(e => e.style.display = MODE === 'legacy' ? '' : 'none');
-  $('#st-oldcard').style.display = MODE === 'google' && lsGet('zqAppToken') ? '' : 'none';
-  $('#st-migcard').style.display = MODE === 'legacy' && window.ZQ && ZQ.ready() ? '' : 'none';
   if (MODE === 'google') ZQ.whoami().then(m => { $('#st-gmail').textContent = m || '已登入'; });
   $('#st-fees').innerHTML = '<div class="skel" style="height:60px;margin:8px 0"></div>';
   try {
@@ -1549,43 +1501,7 @@ $('#st-gout').onclick = () => {
   openSheet('<h2>登出 Google？</h2><span class="sub">登出後這台裝置會清掉暫存的資料；你的紀錄還在 Google 雲端硬碟，重新登入就會回來。</span><button class="primary" id="go-yes">登出</button>');
   $('#go-yes').onclick = () => { ZQ.signOut(); ['zqCache2', 'zqAccts', 'zqSym', 'zqMode'].forEach(k => lsSet(k, null)); location.href = location.pathname; };
 };
-$('#st-toold').onclick = () => { lsSet('zqMode', 'legacy'); ['zqCache2', 'zqAccts'].forEach(k => lsSet(k, null)); location.href = location.pathname; };
-$('#st-forget').onclick = () => { lsSet('zqAppToken', null); lsSet('zqApi', null); $('#st-oldcard').style.display = 'none'; toast('已清掉舊版密碼'); };
-$('#st-mig').onclick = () => {
-  openSheet('<h2>搬到新版</h2><span class="sub">接下來會：<br>1. 用 Google 帳號登入，允許 App 建立自己的資料檔<br>2. 從舊版讀出所有帳戶的交易紀錄與設定<br>3. 寫進新版的試算表<br><br>舊版試算表不會被改動，搬完之後兩邊都還能看。</span><button class="primary" id="mg-go">開始</button>');
-  $('#mg-go').onclick = () => { lsSet('zqMigrate', '1'); lsSet('zqMode', 'google'); ZQ.signIn({select: true, back: 'migrate'}); };
-};
-async function runMigrate() {
-  lsSet('zqMigrate', null);
-  const step = t => openSheet('<h2>搬資料中…</h2><span class="sub">' + esc(t) + '</span><div class="skel" style="height:8px;border-radius:4px"></div>');
-  try {
-    step('從舊版讀取紀錄（可能要十幾秒）…');
-    const tok = lsGet('zqAppToken');
-    if (!tok) throw new Error('這台裝置沒有舊版的密碼，請在舊版先登入一次');
-    const r = await fetch(API, {method: 'POST', body: JSON.stringify({token: tok, fn: 'appExport', args: [], acct: 'main'})});
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.auth ? '舊版密碼不正確' : (j.error || '舊版讀取失敗'));
-    step('寫入新版試算表…');
-    const res = await ZQ.importLegacy(j.data, step);
-    cache = {}; lsSet('zqCache2', null); lsSet('zqAccts', null);
-    openSheet('<h2>搬好了</h2><span class="sub">共 ' + res.records + ' 筆紀錄、' + res.accounts + ' 個帳戶。之後的新增、修改都會存到新版。<br><br>建議對照一下總覽、持股的數字和舊版一樣，確認後再到設定清掉舊版密碼。</span><button class="primary" id="mg-ok">好</button>');
-    $('#mg-ok').onclick = () => { closeSheet(); location.href = location.pathname; };
-  } catch (e) {
-    openSheet('<h2>搬資料沒有完成</h2><span class="sub">' + esc(errMsg(e)) + '</span><button class="primary" id="mg-retry">再試一次</button><button id="mg-back" style="height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:15px">先回舊版</button>');
-    $('#mg-retry').onclick = runMigrate;
-    $('#mg-back').onclick = () => { lsSet('zqMode', 'legacy'); location.href = location.pathname; };
-  }
-}
-$('#st-tok').onclick = async () => { setTok(''); await askToken('請輸入新的 App 密碼。'); toast('已更新密碼'); };
 $('#st-clear').onclick = () => { cache = {}; try { localStorage.removeItem(CK); } catch (e) {} afterWrite(); toast('已清除，重新讀取中'); loadOverview(); };
-$('#st-saveapi').onclick = () => {
-  const v = $('#st-api').value.trim();
-  if (v && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(v)) return toast('網址格式應為 https://script.google.com/macros/s/…/exec', 4000);
-  API = v || API_DEF;
-  try { if (v && v !== API_DEF) localStorage.setItem('zqApi', v); else localStorage.removeItem('zqApi'); } catch (e) {}
-  cache = {}; try { localStorage.removeItem(CK); } catch (e) {}
-  $('#st-api').value = API; afterWrite(); toast('已儲存，重新讀取中'); loadOverview();
-};
 
 // ---------- 除權息與股本變動 ----------
 let caItems = [];
@@ -1615,10 +1531,10 @@ function caDesc(x) {
   if (x.type === 'stock') return '除權日 ' + ymd(x.date) + ' 前持有 ' + fmt(x.shares) + ' 股，每千股配 ' + x.perK + ' 股，約配發 ' + fmt(x.units) + ' 股（不足 1 股的部分券商會折發現金）。';
   if (x.type === 'split') return ymd(x.date) + ' 恢復買賣，1 股分割為 ' + x.units + ' 股：' + fmt(x.shares) + ' 股 → ' + fmt(x.after) + ' 股。';
   if (x.type === 'rsplit') return ymd(x.date) + ' 恢復買賣，' + x.units + ' 股合併為 1 股：' + fmt(x.shares) + ' 股 → ' + fmt(x.after) + ' 股。';
-  return ymd(x.date) + ' 減資恢復買賣（' + esc(x.why || '減資') + '），持有 ' + fmt(x.shares) + ' 股。' + (x.needInput ? '退還股款的減資無法從公告算出換股比例，請依券商通知填「每千股換發股數」。退還的現金不會記進 LOG。' : '比例由公告的參考價推算，請和券商通知核對。');
+  return ymd(x.date) + ' 減資恢復買賣（' + esc(x.why || '減資') + '），持有 ' + fmt(x.shares) + ' 股。' + (x.needInput ? '退還股款的減資無法從公告算出換股比例，請依券商通知填「每千股換發股數」。退還的現金不會記進紀錄。' : '比例由公告的參考價推算，請和券商通知核對。');
 }
 function renderCorp(checked) {
-  $('#ca-head').textContent = '依你在 LOG 的持股，比對證交所、櫃買中心公告的除權息、分割與減資（' + (checked ? ymd(checked) + ' 檢查' : '') + '）。請由舊到新確認，金額以券商實際入帳為準。';
+  $('#ca-head').textContent = '依你的持股，比對證交所、櫃買中心公告的除權息、分割與減資（' + (checked ? ymd(checked) + ' 檢查' : '') + '）。請由舊到新確認，金額以券商實際入帳為準。';
   if (!caItems.length) { $('#ca-list').innerHTML = '<div class="card empty">目前沒有待記錄的項目 👍</div>'; return; }
   const easy = caItems.filter(x => !x.needInput && !x.afterPending);
   $('#ca-allrow').style.display = easy.length > 1 ? '' : 'none';
@@ -1633,7 +1549,7 @@ function renderCorp(checked) {
     return '<div class="card ca" data-i="' + i + '"><div class="t"><span class="badge ' + b + '">' + CA_LBL[x.type] + '</span><b>' + esc(shortName(x.name)) + '</b><span class="lbl">' + esc(x.code) + '</span>' + (x.acctName && multi() ? '<span class="tag a">' + esc(x.acctName) + '</span>' : '') + '</div>' +
       '<span class="note" style="color:#C9CED6">' + caDesc(x) + '</span>' +
       (x.afterPending ? '<span class="warn">這檔股票有更早的分割／減資還沒記錄，股數可能不對，請先處理上面那筆。</span>' : '') +
-      '<div class="f">' + f + '</div><div class="acts"><button class="small" data-dis>忽略</button><button class="small pri" data-rec>記錄到 LOG</button></div></div>';
+      '<div class="f">' + f + '</div><div class="acts"><button class="small" data-dis>忽略</button><button class="small pri" data-rec>記錄</button></div></div>';
   }).join('');
   $$('#ca-list .ca').forEach(el => {
     const x = caItems[+el.dataset.i];
@@ -1644,7 +1560,7 @@ function renderCorp(checked) {
       const rec = caRecord(x, el); if (!rec) return;
       e.target.disabled = true; e.target.textContent = '記錄中…';
       try { await callIn(x.acct || writeAcct(), 'appAddRecord', rec); toast('已記錄 ' + shortName(x.name) + ' ' + CA_LBL[x.type]); afterWrite(); loadCorp(); }
-      catch (err) { toast('記錄失敗：' + errMsg(err), 4000); e.target.disabled = false; e.target.textContent = '記錄到 LOG'; }
+      catch (err) { toast('記錄失敗：' + errMsg(err), 4000); e.target.disabled = false; e.target.textContent = '記錄'; }
     };
   });
 }
@@ -1812,7 +1728,7 @@ function openBatch(rows, title, note) {
   btRows = rows && rows.length ? rows : [btBlank()];
   $('#bt-title').textContent = title || '批次新增紀錄';
   renderAcctUI(); if (btRows[0] && btRows[0].acct) $('#bt-acct').value = btRows[0].acct;
-  $('#bt-note').textContent = note || '一次輸入多筆買賣（例如零股、定期定額），核對後一起存進 LOG。';
+  $('#bt-note').textContent = note || '一次輸入多筆買賣（例如零股、定期定額），核對後一起儲存。';
   renderBatch();
   if (pageCur !== 'batch') openPage('batch');
 }
@@ -2085,7 +2001,6 @@ loadMeta().catch(() => {});
 window.addEventListener('resize', () => { if (current === 'overview') renderOvChart(); });
 </script>
 <script>
-if (RED && RED.ok && (RED.back === 'migrate' || lsGet('zqMigrate'))) setTimeout(runMigrate, 300);
 if (DEMO) { ACCT = 'main'; document.body.classList.add('demo'); document.getElementById('demo-exit').onclick = exitDemo; }
 // 背景程式：讓 App 可以安裝、離線也能打開畫面（資料仍要連線才會更新）
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

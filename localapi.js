@@ -681,40 +681,10 @@
     }
   };
 
-  // 從舊版（Apps Script）搬家：data 是舊版 appExport 的結果
-  async function importLegacy(data, onStep) {
-    if (!data || !Array.isArray(data.accounts)) err('舊版資料格式不對');
-    await load(true);
-    if (DB.recs.length) err('新版已經有紀錄了，為避免重複，只能搬到空白的新版資料');
-    onStep && onStep('寫入新版試算表…');
-    await mutate(db => {
-      db.set.accounts = data.accounts.map((a, i) => ({id: i === 0 ? 'main' : a.id, name: a.name || (i === 0 ? '主帳戶' : '帳戶' + i)}));
-      data.accounts.forEach((a, i) => {
-        const id = i === 0 ? 'main' : a.id;
-        const s = acctSet(id);
-        if (a.fees && a.fees.length) s.fees = a.fees;
-        if (a.minFee !== undefined) s.minFee = a.minFee;
-        if (a.minOdd !== undefined) s.minOdd = a.minOdd;
-        if (a.credit) s.credit = a.credit;
-        s.nhi = a.nhi !== false;
-        if (a.custom && a.custom.length) s.custom = a.custom;
-        if (a.fifo === false) s.fifo = false;
-        s.dismissed = (data.dismissed || []).filter(k => i === 0 ? !/^[a-z0-9]+:/.test(k) : k.indexOf(a.id + ':') === 0);
-        (a.rows || []).forEach(r => {
-          db.recs.push({acct: id, id: db.nextId++, d: r[0], item: r[1], name: r[2], units: Number(r[3]) || 0, price: Number(r[4]) || 0,
-            custom: r[5] || '', adj: Number(r[6]) || 0, cr: Number(r[7]) || 0, dt: r[8] === true});
-        });
-      });
-      if (data.plans) db.set.plans = data.plans.map(p => Object.assign({}, p, {acct: p.acct && data.accounts.findIndex(a => a.id === p.acct) > 0 ? p.acct : 'main'}));
-      if (data.manual && data.manual.length) db.set.manualSyms = data.manual;
-    });
-    return {records: DB.recs.length, accounts: DB.set.accounts.length};
-  }
-
   window.ZQ = {
     call: (fn, args, acct) => { const f = API[fn]; if (!f) return Promise.reject(new Error('不支援的功能：' + fn)); return f.apply(null, [acct === undefined ? 'main' : acct].concat(args || [])); },
     signIn: signIn, signOut: signOut, takeRedirect: takeRedirect, signedIn: signedIn, tokenOk: tokenOk, whoami: whoami,
-    importLegacy: importLegacy, ready: () => !!CLIENT_ID, fileUrl: () => FILE ? 'https://docs.google.com/spreadsheets/d/' + FILE.id + '/edit' : '',
+    ready: () => !!CLIENT_ID, fileUrl: () => FILE ? 'https://docs.google.com/spreadsheets/d/' + FILE.id + '/edit' : '',
     _db: () => DB
   };
 })();
