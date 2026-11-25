@@ -609,8 +609,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.5.1';
 const CHANGELOG = [
+  ['2.5.1', '2026-11-25', ['加入主畫面的 Safari 步驟依實際畫面修正：頁面選單 → 分享 → 檢視較多 → 加入主畫面 → 加入']],
   ['2.5.0', '2026-11-25', ['用瀏覽器開啟時，會自動提醒加到主畫面，並分別提供 Safari 和 Chrome 的步驟', 'Android 的 Chrome 可一鍵安裝', '在 LINE、Facebook、Instagram 裡開啟時，提醒改用瀏覽器開啟', '設定 → 關於 新增「加入主畫面」按鈕']],
   ['2.4.0', '2026-11-25', ['新增引導模式：右上角開關打開後，各功能旁會出現 ⓘ，點開說明用途與算法，並帶入你的數字', '沒登入時直接用示範資料展示，並自動開啟引導模式；按上方「登入使用」即可用 Google 帳號登入']],
   ['2.3.0', '2026-11-25', ['當沖改成開關樣式', '匯出 CSV 改為詳細版：手續費、稅、利息、庫存、成本、已實現損益和進出場理由都會匯出', '多帳戶時，總覽只顯示目前選擇的帳戶；沒有紀錄的帳戶不會再殘留上一個帳戶的數字']],
@@ -1491,16 +1492,20 @@ const IC = {
   share: '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>',
   more: '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span>',
   dots: '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></span>',
+  page: '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span>',
+  chev: '<span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 10.5l4 4 4-4"/></svg></span>',
   plus: '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span>'
 };
 const steps = l => '<ol class="inst-steps">' + l.map((t, i) => '<li><span class="n">' + (i + 1) + '</span><span>' + t + '</span></li>').join('') + '</ol>';
 const INST = {
   safari: () => steps([
-    '用 <b>Safari</b> 打開這個網頁（現在就是）。',
-    '點畫面下方網址列旁的 ' + IC.more + '（或分享按鈕 ' + IC.share + '），選「<b>分享</b>」。',
-    '往下滑，點「<b>加入主畫面</b>」' + IC.plus + '。',
-    '確認「以網頁 App 打開」是開啟的，再按右上角「<b>新增</b>」。',
-    '回到主畫面，點「韭菜紀錄」圖示就能使用。第一次從主畫面打開時，要再用 Google 登入一次（iPhone 的主畫面 App 和 Safari 是分開記住登入的）。']),
+    '點畫面下方網址列<b>左邊</b>的頁面選單 ' + IC.page + '。',
+    '在選單裡點「<b>分享</b>」' + IC.share + '。',
+    '分享面板第二排點「<b>檢視較多</b>」' + IC.chev + '。',
+    '往下找到並點「<b>加入主畫面</b>」' + IC.plus + '。',
+    '確認「<b>打開為網頁 App</b>」是開啟的，按右上角藍色的「<b>加入</b>」。',
+    '回到主畫面點「韭菜紀錄」圖示。第一次從主畫面打開時要再用 Google 登入一次（主畫面 App 和 Safari 是分開記住登入的）。']) +
+    '<span class="note">iOS 18 以前的 Safari：直接點下方工具列的分享按鈕 ' + IC.share + '，再往下點「加入主畫面」。</span>',
   chrome: () => IS_IOS ? steps([
     '用 <b>Chrome</b> 打開這個網頁。',
     '點網址列右邊的分享按鈕 ' + IC.share + '。',
