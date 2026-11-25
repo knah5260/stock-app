@@ -74,7 +74,40 @@
 3. 第一次登入時，App 會在你的雲端硬碟建立「韭菜紀錄（App 資料）」
 4. 到「交易」新增第一筆紀錄，或到「設定」先調整券商的手續費折數
 
-加入主畫面：iPhone／iPad 用 Safari 開啟後按「分享 → 加入主畫面」；Android 用 Chrome 開啟後按「安裝應用程式」。
+### 加入主畫面
+
+從主畫面打開會全螢幕顯示、開得更快，離線也能看上次的資料。用瀏覽器打開時，App 也會自動跳出這份教學（之後可在「設定 → 關於 → 加入主畫面」再打開）。
+
+**iPhone／iPad（Safari，iOS 26）**
+
+1. 點畫面下方網址列**左邊**的頁面選單 <img src="docs/icons/page.svg" width="18" height="18" alt="">
+2. 在選單裡點「**分享**」<img src="docs/icons/share.svg" width="18" height="18" alt="">
+3. 分享面板第二排點「**檢視較多**」<img src="docs/icons/more.svg" width="18" height="18" alt="">
+4. 往下找到並點「**加入主畫面**」<img src="docs/icons/add.svg" width="18" height="18" alt="">
+5. 確認「**打開為網頁 App**」是開啟的，按右上角藍色的「**加入**」
+6. 回到主畫面點「韭菜紀錄」圖示。第一次從主畫面打開時要再用 Google 登入一次（主畫面 App 和 Safari 是分開記住登入的）
+
+iOS 18 以前的 Safari：直接點下方工具列的分享按鈕 <img src="docs/icons/share.svg" width="18" height="18" alt="">，再往下點「加入主畫面」<img src="docs/icons/add.svg" width="18" height="18" alt="">。
+
+**iPhone／iPad（Chrome）**
+
+1. 點網址列右邊的分享按鈕 <img src="docs/icons/share.svg" width="18" height="18" alt="">
+2. 在選單裡點「**加入主畫面**」<img src="docs/icons/add.svg" width="18" height="18" alt="">（找不到就往下滑，或點「更多」）
+3. 按右上角「**新增**」，回到主畫面點「韭菜紀錄」圖示
+
+需要 iOS 16.4 以上；加不進去時請改用 Safari。
+
+**Android（Chrome）**
+
+1. 點右上角的選單 <img src="docs/icons/dots.svg" width="18" height="18" alt="">
+2. 點「**安裝應用程式**」或「**加到主畫面**」
+3. 按「**安裝**」，完成後從主畫面或應用程式清單打開「韭菜紀錄」
+
+App 偵測到 Android 的 Chrome 時，也會直接提供「一鍵安裝」按鈕。
+
+**在 LINE、Facebook、Instagram 裡打開的話**
+
+這些 App 內建的瀏覽器沒辦法加到主畫面，Google 登入也可能失敗。請點右上角（或右下角）的選單，選「以 Safari 開啟」或「用 Chrome 開啟」，再照上面的步驟操作。
 
 換手機或用其他裝置，只要登入同一個 Google 帳號，資料就會同步。
 
