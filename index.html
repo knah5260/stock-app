@@ -574,6 +574,7 @@ body.guide .hi{display:inline-flex}
     <b>目前支援</b>
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">國泰證券</b>：國泰證券 App 匯出的「客戶交易明細表」PDF（可選一整年）。有密碼的話，App 會請你輸入身分證字號。</span>
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">元大證券</b>：①「電子月對帳單」PDF（最準）：投資先生 App「明細 → 月對帳單」選月份按「補寄」，把信裡的 PDF 附件存到「檔案」再選，可一次選好幾個月；密碼通常是身分證字號。②「月對帳單」按「開啟」後的截圖，不用密碼，可一次選多張、重疊沒關係；放大截圖時最右邊的淨收付欄被切掉也可以，最後一張最好截到「合計」那行，App 會自動核對總數。③投資先生「交易 → 明細」的截圖。</span>
+    <span style="font-size:13px;color:#F5C04A">⚠️ 截圖辨識還在測試中，失敗率較高，可能讀不出來或讀錯；能用 PDF 的話建議優先用 PDF。</span>
     <span class="lbl" style="font-size:13px">檔案、截圖和密碼只在這台裝置上讀取，不會上傳。其他券商之後陸續加入。</span>
   </div>
   <div class="form" id="im-acctrow" style="display:none"><label class="selrow"><span>寫入帳戶</span><select id="im-acct"></select></label></div>
@@ -623,8 +624,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.11.1';
+const APP_VERSION = '2.11.2';
 const CHANGELOG = [
+  ['2.11.2', '2026-11-25', ['匯入頁註明截圖辨識還在測試中、失敗率較高，建議優先使用 PDF']],
   ['2.11.1', '2026-11-25', ['月對帳單截圖改成一段一段辨識，iPhone 上不會因為記憶體不足而讀不出來', '辨識進度顯示百分比', '數字前後多讀到的符號會先去掉，讀得更準']],
   ['2.11.0', '2026-11-25', ['新增元大「月對帳單」截圖匯入：在投資先生按「開啟」後直接截圖，不用補寄、不用密碼', '有股票代號和實際手續費、交易稅，每筆都會驗算，截到「合計」那行還會核對總數', '放大截圖、多張重疊、淨收付欄被切掉都可以；讀不清楚的日期或代號會單獨再辨識一次']],
   ['2.10.0', '2026-11-25', ['新增元大「電子月對帳單」PDF 匯入：有股票代號、實際手續費和交易稅，並和對帳單合計自動比對', '可以一次選好幾個月的 PDF，密碼只要輸入一次', 'PDF 裡的特殊字形（例如「⽇」「⾦」）會先轉成一般文字再判讀']],
@@ -2468,7 +2470,7 @@ async function importShots(files) {
   } catch (x) { info.textContent = '辨識失敗：' + errMsg(x); return; }
   if (!res.rows.length) { info.textContent = '沒有辨識到交易。請確認是投資先生「月對帳單」或「交易 → 明細」的畫面'; return; }
   info.textContent = files.length + ' 張截圖 · ' + res.broker + '「' + res.kind + '」';
-  res.warnings.unshift('截圖是用文字辨識讀的，匯入前請核對每一筆');
+  res.warnings.unshift('截圖辨識還在測試中，失敗率較高，匯入前請逐筆核對');
   await imFinish(res);
 }
 function renderImport() {
