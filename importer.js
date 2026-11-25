@@ -209,6 +209,21 @@
     }
     return r > g * 2 && r > 20 ? 'red' : g > r * 2 && g > 20 ? 'green' : '';
   }
+  // 某欄的文字行（用像素判斷，不靠文字辨識）
+  function inkLines(img, x0, x1, y0, y1, dark, k) {
+    const cnt = [];
+    for (let y = Math.round(y0); y < Math.round(y1); y++) {
+      let c = 0;
+      for (let x = Math.round(x0); x < Math.round(x1); x += 2) { const i = (y * img.w + x) * 4, v = Math.max(img.d[i], img.d[i + 1], img.d[i + 2]); if (dark ? v > 110 : v < 140) c++; }
+      cnt.push(c);
+    }
+    const out = []; let cur = null;
+    cnt.forEach((c, i) => {
+      const y = Math.round(y0) + i;
+      if (c >= 2) { if (cur && y - cur.y1 <= 8 * k) cur.y1 = y; else { cur = {y0: y, y1: y}; out.push(cur); } }
+    });
+    return out.filter(l => l.y1 - l.y0 >= 12 * k);
+  }
   const digits = s => String(s || '').replace(/[^\d]/g, '');
   function priceCands(t) {
     t = String(t || '').replace(/[^\d.,]/g, '');
@@ -251,25 +266,46 @@
         const lines = await o.ocr(st, c === 'name' ? 'text' : 'digits');
         L[c] = lines.map(l => ({y0: l.y0 + st.y0, y1: l.y1 + st.y0, t: String(l.text || '').replace(/\s+/g, '').trim(), conf: l.conf})).filter(l => l.t).sort((p, q) => p.y0 - q.y0);
       }
-      // 以日期欄找出每一筆：上一行「2026/」、下一行「MM/DD」
-      const anchors = []; const dl = L.date;
-      for (let i = 0; i < dl.length; i++) {
-        const y = /^(20\d\d)\/?$/.exec(dl[i].t.replace(/[^\d/]/g, ''));
-        if (!y) continue;
-        const nx = dl[i + 1], md = nx && /^(\d{1,2})\/(\d{1,2})$/.exec(nx.t.replace(/[^\d/]/g, ''));
-        if (!md || nx.y0 - dl[i].y0 > 110 * k) { res.warnings.push('第 ' + (ii + 1) + ' 張有一筆被截斷，沒有匯入'); continue; }
-        anchors.push({yT: dl[i].y0, yB: nx.y1, date: y[1] + '-' + md[1].padStart(2, '0') + '-' + md[2].padStart(2, '0')}); i++;
+      // 用圖片本身切出每一筆：「價格／股數」欄每筆固定兩行，筆與筆之間的間距比同一筆內大
+      const ink = inkLines(img, YT_COLS.num[0] * img.w, YT_COLS.num[1] * img.w, A.top, A.bot, A.dark, k);
+      const bands = [];
+      for (let i = 0; i < ink.length; i++) {
+        const a = ink[i], b = ink[i + 1];
+        if (b && b.y0 - a.y0 < 104 * k) {
+          const hs = ink.map(l => l.y1 - l.y0).sort((p, q) => p - q), hm = hs[Math.floor(hs.length / 2)] || 30 * k;
+          const cutTop = a.y0 - A.top < 3 * k || a.y1 - a.y0 < hm * 0.7, cutBot = A.bot - b.y1 < 3 * k || b.y1 - b.y0 < hm * 0.7;
+          bands.push({lo: a.y0 - 48 * k, hi: b.y1 + 42 * k, py: a, sy: b, cut: cutTop || cutBot, where: cutTop ? '最上面' : '最下面'}); i++;
+        } else res.warnings.push('第 ' + (ii + 1) + ' 張' + (i === 0 ? '最上面' : '最下面') + '有一筆被截斷，沒有匯入');
       }
-      if (dl.length && /^\d{1,2}\/\d{1,2}$/.test(dl[0].t.replace(/[^\d/]/g, '')) && (!anchors.length || dl[0].y0 < anchors[0].yT)) res.warnings.push('第 ' + (ii + 1) + ' 張最上面有一筆被截斷，沒有匯入');
       const rowsHere = [];
-      anchors.forEach((an, j) => {
-        const lo = j ? (anchors[j - 1].yB + an.yT) / 2 : an.yT - 70 * k, hi = j < anchors.length - 1 ? (an.yB + anchors[j + 1].yT) / 2 : an.yB + 60 * k;
-        const inB = arr => arr.filter(l => (l.y0 + l.y1) / 2 >= lo && (l.y0 + l.y1) / 2 < hi);
-        const nm = inB(L.name), nu = inB(L.num), ne = inB(L.net);
-        const r = {date: an.date, issues: [], img: ii + 1};
-        if (nm.length < 2 || nu.length < 2 || !ne.length) { if (j === anchors.length - 1 && hi > A.bot - 20 * k) res.warnings.push('第 ' + (ii + 1) + ' 張最下面有一筆被截斷，沒有匯入'); else { r.issues.push('有欄位讀不到'); r.name = (nm[0] || {}).t || '?'; r.raw = [nm, nu, ne].map(a => a.map(l => l.t).join(' ')).join(' | '); rowsHere.push(r); } return; }
-        const typeL = nm[nm.length - 1];
-        r.name = nm.slice(0, -1).map(l => l.t).join('');
+      for (const bd of bands) {
+        if (bd.cut) { res.warnings.push('第 ' + (ii + 1) + ' 張' + bd.where + '有一筆被截斷，沒有匯入'); continue; }
+        const inB = arr => arr.filter(l => (l.y0 + l.y1) / 2 >= bd.lo && (l.y0 + l.y1) / 2 < bd.hi);
+        const cell = async (c, mode) => {
+          const [a, b] = YT_COLS[c], st = ytStrip(img, a * img.w, bd.lo, b * img.w, bd.hi, A.dark);
+          return (await o.ocr(st, mode)).map(l => ({y0: l.y0 + st.y0, y1: l.y1 + st.y0, t: String(l.text || '').replace(/\s+/g, ''), conf: l.conf})).filter(l => l.t);
+        };
+        let dl = inB(L.date), nm = inB(L.name), nu = inB(L.num), ne = inB(L.net);
+        const r = {issues: [], img: ii + 1};
+        // 日期
+        const getDate = arr => {
+          const s2 = arr.map(l => l.t.replace(/[^\d/]/g, '')).join('/').replace(/\/+/g, '/');
+          const m = /(20\d\d)\/?(\d{1,2})\/(\d{1,2})/.exec(s2);
+          return m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 ? m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0') : '';
+        };
+        r.date = getDate(dl);
+        if (!r.date) { dl = await cell('date', 'digits'); r.date = getDate(dl); }
+        if (nm.length < 2) nm = await cell('name', 'text');
+        if (nu.length < 2) nu = await cell('num', 'digits');
+        if (!ne.length) ne = await cell('net', 'digits');
+        if (!r.date) r.issues.push('日期讀不到');
+        if (nm.length < 2 || nu.length < 2 || !ne.length) { r.issues.push('有欄位讀不到'); r.name = (nm[0] || {}).t || '?'; r.cd = ''; r.item = ''; r.shares = 0; r.price = 0; r.net = 0; rowsHere.push(r); continue; }
+        // 名稱欄：最下面那行是交易類別，其餘是股票名稱（可能兩行）；類別那行靠「股數」那行的高度判斷
+        nm.sort((p, q) => p.y0 - q.y0);
+        let ti = nm.findIndex(l => Math.abs((l.y0 + l.y1) / 2 - (bd.sy.y0 + bd.sy.y1) / 2) < 30 * k);
+        if (ti < 0) ti = nm.length - 1;
+        const typeL = nm[ti];
+        r.name = nm.filter((l, i) => i !== ti && (l.y1 <= typeL.y0 + 5 * k)).map(l => l.t).join('');
         r.cd = typeL.t;
         const col = ytColor(img, YT_COLS.name[0] * img.w, typeL.y0, YT_COLS.name[1] * img.w, typeL.y1);
         const tb = /買/.test(r.cd) ? 'buy' : /賣/.test(r.cd) ? 'sell' : '';
@@ -282,6 +318,7 @@
         r.net = Number(digits(ne[0].t)) || 0;
         r.pl = ne[1] ? ne[1].t : '';
         // 價格、股數：用「價格 × 股數」和應收付互相驗證，挑出合理的組合（修正小數點、千分位被讀錯）
+        nu.sort((p, q) => p.y0 - q.y0); ne.sort((p, q) => p.y0 - q.y0);
         const sh = Number(digits(nu[1].t)) || 0, pcs = priceCands(nu[0].t);
         let best = null;
         pcs.forEach(p => {
@@ -294,7 +331,7 @@
         if (best) { r.price = best.p; r.amt = best.amt; r.cost = best.diff; }
         else { r.price = pcs[0] || 0; r.amt = Math.round(r.price * sh); r.cost = null; r.issues.push('價格 × 股數和應收付對不上，可能有數字讀錯'); }
         rowsHere.push(r);
-      });
+      }
       per.push(rowsHere);
     }
     if (o.progress) o.progress(imgs.length, imgs.length);
@@ -321,6 +358,7 @@
     res.rows.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     // 股票代號、手續費與稅
     for (const r of res.rows) {
+      r.fee = r.fee || 0; r.tax = r.tax || 0;
       if (!r.item || !r.price) continue;
       const s = await ytResolve(r.name, r.date, r.price, o.symbols || [], o.priceOn);
       if (s) { r.code = s.code; r.fullName = s.name + '（' + s.code + '）'; if (!s.sure) r.issues.push('股票名稱是推測的（讀到「' + r.name + '」），請確認'); }

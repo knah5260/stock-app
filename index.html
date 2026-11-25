@@ -623,8 +623,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.9.1';
 const CHANGELOG = [
+  ['2.9.1', '2026-11-25', ['元大截圖辨識更準：改用畫面位置切出每一筆，一個日期讀錯不會影響其他筆；讀不到的欄位會單獨再辨識一次', '修正貼著列表頂端的那筆被誤判為截斷', '比對已記過的紀錄改用股票代號，日期差 3 天內、價格差 1% 內也會標成「可能已記過」']],
   ['2.9.0', '2026-11-25', ['匯入券商對帳單新增元大證券：直接選投資先生 App「交易 → 明細」的截圖（可多張、可重疊），在手機上辨識文字，並用價格 × 股數和應收付互相驗算', '自動判斷買賣、當沖，推算手續費和交易稅，對應股票代號時也會比對當天收盤價', '被截斷的那筆會提醒，不會匯入']],
   ['2.8.0', '2026-11-25', ['設定 → 帳戶與資料 新增「清除交易紀錄」：可清除全部、某段日期，或只清除匯入的紀錄；清除前可先下載備份，並需輸入「清除」確認']],
   ['2.7.0', '2026-11-25', ['新增匯入券商對帳單：支援國泰證券 App 匯出的「客戶交易明細表」PDF（含密碼保護的檔案），自動對應股票代號、判斷當沖、跳過已記過的交易', '匯入的手續費和稅照對帳單實際金額記錄', '檔案和密碼只在你的裝置上讀取，不會上傳']],
@@ -2405,14 +2406,19 @@ async function imFinish(res) {
   const dates = res.rows.map(r => r.date).filter(Boolean).sort();
   let have = [];
   try { if (dates.length) have = await callIn(acct, 'appRecords', dates[0], dates[dates.length - 1]); } catch (x) {}
-  const cnt = {};
-  const key = (d, item, name, u, p) => [d, item, name, +u, +p].join('|');
-  have.forEach(h => { const k = key(h.d, h.item, h.name, h.units, h.price); cnt[k] = (cnt[k] || 0) + 1; });
-  res.rows.forEach(r => {
-    r.dup = false;
-    if (r.fullName) { const k = key(r.date, r.item, r.fullName, r.shares, r.price); if (cnt[k] > 0) { cnt[k]--; r.dup = true; } }
-    r.sel = !r.dup && !r.issues.length && !!r.fullName;
-  });
+  // 用股票代號比對：先找完全一樣的；找不到再放寬（日期差 3 天內、價格差 1% 內、股數相同）
+  const codeOf = n => (String(n || '').match(/（([^（）]+)）$/) || [])[1] || '';
+  const pool = have.map(h => ({d: h.d, item: h.item, code: codeOf(h.name), u: +h.units, p: +h.price, used: false}));
+  const days = (a, b) => Math.abs((new Date(a) - new Date(b)) / 864e5);
+  res.rows.forEach(r => { r.dup = false; r.dupLoose = false; });
+  [true, false].forEach(strict => res.rows.forEach(r => {
+    if (r.dup || !r.fullName) return;
+    const c = r.code || codeOf(r.fullName);
+    const h = pool.find(x => !x.used && x.item === r.item && x.code === c && x.u === +r.shares &&
+      (strict ? x.d === r.date && Math.abs(x.p - r.price) < 1e-6 : days(x.d, r.date) <= 3 && Math.abs(x.p / r.price - 1) <= 0.01));
+    if (h) { h.used = true; r.dup = true; r.dupLoose = !strict; }
+  }));
+  res.rows.forEach(r => { r.sel = !r.dup && !r.issues.length && !!r.fullName; });
   IM = {res: res, acct: acct};
   renderImport();
 }
@@ -2446,7 +2452,7 @@ function renderImport() {
     res.warnings.map(w => '<span style="color:#F5C04A">' + esc(w) + '</span>').join('') +
     '<span class="lbl">' + (/截圖/.test(res.kind) ? '手續費和稅金由截圖的應收付金額推算，不套用折扣設定。' : '手續費和稅金照對帳單的實際金額記錄，不套用折扣設定。') + '</span>';
   $('#im-list').innerHTML = rows.map((r, i) => {
-    const st = r.dup ? '<span class="imst">已記過</span>' : !r.fullName ? '<span class="imst warn">找不到代號</span>' : r.issues.length ? '<span class="imst warn">需確認</span>' : '';
+    const st = r.dup ? '<span class="imst">' + (r.dupLoose ? '可能已記過' : '已記過') + '</span>' : !r.fullName ? '<span class="imst warn">找不到代號</span>' : r.issues.length ? '<span class="imst warn">需確認</span>' : '';
     const buy = /買/.test(r.item);
     return '<label class="imrow"><input type="checkbox" data-i="' + i + '"' + (r.sel ? ' checked' : '') + (r.fullName ? '' : ' disabled') + '>' +
       '<span class="col" style="gap:2px;min-width:0;flex:1"><span class="row" style="gap:6px;align-items:center"><span class="tag ' + (buy ? 'buy' : 'sell') + '">' + esc(r.item || r.cd) + '</span>' +
