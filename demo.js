@@ -144,6 +144,7 @@
         return {row: 99, d: r.date || r.d, units: r.units, price: r.price, dayTrade: false, item: r.item, name: r.name, amt: amt, fee: f, tax: 0, net: /買進/.test(r.item) ? -(amt + f) : amt - f, batch: 1, note: r.note || ''};
       }
       case 'appAddRecords': return a[0].map(r => window.demoCall('appAddRecord', [r]));
+      case 'appImportRecords': return {added: a[0].length};
       case 'appUpdateRecord': return window.demoCall('appAddRecord', [a[2]]);
       case 'appDeleteRecord': case 'appDismissAction': return true;
       case 'appSaveFees': FEES = a[0]; return SETTINGS();

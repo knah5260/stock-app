@@ -289,6 +289,12 @@ body.guide .hi{display:inline-flex}
 .tag.s{background:#173A2A;color:#9CF0C4}
 .tag.a{background:#2C313B;color:#C9CED6}
 .imtb{border-collapse:collapse;font-size:12px;white-space:nowrap}
+.imrow{display:flex;gap:10px;align-items:center;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.imrow input[type=checkbox]{width:20px;height:20px;flex-shrink:0;accent-color:var(--acc)}
+.imrow .tag{font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;flex-shrink:0}
+.imrow .tag.buy{background:#3A1A1C;color:#FF7A7E}.imrow .tag.sell{background:#12301F;color:#5CD08F}
+.imrow .col{align-items:flex-start}.imrow .row{justify-content:flex-start}
+.imst{font-size:11px;border-radius:6px;padding:1px 6px;background:#2A2E36;color:var(--mut);flex-shrink:0}.imst.warn{background:#2A2110;color:#F5C04A}
 .imtb th,.imtb td{border:1px solid var(--line);padding:4px 6px;text-align:left}
 .imtb th{color:var(--mut);font-weight:600}
 .selrow select{flex:1;min-width:0;text-align:right;background:transparent;border:0;color:var(--tx);font-size:16px;-webkit-appearance:none;appearance:none;direction:rtl}
@@ -563,22 +569,24 @@ body.guide .hi{display:inline-flex}
 <!-- 匯入對帳單（畫面先做，解析規則之後再加）-->
 <section class="page" id="pg-import" aria-label="匯入券商對帳單">
   <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>匯入券商對帳單</h1></div>
-  <div class="card" style="border-color:#5A4520;background:#2A2110;color:#F5C04A;font-size:14px">這個功能還在準備中：可以先選擇券商和檔案看看內容，但還不會解析或寫入紀錄。</div>
-  <div class="form">
-    <label class="selrow"><span>券商</span><select id="im-broker">
-      <option value="">請選擇</option><option>元大證券</option><option>凱基證券</option><option>富邦證券</option><option>國泰證券</option><option>永豐金證券</option><option>群益金鼎證券</option><option>玉山證券</option><option>台新證券</option><option>兆豐證券</option><option>元富證券</option><option>統一證券</option><option>中國信託證券</option><option>其他</option>
-    </select></label>
-    <label class="selrow" id="im-acctrow" style="display:none"><span>寫入帳戶</span><select id="im-acct"></select></label>
+  <div class="card col" style="gap:6px;font-size:14px;line-height:1.6">
+    <b>目前支援：國泰證券</b>
+    <span class="lbl" style="font-size:13px">在國泰證券 App 匯出「客戶交易明細表」PDF（可選一整年），再選擇這個檔案。有密碼的話，App 會請你輸入身分證字號。</span>
+    <span class="lbl" style="font-size:13px">檔案和密碼只在這台裝置上讀取，不會上傳。其他券商之後陸續加入。</span>
   </div>
-  <label class="card col" for="im-file" style="gap:6px;align-items:center;justify-content:center;min-height:120px;border-style:dashed;cursor:pointer;text-align:center">
+  <div class="form" id="im-acctrow" style="display:none"><label class="selrow"><span>寫入帳戶</span><select id="im-acct"></select></label></div>
+  <label class="card col" for="im-file" style="gap:6px;align-items:center;justify-content:center;min-height:110px;border-style:dashed;cursor:pointer;text-align:center">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--acc)"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
-    <span style="font-weight:600" id="im-fname">選擇對帳單檔案</span>
-    <span class="lbl" id="im-finfo">支援 CSV、Excel（.xls、.xlsx）、PDF</span>
-    <input type="file" id="im-file" accept=".csv,.txt,.xls,.xlsx,.pdf,text/csv,application/pdf" style="display:none">
+    <span style="font-weight:600;word-break:break-all" id="im-fname">選擇對帳單 PDF</span>
+    <span class="lbl" id="im-finfo">國泰證券「客戶交易明細表」</span>
+    <input type="file" id="im-file" accept=".pdf,application/pdf" style="display:none">
   </label>
-  <span class="sec">預覽</span>
-  <div class="card" id="im-preview"><span class="lbl">選好檔案後會在這裡顯示內容。之後會改成自動辨識成交日期、股票、買賣、股數和價格，讓你核對後再匯入。</span></div>
-  <button class="primary" id="im-go" disabled>匯入（尚未開放）</button>
+  <div id="im-result" style="display:none" class="col">
+    <div class="card col" id="im-sum" style="gap:6px;font-size:14px"></div>
+    <div class="row" style="justify-content:space-between;align-items:center"><span class="sec" style="margin:0">交易明細</span><button class="link" id="im-toggle">全選／全不選</button></div>
+    <div class="list" id="im-list"></div>
+  </div>
+  <button class="primary" id="im-go" disabled>匯入</button>
 </section>
 
 <!-- 批次新增 -->
@@ -609,11 +617,13 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>window.ZQ_CLIENT_ID = '853599421618-ht8fbomf0te15scdv98kc2rmunv4j0v6.apps.googleusercontent.com';</script>
 <script src="engine.js"></script>
 <script src="localapi.js"></script>
+<script src="importer.js"></script>
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.7.0';
 const CHANGELOG = [
+  ['2.7.0', '2026-11-25', ['新增匯入券商對帳單：支援國泰證券 App 匯出的「客戶交易明細表」PDF（含密碼保護的檔案），自動對應股票代號、判斷當沖、跳過已記過的交易', '匯入的手續費和稅照對帳單實際金額記錄', '檔案和密碼只在你的裝置上讀取，不會上傳']],
   ['2.6.0', '2026-11-25', ['加入匿名使用統計（GoatCounter）：只計算打開次數、登入次數和新使用者人數，不含帳號或交易資料，詳見隱私權政策']],
   ['2.5.4', '2026-11-25', ['修正 iPhone 12／13／14 等較窄的螢幕上，總覽標題會換成兩行的問題']],
   ['2.5.3', '2026-11-25', ['修正當沖開關有時點了沒反應、反而跳出說明的問題', '示範資料加上進出場理由範例']],
@@ -1430,7 +1440,7 @@ const HELP = {
   divinc: ['股利與所得', () => '依年度整理收到的現金股利、股票股利和被扣的二代健保補充保費，報稅時可以對照。'],
   dca: ['定期定額', () => '設定好扣款日和每次金額，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存起來。'],
   batch: ['批次新增', () => '一次輸入多筆買賣（例如一天內多筆零股），核對後一起儲存，比一筆一筆新增快。'],
-  import: ['匯入券商對帳單', () => '還在準備中：目前可以選擇券商和檔案預覽內容，之後會自動辨識成交資料。'],
+  import: ['匯入券商對帳單', () => '目前支援國泰證券 App 匯出的「客戶交易明細表」PDF。App 會自動辨識每筆買賣、對應股票代號，並和對帳單上的合計比對；已經記過的交易不會重複匯入。手續費和稅照對帳單的實際金額記錄。檔案和密碼只在這台裝置上讀取，不會上傳。'],
   fees: ['手續費設定', () => '手續費＝成交金額 × 0.1425% × 折數，不足最低手續費以最低計。券商折扣有變動時，新增一段「從某天開始用新折數」，舊紀錄仍用舊折數。'],
   credit: ['信用交易設定', () => '融資成數、融券保證金成數和利率，用來計算融資金額、擔保品、保證金和利息。依你的券商實際條件填寫。'],
   nhi: ['二代健保補充保費', () => '單筆現金股利達 2 萬元時，券商會先扣 2.11%。符合免扣資格或實際沒被扣時可以關閉，所有股利紀錄會重新計算。'],
@@ -2264,33 +2274,124 @@ async function exportCSV() {
 }
 $('#dr-export').onclick = () => { closeDrawer(); exportCSV(); };
 
-// ---------- 匯入對帳單（目前只做畫面與預覽）----------
+// ---------- 匯入對帳單 ----------
+// 檔案在這台裝置上解析（importer.js + pdf.js），密碼只用來打開檔案，不會存起來
+let IM = null;
+const fmtN = v => Number(v || 0).toLocaleString('en-US');
 function loadImport() {
   const row = $('#im-acctrow');
   row.style.display = multi() ? '' : 'none';
   if (multi()) $('#im-acct').innerHTML = acctOptions(writeAcct());
+  loadSymbols().catch(() => {});
+}
+const imAcct = () => multi() ? $('#im-acct').value : writeAcct();
+function askPdfPassword(wrong) {
+  return new Promise(res => {
+    openSheet('<h2>這個 PDF 有密碼</h2><span class="sub">' + (wrong ? '<b style="color:#FF6B6B">密碼不對，請再試一次。</b><br>' : '') +
+      '國泰的對帳單密碼通常是身分證字號（英文字母大寫）。密碼只用來在這台裝置上打開檔案，不會儲存或上傳。</span>' +
+      '<input id="im-pw" type="password" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="身分證字號" style="height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--tx);padding:0 14px;font-size:17px">' +
+      '<button class="primary" id="im-pwok">打開</button><button class="link" id="im-pwno">取消</button>');
+    const i = $('#im-pw'); setTimeout(() => i.focus(), 100);
+    const ok = () => { const v = i.value.trim().toUpperCase(); closeSheet(); res(v || null); };
+    $('#im-pwok').onclick = ok; i.onkeydown = e => { if (e.key === 'Enter') ok(); };
+    $('#im-pwno').onclick = () => { closeSheet(); res(null); };
+  });
 }
 $('#im-file').onchange = async e => {
-  const f = e.target.files[0];
+  const f = e.target.files[0]; e.target.value = '';
   if (!f) return;
   $('#im-fname').textContent = f.name;
-  $('#im-finfo').textContent = (f.size / 1024).toFixed(1) + ' KB · ' + ($('#im-broker').value || '尚未選擇券商');
-  const box = $('#im-preview');
-  if (/\.(csv|txt)$/i.test(f.name)) {
-    let txt = '';
-    try {
-      const buf = await f.arrayBuffer();
-      txt = new TextDecoder('utf-8', {fatal: true}).decode(buf);
-    } catch (x) {
-      try { txt = new TextDecoder('big5').decode(await f.arrayBuffer()); } catch (y) { txt = ''; }
+  $('#im-finfo').textContent = '讀取中…';
+  $('#im-result').style.display = 'none'; $('#im-go').disabled = true; IM = null;
+  let pw = null, wrong = false, res = null;
+  try {
+    const sym = await loadSymbols().catch(() => SYM);
+    for (let tries = 0; tries < 5; tries++) {
+      try { res = await ZQImport.parseFile(f, pw, {symbols: sym ? sym.list : []}); break; }
+      catch (x) {
+        if (x.code !== 'NEED_PW' && x.code !== 'WRONG_PW') throw x;
+        pw = await askPdfPassword(x.code === 'WRONG_PW' || wrong); wrong = true;
+        if (!pw) { $('#im-finfo').textContent = '已取消'; return; }
+      }
     }
-    const lines = txt.split(/\r?\n/).filter(l => l.trim()).slice(0, 12);
-    const cells = l => l.split(/,|\t/).map(c => c.replace(/^"|"$/g, '').trim());
-    box.innerHTML = lines.length ? '<span class="lbl">前 ' + lines.length + ' 行（原始內容，尚未辨識欄位）</span><div style="overflow-x:auto;margin-top:8px"><table class="imtb">' +
-      lines.map((l, i) => '<tr>' + cells(l).slice(0, 10).map(c => (i ? '<td>' : '<th>') + esc(c) + (i ? '</td>' : '</th>')).join('') + '</tr>').join('') + '</table></div>' : '<span class="lbl">讀不到內容</span>';
-  } else {
-    box.innerHTML = '<span class="lbl">' + esc(f.name) + '：Excel 和 PDF 的內容會在解析功能完成後顯示。</span>';
+    pw = null;
+    if (!res) throw new Error('打不開這個檔案');
+  } catch (x) {
+    $('#im-finfo').textContent = x.code === 'FORMAT' || x.code === 'UNKNOWN' ? x.message : '讀取失敗：' + errMsg(x);
+    return;
   }
+  $('#im-finfo').textContent = (f.size / 1024).toFixed(0) + ' KB · ' + res.broker + '「' + res.kind + '」';
+  // 跟已經記過的紀錄比對（同日期、買賣、股票、股數、價格），重複的預設不勾
+  const acct = imAcct();
+  const dates = res.rows.map(r => r.date).sort();
+  let have = [];
+  try { if (dates.length) have = await callIn(acct, 'appRecords', dates[0], dates[dates.length - 1]); } catch (x) {}
+  const cnt = {};
+  const key = (d, item, name, u, p) => [d, item, name, +u, +p].join('|');
+  have.forEach(h => { const k = key(h.d, h.item, h.name, h.units, h.price); cnt[k] = (cnt[k] || 0) + 1; });
+  res.rows.forEach(r => {
+    r.dup = false;
+    if (r.fullName) { const k = key(r.date, r.item, r.fullName, r.shares, r.price); if (cnt[k] > 0) { cnt[k]--; r.dup = true; } }
+    r.sel = !r.dup && !r.issues.length && !!r.fullName;
+  });
+  IM = {res: res, acct: acct};
+  renderImport();
+};
+function renderImport() {
+  const res = IM.res, rows = res.rows;
+  const n = k => rows.filter(k).length;
+  const ds = rows.map(r => r.date).sort();
+  const chk = (res.check || []).map(c => c.name + ' ' + fmtN(c.file) + (c.ok ? ' ✓' : ' ✗（讀到 ' + fmtN(c.got) + '）')).join('、');
+  $('#im-sum').innerHTML = '<b>讀到 ' + rows.length + ' 筆交易</b>' +
+    (ds.length ? '<span class="lbl">' + ds[0].replace(/-/g, '/') + ' – ' + ds[ds.length - 1].replace(/-/g, '/') + '　買進 ' + n(r => /買/.test(r.item)) + '・賣出 ' + n(r => /賣/.test(r.item)) + '</span>' : '') +
+    (chk ? '<span class="lbl">和對帳單合計比對：' + chk + '</span>' : '') +
+    (n(r => r.dup) ? '<span class="lbl">已經記過的 ' + n(r => r.dup) + ' 筆不會重複匯入（預設不勾）</span>' : '') +
+    (n(r => r.issues.length || !r.fullName) ? '<span style="color:#F5C04A">有 ' + n(r => r.issues.length || !r.fullName) + ' 筆需要確認，預設不勾</span>' : '') +
+    res.warnings.map(w => '<span style="color:#F5C04A">' + esc(w) + '</span>').join('') +
+    '<span class="lbl">手續費和稅金照對帳單的實際金額記錄，不套用折扣設定。</span>';
+  $('#im-list').innerHTML = rows.map((r, i) => {
+    const st = r.dup ? '<span class="imst">已記過</span>' : !r.fullName ? '<span class="imst warn">找不到代號</span>' : r.issues.length ? '<span class="imst warn">需確認</span>' : '';
+    const buy = /買/.test(r.item);
+    return '<label class="imrow"><input type="checkbox" data-i="' + i + '"' + (r.sel ? ' checked' : '') + (r.fullName ? '' : ' disabled') + '>' +
+      '<span class="col" style="gap:2px;min-width:0;flex:1"><span class="row" style="gap:6px;align-items:center"><span class="tag ' + (buy ? 'buy' : 'sell') + '">' + esc(r.item || r.cd) + '</span>' +
+      '<b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.fullName || r.name) + '</b>' + (r.dayTrade ? '<span class="lbl">當沖</span>' : '') + st + '</span>' +
+      '<span class="lbl">' + r.date.slice(5).replace('-', '/') + '　' + fmtN(r.shares) + ' 股 @ ' + r.price + '　費 ' + r.fee + (r.tax ? '・稅 ' + r.tax : '') + '</span>' +
+      (r.issues.length ? '<span style="color:#F5C04A;font-size:12px">' + esc(r.issues.join('；')) + '</span>' : '') +
+      (!r.fullName ? '<span class="row" style="gap:6px"><input class="imcode" data-i="' + i + '" placeholder="輸入代號" inputmode="text" style="width:110px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);padding:0 8px"></span>' : '') +
+      '</span><span style="font-weight:700;font-size:14px;color:var(--mut)">' + (buy ? '−' : '+') + fmtN(r.net) + '</span></label>';
+  }).join('');
+  $$('#im-list input[type=checkbox]').forEach(c => c.onchange = () => { rows[+c.dataset.i].sel = c.checked; imBtn(); });
+  $$('#im-list .imcode').forEach(inp => inp.onchange = () => {
+    const s = symOf(inp.value.trim());
+    if (!s) return toast('找不到代號 ' + inp.value.trim());
+    const r = rows[+inp.dataset.i]; r.code = s[0]; r.fullName = s[1] + '（' + s[0] + '）'; r.sel = !r.issues.length; renderImport();
+  });
+  $('#im-result').style.display = '';
+  imBtn();
+}
+function imBtn() {
+  const k = IM ? IM.res.rows.filter(r => r.sel && r.fullName).length : 0;
+  const b = $('#im-go'); b.disabled = !k; b.textContent = k ? '匯入 ' + k + ' 筆' : '匯入';
+}
+$('#im-toggle').onclick = () => {
+  if (!IM) return;
+  const rows = IM.res.rows.filter(r => r.fullName), all = rows.every(r => r.sel);
+  rows.forEach(r => r.sel = !all); renderImport();
+};
+$('#im-go').onclick = async () => {
+  if (!IM) return;
+  const pick = IM.res.rows.filter(r => r.sel && r.fullName);
+  if (!pick.length) return;
+  const list = pick.map(r => ({date: r.date, item: r.item, name: r.fullName, units: r.shares, price: r.price, dayTrade: !!r.dayTrade, fee: r.fee, tax: r.tax + (r.cgt || 0), note: ''}));
+  const acct = multi() ? $('#im-acct').value : IM.acct;
+  const b = $('#im-go'); b.disabled = true; b.textContent = '匯入中（' + list.length + ' 筆）…';
+  try {
+    await callIn(acct, 'appImportRecords', list);
+    toast('已匯入 ' + list.length + ' 筆'); afterWrite();
+    if (window.zqTrack) window.zqTrack('import-cathay', true);
+    IM = null; $('#im-result').style.display = 'none'; $('#im-fname').textContent = '選擇對帳單 PDF'; $('#im-finfo').textContent = '國泰證券「客戶交易明細表」';
+    closePage();
+  } catch (e) { toast('匯入失敗：' + errMsg(e), 5000); imBtn(); }
 };
 
 // ---------- 啟動 ----------

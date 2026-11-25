@@ -621,6 +621,24 @@
       await mutate(db => { order.forEach(i => { const nid = db.nextId++; nids[i] = nid; db.recs.push(toRec(list[i], ids[i], nid)); }); });
       return order.map(i => engRow(ids[i], nids[i]));
     },
+    // 匯入對帳單：手續費和稅用對帳單上的實際金額（存成「匯入：手續費 N／稅 M」的自訂費用，不套用折扣設定）
+    async appImportRecords(acct, list) {
+      if (!Array.isArray(list) || !list.length) err('沒有要匯入的紀錄');
+      if (list.length > 2000) err('一次最多 2000 筆');
+      const id = writeOnly(acct);
+      list.forEach(r => { check(r); if (!(r.fee >= 0) || !(r.tax >= 0)) err('手續費或稅金格式錯誤'); });
+      await load();
+      const codes = [...new Set(list.map(r => r.name))];
+      for (const n of codes) await register(n, id);
+      const tag = r => '匯入：手續費 ' + r.fee + '／稅 ' + r.tax;
+      const order = list.map((r, i) => i).sort((a, b) => list[a].date < list[b].date ? -1 : list[a].date > list[b].date ? 1 : a - b);
+      await mutate(db => {
+        const s = acctSet(id); s.custom = Array.isArray(s.custom) ? s.custom : [];
+        list.forEach(r => { const n = tag(r); if (!s.custom.some(x => x && x.name === n)) s.custom.push({name: n, broker: false, fee: r.fee, tax: r.tax}); });
+        order.forEach(i => { const nid = db.nextId++; db.recs.push(toRec(Object.assign({}, list[i], {custom: tag(list[i])}), id, nid)); });
+      });
+      return {added: list.length};
+    },
     async appUpdateRecord(acct, row, expect, rec) {
       const id = writeOnly(acct); check(rec); await load(); await register(rec.name, id);
       await mutate(db => {
