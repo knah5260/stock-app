@@ -384,7 +384,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <datalist id="tr-stocks"></datalist>
   <div id="tr-side" style="display:contents">
   <div class="card est col" style="gap:8px" id="tr-est"></div>
-  <button class="primary" id="tr-save">儲存到 LOG</button>
+  <button class="primary" id="tr-save">儲存</button>
   <button class="danger" id="tr-delete" style="display:none">刪除這筆紀錄</button>
   <button class="link" id="tr-cancel" style="display:none;justify-content:center">取消修改</button>
   </div>
@@ -448,7 +448,7 @@ h2{margin:0;font-size:15px;font-weight:600}
   <div class="card col" style="gap:4px">
     <div id="st-accts"></div>
     <div class="row" style="gap:8px;padding-top:8px"><input class="inp" id="st-newacct" placeholder="新帳戶名稱，例如：元大、國泰" maxlength="20"><button class="small pri" id="st-addacct" style="flex-shrink:0">新增</button></div>
-    <span class="note">每個帳戶是一份獨立的試算表（從主帳戶複製設定，交易紀錄是空的），庫存和成本分開計算。側邊選單可以切換帳戶或查看「全部帳戶」合計。</span>
+    <span class="note">每個帳戶的庫存和成本分開計算，交易成本也可以各自設定。側邊選單可以切換帳戶或查看「全部帳戶」合計。</span>
   </div>
   <div class="row" style="padding:6px 4px 0"><span class="sec" style="padding:0">交易成本</span><label class="selrow" id="st-acctrow" style="display:none;gap:6px;font-size:13px;color:var(--mut)">套用帳戶 <select id="st-acct" style="font-size:14px;color:var(--acc)"></select></label></div>
   <div class="card col" style="gap:6px">
@@ -490,10 +490,20 @@ h2{margin:0;font-size:15px;font-weight:600}
 
   <span class="sec">帳戶與資料</span>
   <div class="card" style="padding:2px 16px">
+    <div class="srow g-only"><span>Google 帳號</span><span class="row" style="gap:10px;min-width:0"><span class="v" id="st-gmail" style="overflow:hidden;text-overflow:ellipsis">—</span><button class="small" id="st-gout">登出</button></span></div>
     <div class="srow"><span>Google 試算表</span><a class="link" id="st-sheet" href="#" target="_blank" rel="noopener" style="height:auto">開啟</a></div>
-    <div class="srow"><span>App 密碼</span><button class="small" id="st-tok">重新輸入</button></div>
+    <div class="srow l-only"><span>App 密碼</span><button class="small" id="st-tok">重新輸入</button></div>
     <div class="srow"><span>暫存資料</span><button class="small" id="st-clear">清除並重新讀取</button></div>
-    <div class="srow" style="flex-wrap:wrap;padding:10px 0;gap:8px"><span>後端網址</span><input class="inp" type="url" id="st-api" style="flex:1 1 100%;font-size:13px" spellcheck="false" autocapitalize="off"><span class="note" style="flex:1 1 100%">給別人使用時，對方要複製一份試算表、自己部署 Apps Script，再把自己的網址貼在這裡。</span><button class="small" id="st-saveapi">儲存網址</button></div>
+    <div class="srow l-only" style="flex-wrap:wrap;padding:10px 0;gap:8px"><span>後端網址</span><input class="inp" type="url" id="st-api" style="flex:1 1 100%;font-size:13px" spellcheck="false" autocapitalize="off"><span class="note" style="flex:1 1 100%">舊版專用：Apps Script 的網址。</span><button class="small" id="st-saveapi">儲存網址</button></div>
+  </div>
+  <div class="card col l-only" id="st-migcard" style="gap:8px">
+    <h2>改用 Google 帳號存資料</h2>
+    <span class="note">新版不再需要 Apps Script 和密碼：交易紀錄改存在你 Google 雲端硬碟裡一份新的試算表，計算都在 App 裡完成。按下面的按鈕，用 Google 登入後會把舊版的紀錄和設定全部複製過去（舊版試算表不會被改動）。</span>
+    <button class="primary" id="st-mig">登入 Google 並搬資料</button>
+  </div>
+  <div class="card col g-only" id="st-oldcard" style="gap:8px;display:none">
+    <span class="note">這台裝置還留著舊版的密碼。新版確認沒問題後，可以清掉它。</span>
+    <div class="row" style="gap:8px"><button class="small" id="st-toold">暫時切回舊版</button><button class="small" id="st-forget">清掉舊版密碼</button></div>
   </div>
 
   <span class="sec">關於</span>
@@ -574,6 +584,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
   } catch (e) {}
 }
 </script>
+<script>window.ZQ_CLIENT_ID = '853599421618-ht8fbomf0te15scdv98kc2rmunv4j0v6.apps.googleusercontent.com';</script>
+<script src="engine.js"></script>
+<script src="localapi.js"></script>
 <script>
 // ---------- 共用 ----------
 const $ = (s, el) => (el || document).querySelector(s);
@@ -610,6 +623,44 @@ function loadDemo() {
   }));
 }
 function exitDemo() { location.href = location.pathname; }
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
+let MODE = DEMO ? 'demo' : lsGet('zqMode') === 'google' ? 'google' : lsGet('zqAppToken') ? 'legacy' : 'new';
+let needLogin = false, loginMsg = '';
+// Google 登入回來：網址帶著登入結果
+const RED = (!DEMO && window.ZQ) ? ZQ.takeRedirect() : null;
+if (RED && RED.ok) {
+  if (MODE !== 'google') ['zqCache2', 'zqAccts', 'zqSym'].forEach(k => lsSet(k, null));
+  lsSet('zqMode', 'google'); MODE = 'google';
+  setTimeout(() => ZQ.whoami(), 800);
+} else if (RED && RED.error) {
+  if (MODE === 'google') { needLogin = true; loginMsg = RED.silent ? 'Google 登入已過期，請再登入一次。' : '登入沒有完成，請再試一次。'; }
+}
+function loginSheet(msg) {
+  return new Promise(() => {
+    openSheet('<h2>用 Google 帳號登入</h2><span class="sub">' + esc(msg || '你的交易紀錄存在自己的 Google 雲端硬碟。') + '</span>' +
+      '<button class="primary" id="g-in">用 Google 帳號登入</button>');
+    $('#g-in').onclick = () => ZQ.signIn({});
+  });
+}
+let welP = null;
+function welcome() {
+  if (welP) return welP;
+  welP = new Promise(res => {
+    const ready = window.ZQ && ZQ.ready();
+    openSheet('<h2>歡迎使用我的證券資產</h2>' +
+      '<span class="sub">記錄台股交易，自動算出損益、報酬率和除權息。資料存在你自己的 Google 雲端硬碟，App 只能看到它自己建立的那一份檔案。</span>' +
+      '<button class="primary" id="w-google"' + (ready ? '' : ' disabled') + '>用 Google 帳號開始</button>' +
+      (ready ? '' : '<span class="note">Google 登入準備中，先看看示範資料吧。</span>') +
+      '<button id="w-demo" style="height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:15px">先看示範資料</button>' +
+      '<button id="w-legacy" style="height:36px;border:0;background:transparent;color:var(--dim);font-size:13px">我有舊版的 App 密碼</button>' +
+      '<span class="note" style="text-align:center"><a class="link" href="privacy.html" target="_blank" rel="noopener" style="height:auto;font-size:12px">隱私權政策</a>　<a class="link" href="terms.html" target="_blank" rel="noopener" style="height:auto;font-size:12px">使用條款</a></span>');
+    $('#w-google').onclick = () => { lsSet('zqMode', 'google'); ZQ.signIn({select: true}); };
+    $('#w-demo').onclick = () => { location.href = location.pathname + '?demo=1'; };
+    $('#w-legacy').onclick = () => { MODE = 'legacy'; closeSheet(); welP = null; res(); };
+  });
+  return welP;
+}
 function getTok() { try { return localStorage.getItem(TK) || ''; } catch (e) { return window.__tok || ''; } }
 function setTok(v) { window.__tok = v; try { if (v) localStorage.setItem(TK, v); else localStorage.removeItem(TK); } catch (e) {} }
 let askP = null;
@@ -634,6 +685,14 @@ async function rawCall(fn, args, acct) {
     await new Promise(r => setTimeout(r, 120));
     if (!READS.test(fn) && fn !== 'appSymbols') setTimeout(() => toast('示範模式：這個變更不會儲存'), 50);
     try { return JSON.parse(JSON.stringify(window.demoCall(fn, args || []))); } catch (e) { throw new Error(errMsg(e)); }
+  }
+  if (MODE === 'new') { await welcome(); return rawCall(fn, args, acct); }
+  if (MODE === 'google') {
+    if (needLogin) await loginSheet(loginMsg);
+    if (!ZQ.signedIn()) await loginSheet();
+    let r;
+    try { r = await ZQ.call(fn, args || [], acct === undefined ? ACCT : acct); } catch (e) { throw new Error(errMsg(e)); }
+    return r === undefined ? r : JSON.parse(JSON.stringify(r));
   }
   let tok = getTok();
   if (!tok) tok = await askToken();
@@ -836,7 +895,7 @@ async function loadOverview() {
   try {
     const d = await call('appOverview', ovRange.from, ovRange.to);
     ovData = d;
-    if (d.empty) { $('#ov-sub').textContent = '還沒有資產歷史，請按右上角更新'; return; }
+    if (d.empty) { $('#ov-sub').textContent = MODE === 'legacy' ? '還沒有資產歷史，請按右上角更新' : d.hasRecs ? '下個交易日收盤後就會有資產走勢' : '還沒有紀錄，到「交易」新增第一筆'; return; }
     $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : '');
     $('#ov-mv').textContent = fmt(d.mv);
     setNum('#ov-today', d.todayPl, true);
@@ -1207,15 +1266,15 @@ function resetForm() {
   editing = null;
   $('#tr-title').textContent = '新增紀錄';
   $('#tr-date').value = TODAY; $('#tr-name').value = ''; $('#tr-units').value = ''; $('#tr-price').value = ''; $('#tr-dt').checked = false;
-  $('#tr-delete').style.display = 'none'; $('#tr-cancel').style.display = 'none'; $('#tr-save').textContent = '儲存到 LOG';
+  $('#tr-delete').style.display = 'none'; $('#tr-cancel').style.display = 'none'; $('#tr-save').textContent = '儲存';
   crType = 'cash'; $$('#tr-crseg button').forEach(b => b.classList.toggle('on', b.dataset.k === 'cash'));
   setKind('buy');
   if (typeof renderAcctUI === 'function' && $('#dr-accts')) renderAcctUI();
 }
 function resultSheet(r, title) {
   const rows = [['成交金額', fmt(r.amt)], ['手續費', fmt(r.fee)], ['交易稅', fmt(r.tax)], ['淨金額', sgn(r.net)], ['批號', r.batch === '' ? '—' : r.batch]];
-  openSheet('<h2>' + title + '</h2><span class="lbl">' + esc(shortName(r.name)) + ' ' + esc(r.item) + '（LOG 第 ' + r.row + ' 列）</span><div class="card est col" style="gap:8px">' +
-    rows.map(x => '<div><span style="color:#D5D8DD">' + x[0] + '</span><span>' + x[1] + '</span></div>').join('') + '</div><span class="lbl">若數字顯示「—」，是試算表還在計算，稍後到交易紀錄查看即可。</span><button class="primary" id="sh-ok">好</button>');
+  openSheet('<h2>' + title + '</h2><span class="lbl">' + esc(shortName(r.name)) + ' ' + esc(r.item) + (MODE === 'legacy' ? '（LOG 第 ' + r.row + ' 列）' : '') + '</span><div class="card est col" style="gap:8px">' +
+    rows.map(x => '<div><span style="color:#D5D8DD">' + x[0] + '</span><span>' + x[1] + '</span></div>').join('') + '</div>' + (MODE === 'legacy' ? '<span class="lbl">若數字顯示「—」，是試算表還在計算，稍後到交易紀錄查看即可。</span>' : '') + '<button class="primary" id="sh-ok">好</button>');
   $('#sh-ok').onclick = closeSheet;
 }
 $('#tr-save').onclick = async () => {
@@ -1228,12 +1287,12 @@ $('#tr-save').onclick = async () => {
   try {
     const acct = rec.acct; delete rec.acct;
     const r = editing ? await callIn(acct, 'appUpdateRecord', editing.row, editing.expect, rec) : await callIn(acct, 'appAddRecord', rec);
-    resultSheet(r, editing ? '已修改' : '已寫入 LOG');
+    resultSheet(r, editing ? '已修改' : '已儲存');
     meta = null; loadMeta();
     Object.keys(loaded).forEach(k => loaded[k] = false);
     resetForm();
   } catch (e) { toast('儲存失敗：' + errMsg(e), 4000); }
-  finally { b.disabled = false; b.textContent = editing ? '儲存修改' : '儲存到 LOG'; }
+  finally { b.disabled = false; b.textContent = editing ? '儲存修改' : '儲存'; }
 };
 $('#tr-delete').onclick = () => {
   if (!editing) return;
@@ -1427,6 +1486,11 @@ async function loadSettings() {
   renderStAccts();
   $('#st-autoca').checked = autoCA();
   $('#st-api').value = API;
+  $$('.g-only').forEach(e => e.style.display = MODE === 'google' ? '' : 'none');
+  $$('.l-only').forEach(e => e.style.display = MODE === 'legacy' ? '' : 'none');
+  $('#st-oldcard').style.display = MODE === 'google' && lsGet('zqAppToken') ? '' : 'none';
+  $('#st-migcard').style.display = MODE === 'legacy' && window.ZQ && ZQ.ready() ? '' : 'none';
+  if (MODE === 'google') ZQ.whoami().then(m => { $('#st-gmail').textContent = m || '已登入'; });
   $('#st-fees').innerHTML = '<div class="skel" style="height:60px;margin:8px 0"></div>';
   try {
     stData = await callIn(stAcct, 'appSettings');
@@ -1481,6 +1545,37 @@ $('#st-savefee').onclick = async () => {
 };
 $('#st-autoca').onchange = e => { try { localStorage.setItem('zqAutoCA', e.target.checked ? '1' : '0'); } catch (x) {} if (e.target.checked) checkCA(); else setCaBadge(0); };
 $('#st-undis').onclick = async () => { try { await callIn('main', 'appDismissAction', '__reset__'); $('#st-dis').textContent = '0 筆'; toast('已還原'); checkCA(); } catch (e) { toast(errMsg(e)); } };
+$('#st-gout').onclick = () => {
+  openSheet('<h2>登出 Google？</h2><span class="sub">登出後這台裝置會清掉暫存的資料；你的紀錄還在 Google 雲端硬碟，重新登入就會回來。</span><button class="primary" id="go-yes">登出</button>');
+  $('#go-yes').onclick = () => { ZQ.signOut(); ['zqCache2', 'zqAccts', 'zqSym', 'zqMode'].forEach(k => lsSet(k, null)); location.href = location.pathname; };
+};
+$('#st-toold').onclick = () => { lsSet('zqMode', 'legacy'); ['zqCache2', 'zqAccts'].forEach(k => lsSet(k, null)); location.href = location.pathname; };
+$('#st-forget').onclick = () => { lsSet('zqAppToken', null); lsSet('zqApi', null); $('#st-oldcard').style.display = 'none'; toast('已清掉舊版密碼'); };
+$('#st-mig').onclick = () => {
+  openSheet('<h2>搬到新版</h2><span class="sub">接下來會：<br>1. 用 Google 帳號登入，允許 App 建立自己的資料檔<br>2. 從舊版讀出所有帳戶的交易紀錄與設定<br>3. 寫進新版的試算表<br><br>舊版試算表不會被改動，搬完之後兩邊都還能看。</span><button class="primary" id="mg-go">開始</button>');
+  $('#mg-go').onclick = () => { lsSet('zqMigrate', '1'); lsSet('zqMode', 'google'); ZQ.signIn({select: true, back: 'migrate'}); };
+};
+async function runMigrate() {
+  lsSet('zqMigrate', null);
+  const step = t => openSheet('<h2>搬資料中…</h2><span class="sub">' + esc(t) + '</span><div class="skel" style="height:8px;border-radius:4px"></div>');
+  try {
+    step('從舊版讀取紀錄（可能要十幾秒）…');
+    const tok = lsGet('zqAppToken');
+    if (!tok) throw new Error('這台裝置沒有舊版的密碼，請在舊版先登入一次');
+    const r = await fetch(API, {method: 'POST', body: JSON.stringify({token: tok, fn: 'appExport', args: [], acct: 'main'})});
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.auth ? '舊版密碼不正確' : (j.error || '舊版讀取失敗'));
+    step('寫入新版試算表…');
+    const res = await ZQ.importLegacy(j.data, step);
+    cache = {}; lsSet('zqCache2', null); lsSet('zqAccts', null);
+    openSheet('<h2>搬好了</h2><span class="sub">共 ' + res.records + ' 筆紀錄、' + res.accounts + ' 個帳戶。之後的新增、修改都會存到新版。<br><br>建議對照一下總覽、持股的數字和舊版一樣，確認後再到設定清掉舊版密碼。</span><button class="primary" id="mg-ok">好</button>');
+    $('#mg-ok').onclick = () => { closeSheet(); location.href = location.pathname; };
+  } catch (e) {
+    openSheet('<h2>搬資料沒有完成</h2><span class="sub">' + esc(errMsg(e)) + '</span><button class="primary" id="mg-retry">再試一次</button><button id="mg-back" style="height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--tx);font-size:15px">先回舊版</button>');
+    $('#mg-retry').onclick = runMigrate;
+    $('#mg-back').onclick = () => { lsSet('zqMode', 'legacy'); location.href = location.pathname; };
+  }
+}
 $('#st-tok').onclick = async () => { setTok(''); await askToken('請輸入新的 App 密碼。'); toast('已更新密碼'); };
 $('#st-clear').onclick = () => { cache = {}; try { localStorage.removeItem(CK); } catch (e) {} afterWrite(); toast('已清除，重新讀取中'); loadOverview(); };
 $('#st-saveapi').onclick = () => {
@@ -1990,6 +2085,7 @@ loadMeta().catch(() => {});
 window.addEventListener('resize', () => { if (current === 'overview') renderOvChart(); });
 </script>
 <script>
+if (RED && RED.ok && (RED.back === 'migrate' || lsGet('zqMigrate'))) setTimeout(runMigrate, 300);
 if (DEMO) { ACCT = 'main'; document.body.classList.add('demo'); document.getElementById('demo-exit').onclick = exitDemo; }
 // 背景程式：讓 App 可以安裝、離線也能打開畫面（資料仍要連線才會更新）
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

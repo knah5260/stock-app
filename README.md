@@ -4,7 +4,7 @@
 
 網址：https://knah5260.github.io/stock-app/
 
-> 目前正在準備公開版（用 Google 帳號登入即可使用）。公開版完成前，這個網址只供開發者自己使用。
+打開網址、用 Google 帳號登入就能開始使用；不想登入也可以先看示範資料。
 
 ## 功能
 
@@ -17,9 +17,18 @@
 
 ## 資料放在哪裡
 
-公開版會把你的交易紀錄存在**你自己的 Google 雲端硬碟**，App 只能存取它自己建立的那份試算表，看不到你雲端硬碟裡的其他檔案。開發者不會收到或保存你的交易資料。詳見[隱私權政策](https://knah5260.github.io/stock-app/privacy.html)。
+交易紀錄存在**你自己的 Google 雲端硬碟**，App 只能存取它自己建立的那份試算表，看不到你雲端硬碟裡的其他檔案。開發者不會收到或保存你的交易資料。詳見[隱私權政策](https://knah5260.github.io/stock-app/privacy.html)。
 
-股價、代號表、除權息等公開資料來自臺灣證券交易所與證券櫃檯買賣中心。
+股價、代號表、除權息等公開資料來自臺灣證券交易所與證券櫃檯買賣中心，由 GitHub Actions 每個交易日下午與晚上各更新一次（`scripts/fetch-data.mjs`，存在 `data/`）。股價用收盤價，不是盤中即時價。
+
+## 架構
+
+- `index.html`：App 畫面
+- `engine.js`：計算引擎（手續費、稅、FIFO 成本、融資融券利息）
+- `localapi.js`：Google 登入、讀寫使用者的試算表、整理各頁資料
+- `demo.js`：示範模式的假資料
+- `sw.js`：背景程式（可安裝、離線開啟）
+- `scripts/fetch-data.mjs`、`.github/workflows/data.yml`：每天抓公開資料
 
 ## 免責聲明
 
