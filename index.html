@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -16,6 +16,9 @@
 <style>
 :root{--bg:#000000;--card:#171A20;--card2:#1F232B;--line:#262A32;--bd:#23272F;--tx:#F2F3F5;--mut:#A3A9B2;--dim:#6B717B;--acc:#F59A4A;--up:#FF6B6B;--dn:#4ADE95}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#demo-bar{position:fixed;z-index:60;left:50%;transform:translateX(-50%);top:calc(6px + env(safe-area-inset-top));display:none;align-items:center;gap:8px;background:#3A2A12;color:#FFD9A8;border:1px solid #6B4A1E;border-radius:999px;padding:5px 6px 5px 14px;font-size:13px;white-space:nowrap}
+#demo-bar button{height:28px;border-radius:999px;border:0;background:var(--acc);color:#1A1206;font-weight:600;padding:0 12px;font-size:13px}
+body.demo #demo-bar{display:flex}body.demo .view{padding-top:calc(52px + env(safe-area-inset-top))}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang TC","Noto Sans TC",sans-serif;font-variant-numeric:tabular-nums}
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
@@ -225,6 +228,8 @@ h2{margin:0;font-size:15px;font-weight:600}
 .b-sp{background:#1E2E4A;color:#9CC4FF}
 .pill{align-self:flex-start;margin-top:6px;height:30px;border-radius:15px;border:1px solid #5A4520;background:#2A2110;color:#F5C04A;font-size:13px;font-weight:600;padding:0 12px;display:none;align-items:center;gap:4px}
 .pill.on{display:inline-flex}
+.pill{white-space:nowrap;max-width:100%}
+@media (max-width:374px){h1{font-size:22px}#ov-title{white-space:nowrap}.view{padding-left:14px;padding-right:14px}#demo-bar{font-size:12px}}
 .brow{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .brow label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut);min-width:0}
 .brow .full{grid-column:1/-1}
@@ -556,9 +561,19 @@ h2{margin:0;font-size:15px;font-weight:600}
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="demo-bar" role="status"><span>示範模式・資料是假的</span><button id="demo-exit">離開</button></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="panel" id="sheet-panel"></div></div>
 </div>
 
+<script>
+// 示範模式用暫存的儲存空間，不碰到真實資料（密碼、快取、帳戶清單）
+if (/[?&]demo=1\b/.test(location.search)) {
+  try {
+    const m = {}, mem = {getItem: k => k in m ? m[k] : null, setItem: (k, v) => { m[k] = String(v); }, removeItem: k => { delete m[k]; }, clear: () => { for (const k in m) delete m[k]; }, key: i => Object.keys(m)[i] || null, get length() { return Object.keys(m).length; }};
+    Object.defineProperty(window, 'localStorage', {value: mem, configurable: true});
+  } catch (e) {}
+}
+</script>
 <script>
 // ---------- 共用 ----------
 const $ = (s, el) => (el || document).querySelector(s);
@@ -585,6 +600,16 @@ const TODAY = iso(new Date());
 const API_DEF = 'https://script.google.com/macros/s/AKfycbwEQLYI55021drkDDC_9Mdy1xjuJvIJi3dd2CMo4fu_FOVVFFDn21kGfliqnU0roEx2/exec';
 let API = (() => { try { return localStorage.getItem('zqApi') || API_DEF; } catch (e) { return API_DEF; } })();
 const TK = 'zqAppToken';
+// 示範模式：網址加 ?demo=1，或在密碼畫面點「先看示範資料」。資料在瀏覽器裡產生，不連後端、不存檔。
+const DEMO = /[?&]demo=1\b/.test(location.search);
+let demoReady = null;
+function loadDemo() {
+  return demoReady || (demoReady = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = 'demo.js'; sc.onload = res; sc.onerror = () => { demoReady = null; rej(new Error('示範資料載入失敗')); };
+    document.head.appendChild(sc);
+  }));
+}
+function exitDemo() { location.href = location.pathname; }
 function getTok() { try { return localStorage.getItem(TK) || ''; } catch (e) { return window.__tok || ''; } }
 function setTok(v) { window.__tok = v; try { if (v) localStorage.setItem(TK, v); else localStorage.removeItem(TK); } catch (e) {} }
 let askP = null;
@@ -593,7 +618,9 @@ function askToken(msg) {
   askP = new Promise(res => {
     openSheet('<h2>輸入 App 密碼</h2><span class="sub">' + esc(msg || '第一次使用請輸入密碼，之後會記住。') + '</span>' +
       '<input id="tok-in" type="password" autocomplete="current-password" placeholder="密碼" style="height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card2);padding:0 14px;font-size:16px">' +
-      '<button class="primary" id="tok-ok">確定</button>');
+      '<button class="primary" id="tok-ok">確定</button>' +
+      '<button id="tok-demo" style="height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--mut);font-size:15px">先看示範資料</button>');
+    $('#tok-demo').onclick = () => { location.href = location.pathname + '?demo=1'; };
     const go = () => { const v = $('#tok-in').value.trim(); if (!v) return; setTok(v); closeSheet(); askP = null; res(v); };
     $('#tok-ok').onclick = go;
     $('#tok-in').onkeydown = e => { if (e.key === 'Enter') go(); };
@@ -602,6 +629,12 @@ function askToken(msg) {
   return askP;
 }
 async function rawCall(fn, args, acct) {
+  if (DEMO) {
+    await loadDemo();
+    await new Promise(r => setTimeout(r, 120));
+    if (!READS.test(fn) && fn !== 'appSymbols') setTimeout(() => toast('示範模式：這個變更不會儲存'), 50);
+    try { return JSON.parse(JSON.stringify(window.demoCall(fn, args || []))); } catch (e) { throw new Error(errMsg(e)); }
+  }
   let tok = getTok();
   if (!tok) tok = await askToken();
   for (let i = 0; i < 3; i++) {
@@ -621,9 +654,10 @@ async function rawCall(fn, args, acct) {
 const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup|Settings|CorpActions|Dividends|Prices|Accounts)$/;
 const CK = 'zqCache2', inflight = {};
 let cache = {};
-try { cache = JSON.parse(localStorage.getItem(CK) || '{}') || {}; } catch (e) { cache = {}; }
+if (!DEMO) { try { cache = JSON.parse(localStorage.getItem(CK) || '{}') || {}; } catch (e) { cache = {}; } }
 let saveT;
 function saveCache() {
+  if (DEMO) return;
   clearTimeout(saveT);
   saveT = setTimeout(() => { try { localStorage.setItem(CK, JSON.stringify(cache)); } catch (e) { try { localStorage.removeItem(CK); } catch (x) {} } }, 400);
 }
@@ -1737,7 +1771,7 @@ let ACCTS = (() => { try { return JSON.parse(localStorage.getItem('zqAccts') || 
 const acctName = id => id === '*' ? '全部帳戶' : ((ACCTS.find(a => a.id === id) || {}).name || '主帳戶');
 const multi = () => ACCTS.length > 1;
 const writeAcct = () => ACCT === '*' ? 'main' : ACCT;
-function saveAccts(l) { ACCTS = l && l.length ? l : [{id: 'main', name: '主帳戶'}]; try { localStorage.setItem('zqAccts', JSON.stringify(ACCTS)); } catch (e) {} renderAcctUI(); }
+function saveAccts(l) { ACCTS = l && l.length ? l : [{id: 'main', name: '主帳戶'}]; if (!DEMO) try { localStorage.setItem('zqAccts', JSON.stringify(ACCTS)); } catch (e) {} renderAcctUI(); }
 async function loadAccts() { try { saveAccts(await callIn('main', 'appAccounts')); } catch (e) {} }
 function acctOptions(sel, allowAll) {
   return (allowAll ? '<option value="*"' + (sel === '*' ? ' selected' : '') + '>全部帳戶</option>' : '') +
@@ -1769,7 +1803,7 @@ let symP = null;
 function loadSymbols(force) {
   if (!force && SYM && Date.now() - (SYM.got || 0) < 12 * 3600e3) return Promise.resolve(SYM);
   if (symP) return symP;
-  symP = rawCall('appSymbols', [], 'main').then(d => { SYM = {got: Date.now(), list: d.list}; try { localStorage.setItem('zqSym', JSON.stringify(SYM)); } catch (e) {} symP = null; return SYM; }, e => { symP = null; throw e; });
+  symP = rawCall('appSymbols', [], 'main').then(d => { SYM = {got: Date.now(), list: d.list}; if (!DEMO) try { localStorage.setItem('zqSym', JSON.stringify(SYM)); } catch (e) {} symP = null; return SYM; }, e => { symP = null; throw e; });
   return symP;
 }
 const symOf = code => SYM && SYM.list.find(x => x[0] === String(code).toUpperCase());
@@ -1954,6 +1988,13 @@ loadAccts(); loadSymbols().catch(() => {});
 loadOverview().finally(() => setTimeout(prefetch, 300));
 loadMeta().catch(() => {});
 window.addEventListener('resize', () => { if (current === 'overview') renderOvChart(); });
+</script>
+<script>
+if (DEMO) { ACCT = 'main'; document.body.classList.add('demo'); document.getElementById('demo-exit').onclick = exitDemo; }
+// 背景程式：讓 App 可以安裝、離線也能打開畫面（資料仍要連線才會更新）
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
 </script>
 </body>
 </html>
