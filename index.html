@@ -215,7 +215,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 .srow input.inp{max-width:120px;text-align:right}
 .srow .v{color:var(--tx);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .sw{position:relative;width:51px;height:31px;flex-shrink:0}
-.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw input,.form .sw input{opacity:0;width:0;height:0;position:absolute}
 .sw span{position:absolute;inset:0;border-radius:16px;background:#39404B;transition:background .2s}
 .sw span:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:transform .2s}
 .sw input:checked + span{background:#34C759}
@@ -383,7 +383,7 @@ h2{margin:0;font-size:15px;font-weight:600}
     <label><span>股票</span><input type="text" id="tr-name" placeholder="名稱或代號" autocomplete="off"></label>
     <label><span id="tr-unitslbl">股數</span><input type="number" inputmode="numeric" id="tr-units" placeholder="0"></label>
     <label id="tr-pricerow"><span id="tr-pricelbl">成交價</span><input type="number" inputmode="decimal" step="any" id="tr-price" placeholder="0"></label>
-    <label id="tr-dtrow"><span>當沖</span><input type="checkbox" id="tr-dt"></label>
+    <label id="tr-dtrow"><span>當沖</span><span class="sw"><input type="checkbox" id="tr-dt" role="switch"><span></span></span></label>
     <label class="note-row"><span>進出場理由（選填）</span><textarea id="tr-note" maxlength="500" rows="2" placeholder="為什麼買、為什麼賣？例如：突破季線、財報優於預期、跌破停損"></textarea></label>
   </div>
   <datalist id="tr-stocks"></datalist>
@@ -585,8 +585,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 const CHANGELOG = [
+  ['2.3.0', '2026-11-25', ['當沖改成開關樣式', '匯出 CSV 改為詳細版：手續費、稅、利息、庫存、成本、已實現損益和進出場理由都會匯出', '多帳戶時，總覽只顯示目前選擇的帳戶；沒有紀錄的帳戶不會再殘留上一個帳戶的數字']],
   ['2.2.0', '2026-11-25', ['總覽標題改為「我的台股總覽」', '側邊選單顯示你的名字和 Google 大頭貼', '可在設定自訂顯示名稱（暱稱），預設用 Google 帳號名稱']],
   ['2.1.0', '2026-11-25', ['App 改名為「韭菜紀錄」，換上紅漲綠跌 K 線新圖示', '每筆交易可以寫進出場理由，交易紀錄列表會顯示', 'Google 登入按鈕改成官方樣式「使用 Google 登入繼續」', '移除舊版（Apps Script）的密碼、後端網址與搬家介面', '設定頁顯示版本編號與更新內容']],
   ['2.0.0', '2026-11-25', ['改用 Google 帳號登入，資料存在自己的 Google 雲端硬碟', '計算改在 App 裡完成，不再需要 Apps Script', '股價、指數、除權息改由每日自動抓取的公開資料提供', '新增示範模式、可安裝到主畫面、離線也能開啟']],
@@ -868,7 +869,14 @@ async function loadOverview() {
   try {
     const d = await call('appOverview', ovRange.from, ovRange.to);
     ovData = d;
-    if (d.empty) { $('#ov-sub').textContent = d.hasRecs ? '下個交易日收盤後就會有資產走勢' : '還沒有紀錄，到「交易」新增第一筆'; return; }
+    if (d.empty) {
+      $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.hasRecs ? '下個交易日收盤後就會有資產走勢' : '這個帳戶還沒有紀錄，到「交易」新增第一筆');
+      ['#ov-mv', '#ov-today', '#ov-range', '#ov-ret-h', '#ov-ret-m', '#ov-ret-t', '#ov-r1', '#ov-r2', '#ov-r3'].forEach(id => { $(id).textContent = '—'; $(id).className = 'zero'; });
+      $('#ov-todayr').textContent = ''; $('#ov-rangeh').textContent = md(ovRange.from) + ' – ' + md(ovRange.to);
+      $('#ov-chart').innerHTML = '<div class="empty">還沒有資產走勢</div>'; $('#ov-legend').innerHTML = ''; $('#ov-risk').innerHTML = ''; $('#ov-heat').innerHTML = '';
+      ['#ov-mt', '#ov-due', '#ov-st'].forEach(id => $(id).classList.remove('on'));
+      return;
+    }
     $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : '');
     $('#ov-mv').textContent = fmt(d.mv);
     setNum('#ov-today', d.todayPl, true);
@@ -1986,10 +1994,20 @@ $('#ov-st').onclick = () => { $('#btn-refresh') && $('#btn-refresh').click(); };
 async function exportCSV() {
   toast('正在整理交易紀錄…', 6000);
   try {
-    const rows = await call('appRecords', '1900-01-01', '9999-12-31');
-    const head = ['帳戶', '日期', '項目', '股票名稱', '代號', '股數/比例', '單價', '成交金額', '手續費', '交易稅', '淨金額', '批號', '當沖'];
-    const q = v => { v = v === null || v === undefined ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    const lines = [head.join(',')].concat(rows.slice().reverse().map(x => [x.acctName || acctName(ACCT), x.d, x.item, shortName(x.name), (x.name.match(/（(.+)）$/) || [])[1] || '', x.units, x.price, x.amt, x.fee, x.tax, x.net, x.batch, x.dayTrade ? 'Y' : ''].map(q).join(',')));
+    const q = v => { v = v === null || v === undefined ? '' : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    let head, rows, lines;
+    if (MODE === 'google') {
+      // 詳細版：欄位對照舊版試算表 LOG，含進出場理由
+      rows = await call('appExportRows');
+      head = ['帳戶', '日期', '項目', '名稱（代號）', '股票名稱', '代號', '股數/單位', '單價', '當沖', '自選費用', '金額修正', '資券成數修正', '成交金額', '手續費', '交易稅', '二代健保',
+        '融券費', '融資融券利息', '擔保品', '保證金', '融資金額', '融資現償後成本', '淨金額', '批號', '庫存餘數', '現股庫存', '融資庫存', '融券庫存', '庫存均價', '庫存FIFO成本', 'FIFO投入成本', '已實現損益', '進出場理由'];
+      lines = [head.join(',')].concat(rows.map(x => [x.acctName, x.d, x.item, x.name, shortName(x.name), x.code, x.units, x.price, x.dt ? 'Y' : '', x.custom, x.adj || '', x.cr || '', x.amt, x.fee, x.tax, x.nhi,
+        x.sf, x.int, x.collat, x.margin, x.loan, x.repayCost, x.net, x.batch, x.inv, x.spot, x.mt, x.ss, x.avg, x.fifoCost, x.fifoIn, x.pl, x.note].map(q).join(',')));
+    } else {
+      rows = await call('appRecords', '1900-01-01', '9999-12-31');
+      head = ['帳戶', '日期', '項目', '股票名稱', '代號', '股數/比例', '單價', '成交金額', '手續費', '交易稅', '淨金額', '批號', '當沖'];
+      lines = [head.join(',')].concat(rows.slice().reverse().map(x => [x.acctName || acctName(ACCT), x.d, x.item, shortName(x.name), (x.name.match(/（(.+)）$/) || [])[1] || '', x.units, x.price, x.amt, x.fee, x.tax, x.net, x.batch, x.dayTrade ? 'Y' : ''].map(q).join(',')));
+    }
     const name = '交易紀錄_' + acctName(ACCT) + '_' + TODAY + '.csv';
     const file = new File(['﻿' + lines.join('\r\n')], name, {type: 'text/csv'});
     if (navigator.canShare && navigator.canShare({files: [file]})) { try { await navigator.share({files: [file], title: name}); return; } catch (e) { if (e.name === 'AbortError') return; } }

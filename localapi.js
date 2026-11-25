@@ -585,6 +585,22 @@
       const u = await userinfo();
       return {name: u.name, picture: u.picture, email: u.email, nick: nick};
     },
+    // 匯出用：每筆紀錄的輸入與計算結果（欄位對照舊版 LOG）
+    async appExportRows(acct) {
+      await load();
+      const out = [];
+      acctIds(acct).forEach(id => {
+        const C = compute(id), aName = (accts().find(a => a.id === id) || {}).name || '';
+        const pl = {}; C.V.realized.forEach(x => pl[x.r.row] = x.Q);
+        C.res.ok.forEach(c => {
+          const r = DB.recs.find(x => x.acct === id && x.id === c.row) || {};
+          out.push({acctName: aName, d: keyOf(c.d), item: c.item, name: c.name, code: c.T, units: c.units, price: c.price, dt: !!c.dt, custom: r.custom || '', adj: r.adj || 0, cr: r.cr || 0,
+            amt: c.O, fee: c.S, tax: c.U, nhi: c.V, sf: c.W, int: c.X, collat: c.Y, margin: c.Z, loan: c.AA, repayCost: c.AB, net: c.AD, batch: c.J,
+            inv: c.F, spot: c.G, mt: c.H, ss: c.I, avg: c.AE === '' ? '' : Math.round(c.AE * 100) / 100, fifoCost: c.AF, fifoIn: c.Q, pl: pl[c.row] === undefined ? '' : Math.round(pl[c.row]), note: r.note || ''});
+        });
+      });
+      return out;
+    },
     async appRefresh() { await meta(true); PUB.json = {}; await load(true); return (await daily('main')).updated; },
 
     async appAddRecord(acct, rec) {
