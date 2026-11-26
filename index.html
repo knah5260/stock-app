@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="韭菜紀錄">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#0f1011">
 <meta name="robots" content="noindex">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
@@ -338,7 +338,7 @@ window.ZQ_THEMES = [
   {id: 'light', name: '淺色模式', css: 'theme-light.css', bar: '#f6f5f4', desc: '暖米白底、白卡片，白天好讀'},
   {id: 'gallery', name: '夜幕畫廊', css: 'theme-gallery.css', bar: '#0f1011', desc: '近黑底、襯線大字、銀灰主卡'},
   {id: 'dusk', name: '暮色天空', css: 'theme-dusk.css', bar: '#3c5294', desc: '藍到桃的天空漸層、霧面玻璃'},
-  {id: 'aurora', name: '極光晨霧', css: 'theme-aurora.css', bar: '#9fd6cf', desc: '淡綠藍極光、半透明玻璃'},
+  {id: 'aurora', name: '極光晨霧', css: 'theme-aurora.css', bar: '#80cbb8', desc: '淡綠藍極光、半透明玻璃'},
   {id: 'classic', name: '經典', css: '', bar: '#000000', desc: '最初的樣子：純黑底、橘色重點'}
 ];
 (function () {
@@ -751,8 +751,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.13.0';
+const APP_VERSION = '2.13.1';
 const CHANGELOG = [
+  ['2.13.1', '2026-11-26', ['螢幕最上方（時間、電量那一條）改成跟主題一樣的顏色，淺色主題不再是一條黑色']],
   ['2.13.0', '2026-11-26', ['新增 6 種主題：深色模式、淺色模式、夜幕畫廊、暮色天空、極光晨霧、經典，預設為夜幕畫廊', '主題可以跟隨系統（深色／淺色模式自動切換）、固定一個，或勾選幾個輪播，每次打開隨機換', '側邊選單整理：「除權息與股利」合在一起，新增「主題」，批次新增改從新增紀錄頁右上角進入', '設定拆成「交易設定」和「App 設定」']],
   ['2.12.0', '2026-11-26', ['新增「當沖試算」（選單裡）：先買後賣、先賣後買都能算，手續費折數和最低手續費帶入設定，當沖稅 0.15%、ETF 0.1%', '顯示損益兩平價和要漲（跌）幾檔，價格表列出上下每一檔的損益，點一下就帶入']],
   ['2.11.2', '2026-11-25', ['匯入頁註明截圖辨識還在測試中、失敗率較高，建議優先使用 PDF']],
