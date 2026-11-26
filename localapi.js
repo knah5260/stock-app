@@ -246,9 +246,8 @@
   const live = () => {
     const L = window.ZQ_LIVE;
     if (!L || L.day !== todayKey() || !L.px) return null;
-    // 今天的收盤資料已經進來（15:40 之後更新過），就以正式收盤價為準
-    const up = PUB.meta && PUB.meta.updated ? new Date(PUB.meta.updated) : null;
-    if (up && localKey(up) === L.day && up.getHours() >= 14) return null;
+    // 今天的正式收盤資料已經進來，就以正式資料為準
+    if (PUB.meta && PUB.meta.lastDay && PUB.meta.lastDay >= L.day) return null;
     return L;
   };
   const livePx = code => { const L = live(); const p = L && L.px[String(code).toUpperCase()]; return p > 0 ? p : 0; };

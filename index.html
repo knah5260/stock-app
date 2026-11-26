@@ -307,11 +307,12 @@ body.guide .hi{display:inline-flex}
   transition:opacity .2s}
 .glide-lens.on{opacity:1}
 .tabbar.dragging .lens{transition:background .35s,box-shadow .35s}
-/* 數字滾動：只有變動的位數上下滾 */
-.zr-d{display:inline-block;position:relative;overflow:hidden;overflow:clip;vertical-align:baseline}
-.zr-c{display:inline-block;position:relative;transition:transform .5s cubic-bezier(.2,.85,.25,1)}
-.zr-c::before{content:attr(data-o);position:absolute;left:0;right:0;top:-100%;text-align:center;white-space:pre}
-.zr-c.zr-dn::before{top:100%}
+/* 數字滾動：每一位是一條數字帶，疊在原本文字的位置上（不佔額外空間，版面不會動）*/
+.zr-d{position:relative}
+.zr-h{visibility:hidden}
+.zr-s{position:absolute;left:-.15em;right:-.15em;top:0;bottom:0;overflow:hidden;line-height:normal;text-align:center;pointer-events:none}
+.zr-c{display:block;height:100%;will-change:transform;transition:transform 1.25s cubic-bezier(.14,.78,.2,1)}
+.zr-k{display:block;height:100%;line-height:var(--zr-lh,normal);white-space:pre}
 .kv{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
 .kv.tot{font-size:16px;font-weight:700;border-top:1px solid var(--line);padding-top:9px;margin-top:4px}
 @media (min-width:700px) and (min-height:600px){
@@ -657,7 +658,7 @@ window.ZQ_THEMES = [
 
   <span class="sec">關於</span>
   <div class="card col" style="gap:6px">
-    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；股價為每個交易日收盤價（15:40、21:10 更新）；盤中（9:00–13:30）App 開著時，每 10 秒以證交所基本市況報導的成交價暫時更新。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
+    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；股價為每個交易日收盤價（15:40、21:10 更新）；盤中（9:00–13:30）App 開著時，每 10 秒以證交所基本市況報導的成交價暫時更新，收盤後到正式資料進來前也先用它的收盤成交價。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
     <div class="row" style="justify-content:space-between"><span class="lbl" id="st-ver">版本</span><button class="small" id="st-log">更新內容</button></div>
     <div class="row" style="justify-content:space-between"><span class="lbl">加到手機主畫面，像 App 一樣使用</span><button class="small" id="st-install">加入主畫面</button></div>
   </div>
@@ -778,8 +779,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.15.1';
+const APP_VERSION = '2.16.0';
 const CHANGELOG = [
+  ['2.16.0', '2026-11-26 22:46', ['數字滾動改成里程表：每一位會經過中間的數字一路滾到新值，越接近越慢；滾動時版面不再跳動', '收盤後如果 GitHub 的收盤資料還沒進來，App 先用證交所的收盤成交價（上方顯示「證交所即時報價」），按右上角更新會立刻重抓', '每日抓資料的排程多加 17:30、19:00、23:30 三次備援']],
   ['2.15.1', '2026-11-26 21:51', ['更新內容的每個版本，日期旁邊加上更新時間']],
   ['2.15.0', '2026-11-26 21:49', ['數字變動時，變動的位數會像里程表一樣上下滾動（上漲往上滾、下跌往下滾）；切換頁面時，跟上次看到不一樣的數字也會滾', '盤中即時價：交易日 9:00–13:30 App 開著時，每 10 秒更新持股現價、總資產和今日損益（上市、上櫃；興櫃仍用收盤價）']],
   ['2.14.0', '2026-11-26 20:37', ['底部導覽列、分段按鈕、篩選鈕都能按住左右滑動切換，玻璃放大鏡會跟著手指走', '總覽左上角改成玻璃圓形的選單按鈕']],
@@ -1199,7 +1201,7 @@ async function loadOverview() {
       ['#ov-mt', '#ov-due', '#ov-st'].forEach(id => $(id).classList.remove('on'));
       return;
     }
-    $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.live ? '盤中即時 · ' + d.live : md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : ''));
+    $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.live ? (d.live >= '13:30' ? md(d.asOf) + ' 收盤 · 證交所即時報價' : '盤中即時 · ' + d.live) : md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : ''));
     $('#ov-mv').textContent = fmt(d.mv);
     setNum('#ov-today', d.todayPl, true);
     $('#ov-todayr').textContent = arrowPct(d.todayR); $('#ov-todayr').className = cls(d.todayR);
@@ -1301,7 +1303,7 @@ $$('#ov-chartseg button').forEach(b => b.onclick = () => { $$('#ov-chartseg butt
 $('#btn-refresh').onclick = async () => {
   const b = $('#btn-refresh'); if (b.classList.contains('spin')) return;
   b.classList.add('spin'); toast('正在抓收盤價並重算，約需 30 秒到 2 分鐘…', 4000);
-  try { await call('appRefresh'); toast('已更新'); Object.keys(loaded).forEach(k => loaded[k] = false); loaders[current](); }
+  try { await call('appRefresh'); toast('已更新'); Object.keys(loaded).forEach(k => loaded[k] = false); await loaders[current](); if (window.zqLiveTick) await zqLiveTick(true); }
   catch (e) { toast('更新失敗：' + errMsg(e)); }
   finally { b.classList.remove('spin'); }
 };
@@ -1666,7 +1668,7 @@ const HI_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stro
 let HSUM = null;   // 最近一次持股合計（給說明帶入你的數字）
 const you = h => h ? '<div class="you">' + (DEMO ? '以示範資料為例：' : '以你的資料為例：') + h + '</div>' : '';
 const HELP = {
-  mv: ['台股總資產', () => '所有持股以<b>最新收盤價</b>計算的市值合計（融資買進的股票也算進去，融券不算）。股價每個交易日 15:40、21:10 各更新一次；盤中 App 開著時，每 10 秒改用即時成交價，上方會顯示「盤中即時」。' +
+  mv: ['台股總資產', () => '所有持股以<b>最新收盤價</b>計算的市值合計（融資買進的股票也算進去，融券不算）。股價每個交易日 15:40、21:10 各更新一次；盤中 App 開著時，每 10 秒改用即時成交價，上方會顯示「盤中即時」。收盤後如果正式資料還沒進來，會先用證交所的收盤成交價（上方顯示「證交所即時報價」）。' +
     you(ovData && !ovData.empty ? '目前總資產 ' + fmt(ovData.mv) + ' 元（' + md(ovData.asOf) + ' 收盤）。' : '')],
   today: ['今日損益', () => '最近一個交易日，持股市值的漲跌加上當天已實現的損益。百分比是對前一天總資產的比例。' +
     you(ovData && !ovData.empty ? md(ovData.asOf) + ' 損益 ' + sgn(ovData.todayPl) + ' 元（' + pct(ovData.todayR) + '）。' : '')],
@@ -2957,9 +2959,12 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
   const tw = () => new Date(Date.now() + (480 + new Date().getTimezoneOffset()) * 60000);   // 台灣時間
   const LIVE_FN = /\|app(Overview|Holdings|Performance|Calendar)\|/;
   let codes = null, codesAt = 0, closedDay = '', rev = 0, busy = false;
-  function inSession() {
+  let lastAt = 0;
+  // 盤中 9:00–13:30 每 10 秒；收盤後到正式資料進來前，每 10 分鐘（或按更新時）拿一次收盤成交價
+  function phase() {
     const t = tw(), wd = t.getDay(), m = t.getHours() * 60 + t.getMinutes();
-    return wd >= 1 && wd <= 5 && m >= 540 && m <= 815;
+    if (wd < 1 || wd > 5 || m < 540) return '';
+    return m <= 810 ? 'open' : 'after';
   }
   async function heldCodes() {
     if (codes && Date.now() - codesAt < 120000) return codes;
@@ -2980,14 +2985,17 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
     Object.keys(loaded).forEach(k => { if (k !== tabOf(current) && k !== current) loaded[k] = false; });
     if (/^(overview|holdings|calendar)$/.test(current) && loaders[current]) loaders[current]();
   }
-  async function tick() {
+  async function tick(force) {
     if (busy || MODE !== 'google' || document.hidden || !(window.ZQ && ZQ.signedIn())) return;
-    const today = dayKey(new Date());
-    if (closedDay === today || !inSession()) return;
+    const today = dayKey(new Date()), ph = phase();
+    if (closedDay === today || !ph) return;
+    if (ovData && !ovData.empty && ovData.asOf === today && !ovData.live) return;   // 正式收盤資料已經有了
+    if (ph === 'after' && !force && Date.now() - lastAt < 600000) return;
     busy = true;
     try {
       const cs = await heldCodes();
       if (!cs.length) return;
+      lastAt = Date.now();
       const r = await fetch(LIVE_URL + '?c=' + encodeURIComponent(cs.join(',')), {cache: 'no-store'});
       if (!r.ok) return;
       const j = await r.json();
@@ -2999,7 +3007,7 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
       const old = window.ZQ_LIVE;
       const same = old && old.day === today && JSON.stringify(old.px) === JSON.stringify(Object.assign({}, old.px, px));
       window.ZQ_LIVE = {day: today, px: Object.assign({}, old && old.day === today ? old.px : {}, px), t: j.t || '', rev: ++rev};
-      if (same && old.t === window.ZQ_LIVE.t) return;
+      if (same && old.t === window.ZQ_LIVE.t && !force) return;
       await refresh();
     } catch (e) {
     } finally { busy = false; }
@@ -3037,30 +3045,66 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
     for (const c of node.childNodes) units(c, out);
     return out;
   }
+  // 里程表：數字當成一個整數，每一位各自從舊值一路經過中間數字滾到新值；低位轉得快、高位轉得慢，一起開始一起停
+  const DUR = 1250;
+  const digitsOf = t => t.replace(/[^\d]/g, '');
+  const decOf = t => { const m = t.match(/\.(\d+)/); return m ? m[1].length : 0; };
+  const negOf = t => /^[\s]*[-−▼]/.test(t);
+  function cells(lo, hi, k, dec) {
+    // lo..hi：這一位以上的數值；格子顯示個位數。比整數個位還高的位數，數值是 0 就是前導位 → 空白
+    let seq = [];
+    for (let v = lo; v <= hi; v++) seq.push(v);
+    if (seq.length > 24) seq = seq.slice(0, 4).concat(seq.slice(-20));
+    return seq.map(v => v === 0 && k > dec ? ' ' : String(v % 10));
+  }
   function roll(newNode, oldText) {
     const now = newNode.data, a = oldText.trim(), b = now.trim();
     if (a === b) return;
+    const da = digitsOf(a), db = digitsOf(b);
+    const PLAIN = /^[+\-−±▲▼▴▾$\s]*[\d,]+(\.\d+)?\s*(%|萬|億|股|元|天|筆|張|檔)?$/;   // 單一個數字（金額、%、股數）；日期、時間不算
+    const smooth = PLAIN.test(a) && PLAIN.test(b) && decOf(a) === decOf(b) && negOf(a) === negOf(b) && da.length <= 15 && db.length <= 15;
+    const O = smooth ? +da : 0, N = smooth ? +db : 0;
+    const up = smooth ? N > O : !(val(b) < val(a));
     const lead = now.match(/^\s*/)[0], tail = now.match(/\s*$/)[0];
-    const up = !(val(b) < val(a));
-    const n = Math.max(a.length, b.length), A = a.padStart(n, ' '), B = b.padStart(n, ' ');
-    const wrap = document.createElement('span'); wrap.className = 'zr-n';
-    let html = lead.replace(/ /g, '&nbsp;'), k = 0;
-    for (let i = 0; i < n; i++) {
-      const o = A[i], c = B[i];
-      if (o === c) { if (c !== ' ') html += esc(c); continue; }
-      if (c === ' ') continue;
-      html += '<span class="zr-d"><span class="zr-c' + (up ? '' : ' zr-dn') + '" data-o="' + (o === ' ' ? '&#160;' : esc(o)) + '" style="transition-delay:' + Math.min(k++ * 22, 160) + 'ms">' + esc(c) + '</span></span>';
+    const A = a.padStart(Math.max(a.length, b.length), ' ');
+    let html = esc(lead), any = false;
+    const strips = [];
+    // 從右邊數第幾個數字（k）對到哪一格
+    let kk = 0; const kIndex = [];
+    for (let i = b.length - 1; i >= 0; i--) kIndex[i] = /\d/.test(b[i]) ? kk++ : -1;
+    for (let i = 0; i < b.length; i++) {
+      const c = b[i];
+      let list = null;
+      if (smooth && kIndex[i] >= 0) {
+        const p = Math.pow(10, kIndex[i]), lo = Math.floor(Math.min(O, N) / p), hi = Math.floor(Math.max(O, N) / p);
+        if (lo !== hi) list = cells(lo, hi, kIndex[i], decOf(b));
+      } else if (!smooth) {
+        const o = A[A.length - b.length + i] || ' ';
+        if (o !== c) list = up ? [o, c] : [c, o];
+      }
+      if (!list) { html += esc(c); continue; }
+      any = true;
+      html += '<span class="zr-d"><span class="zr-h">' + esc(c) + '</span><span class="zr-s"><span class="zr-c">' + list.map(x => '<span class="zr-k">' + esc(x) + '</span>').join('') + '</span></span></span>';
+      strips.push(list.length);
     }
-    wrap.innerHTML = html + tail.replace(/ /g, '&nbsp;');
+    if (!any) return;
+    const wrap = document.createElement('span'); wrap.className = 'zr-n';
+    wrap.innerHTML = html + esc(tail);
     newNode.parentNode.replaceChild(wrap, newNode);
-    wrap.querySelectorAll('.zr-c').forEach(r => { r.style.transitionProperty = 'none'; r.style.transform = up ? 'translateY(100%)' : 'translateY(-100%)'; });
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      wrap.querySelectorAll('.zr-c').forEach(r => { r.style.transitionProperty = ''; r.style.transform = 'translateY(0)'; });
-    }));
+    // 格子的行高＝原本文字的實際高度，字的位置才會跟旁邊的字完全對齊
+    const hh = wrap.querySelector('.zr-h').getBoundingClientRect().height;
+    if (hh) wrap.style.setProperty('--zr-lh', hh + 'px');
+    const cs = wrap.querySelectorAll('.zr-c');
+    // 起點：上漲停在最小值（最上面），下跌停在最大值（最下面）
+    cs.forEach((r, n) => { r.style.transition = 'none'; r.style.transform = 'translateY(' + (up ? 0 : -(strips[n] - 1) * 100) + '%)'; });
+    void wrap.offsetHeight;
+    requestAnimationFrame(() => {
+      cs.forEach((r, n) => { r.style.transition = ''; r.style.transform = 'translateY(' + (up ? -(strips[n] - 1) * 100 : 0) + '%)'; });
+    });
     setTimeout(() => {
       if (!wrap.parentNode) return;
       busy = true; wrap.parentNode.replaceChild(document.createTextNode(now), wrap); mo.takeRecords(); busy = false;
-    }, 900);
+    }, DUR + 120);
   }
   const shown = el => el.isConnected && el.getClientRects().length > 0;
   // 掃一塊畫面：看得到的數字跟上次看到的比，不一樣就滾
