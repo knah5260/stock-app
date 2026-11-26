@@ -337,7 +337,8 @@
         const lp = livePx(code), prev = lp ? t2[t2.length - 1] : t2.length > 1 ? t2[0] : null;
         const dayR = F && prev ? F / prev - 1 : null, dayPl = F && prev ? Math.round((F - prev) * E * (short ? -1 : 1)) : null;
         return {name: u.name, batch: u.batch, code: code, units: E, price: F, prev: prev || null, dayR: dayR, dayPl: dayPl, mv: G, avg: u.I, cost: u.J, pl: L, r: u.J ? L / u.J : null,
-          div: short ? 0 : Math.round((u.p && u.p.H) || 0), short: short, mt: u.R || 0, loan: u.O || 0, self: u.P || 0, collat: u.M || 0, margin: u.N || 0, mtDue: u.mtDue === '' ? '' : keyOf(u.mtDue), _W: W, _uid: u.name + '_' + u.batch};
+          div: short ? 0 : Math.round(((u.p && u.p.u.rows) || []).filter(r => r._kind === '現金股利').reduce((a, r) => a + (Number(r.O) || 0), 0)),   // 含息用股利原始金額（不扣匯費），和券商相同
+          short: short, mt: u.R || 0, loan: u.O || 0, self: u.P || 0, collat: u.M || 0, margin: u.N || 0, mtDue: u.mtDue === '' ? '' : keyOf(u.mtDue), _W: W, _uid: u.name + '_' + u.batch};
       });
     };
     const out = each(acct, one);
