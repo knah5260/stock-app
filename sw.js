@@ -1,5 +1,5 @@
 // 背景程式：快取 App 本身的檔案和公開股價資料；你的交易紀錄不會經過這裡（直接跟 Google 連線）
-const V = 'zq-shell-2.15.0';
+const V = 'zq-shell-2.15.1';
 const SHELL = ['./', 'index.html', 'manifest.json', 'engine.js', 'localapi.js', 'demo.js', 'importer.js', 'theme-dark.css', 'theme-light.css', 'theme-gallery.css', 'theme-dusk.css', 'theme-aurora.css', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
