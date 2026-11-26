@@ -307,6 +307,11 @@ body.guide .hi{display:inline-flex}
   transition:opacity .2s}
 .glide-lens.on{opacity:1}
 .tabbar.dragging .lens{transition:background .35s,box-shadow .35s}
+/* 數字滾動：只有變動的位數上下滾 */
+.zr-d{display:inline-block;position:relative;overflow:hidden;overflow:clip;vertical-align:baseline}
+.zr-c{display:inline-block;position:relative;transition:transform .5s cubic-bezier(.2,.85,.25,1)}
+.zr-c::before{content:attr(data-o);position:absolute;left:0;right:0;top:-100%;text-align:center;white-space:pre}
+.zr-c.zr-dn::before{top:100%}
 .kv{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
 .kv.tot{font-size:16px;font-weight:700;border-top:1px solid var(--line);padding-top:9px;margin-top:4px}
 @media (min-width:700px) and (min-height:600px){
@@ -652,7 +657,7 @@ window.ZQ_THEMES = [
 
   <span class="sec">關於</span>
   <div class="card col" style="gap:6px">
-    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；股價為每個交易日收盤價（15:40、21:10 更新）。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
+    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；股價為每個交易日收盤價（15:40、21:10 更新）；盤中（9:00–13:30）App 開著時，每 10 秒以證交所基本市況報導的成交價暫時更新。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
     <div class="row" style="justify-content:space-between"><span class="lbl" id="st-ver">版本</span><button class="small" id="st-log">更新內容</button></div>
     <div class="row" style="justify-content:space-between"><span class="lbl">加到手機主畫面，像 App 一樣使用</span><button class="small" id="st-install">加入主畫面</button></div>
   </div>
@@ -773,8 +778,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.14.0';
+const APP_VERSION = '2.15.0';
 const CHANGELOG = [
+  ['2.15.0', '2026-11-26', ['數字變動時，變動的位數會像里程表一樣上下滾動（上漲往上滾、下跌往下滾）；切換頁面時，跟上次看到不一樣的數字也會滾', '盤中即時價：交易日 9:00–13:30 App 開著時，每 10 秒更新持股現價、總資產和今日損益（上市、上櫃；興櫃仍用收盤價）']],
   ['2.14.0', '2026-11-26', ['底部導覽列、分段按鈕、篩選鈕都能按住左右滑動切換，玻璃放大鏡會跟著手指走', '總覽左上角改成玻璃圓形的選單按鈕']],
   ['2.13.2', '2026-11-26', ['換主題時，螢幕最上方的顏色也會立刻跟著換']],
   ['2.13.1', '2026-11-26', ['螢幕最上方（時間、電量那一條）改成跟主題一樣的顏色，淺色主題不再是一條黑色']],
@@ -1192,7 +1198,7 @@ async function loadOverview() {
       ['#ov-mt', '#ov-due', '#ov-st'].forEach(id => $(id).classList.remove('on'));
       return;
     }
-    $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : '');
+    $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.live ? '盤中即時 · ' + d.live : md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : ''));
     $('#ov-mv').textContent = fmt(d.mv);
     setNum('#ov-today', d.todayPl, true);
     $('#ov-todayr').textContent = arrowPct(d.todayR); $('#ov-todayr').className = cls(d.todayR);
@@ -1659,7 +1665,7 @@ const HI_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stro
 let HSUM = null;   // 最近一次持股合計（給說明帶入你的數字）
 const you = h => h ? '<div class="you">' + (DEMO ? '以示範資料為例：' : '以你的資料為例：') + h + '</div>' : '';
 const HELP = {
-  mv: ['台股總資產', () => '所有持股以<b>最新收盤價</b>計算的市值合計（融資買進的股票也算進去，融券不算）。股價每個交易日 15:40、21:10 各更新一次。' +
+  mv: ['台股總資產', () => '所有持股以<b>最新收盤價</b>計算的市值合計（融資買進的股票也算進去，融券不算）。股價每個交易日 15:40、21:10 各更新一次；盤中 App 開著時，每 10 秒改用即時成交價，上方會顯示「盤中即時」。' +
     you(ovData && !ovData.empty ? '目前總資產 ' + fmt(ovData.mv) + ' 元（' + md(ovData.asOf) + ' 收盤）。' : '')],
   today: ['今日損益', () => '最近一個交易日，持股市值的漲跌加上當天已實現的損益。百分比是對前一天總資產的比例。' +
     you(ovData && !ovData.empty ? md(ovData.asOf) + ' 損益 ' + sgn(ovData.todayPl) + ' 元（' + pct(ovData.todayR) + '）。' : '')],
@@ -2940,6 +2946,159 @@ if (DEMO) { ACCT = 'main'; document.body.classList.add('demo'); document.getElem
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 }
+
+// ---------- 盤中即時價：交易日 9:00–13:35、App 開在畫面上時，每 10 秒向證交所拿一次成交價 ----------
+const LIVE_URL = 'https://zq-quote.pages.dev/q';
+(function () {
+  if (DEMO) return;
+  const p2 = n => String(n).padStart(2, '0');
+  const dayKey = d => d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+  const tw = () => new Date(Date.now() + (480 + new Date().getTimezoneOffset()) * 60000);   // 台灣時間
+  const LIVE_FN = /\|app(Overview|Holdings|Performance|Calendar)\|/;
+  let codes = null, codesAt = 0, closedDay = '', rev = 0, busy = false;
+  function inSession() {
+    const t = tw(), wd = t.getDay(), m = t.getHours() * 60 + t.getMinutes();
+    return wd >= 1 && wd <= 5 && m >= 540 && m <= 815;
+  }
+  async function heldCodes() {
+    if (codes && Date.now() - codesAt < 120000) return codes;
+    const m = await rawCall('appMeta', [], '*');
+    codes = (m.stocks || []).filter(s => (s.held || s.short) && s.code).map(s => String(s.code).toUpperCase());
+    codesAt = Date.now();
+    return codes;
+  }
+  // 用新價格重算畫面用過的資料，放回快取再重畫（不閃爍、不打 Google）
+  async function refresh() {
+    await Promise.all(Object.values(inflight).map(p => p.catch(() => {})));   // 正在讀的先讀完，免得蓋掉新價格
+    const keys = Object.keys(cache).filter(k => LIVE_FN.test(k) && k.indexOf(ACCT + '|') === 0);
+    for (const k of keys) {
+      const fn = k.split('|')[1], args = JSON.parse(k.slice(k.indexOf('|', k.indexOf('|') + 1) + 1));
+      try { cache[k] = {d: await rawCall(fn, args, ACCT), t: Date.now()}; } catch (e) {}
+    }
+    saveCache();
+    Object.keys(loaded).forEach(k => { if (k !== tabOf(current) && k !== current) loaded[k] = false; });
+    if (/^(overview|holdings|calendar)$/.test(current) && loaders[current]) loaders[current]();
+  }
+  async function tick() {
+    if (busy || MODE !== 'google' || document.hidden || !(window.ZQ && ZQ.signedIn())) return;
+    const today = dayKey(new Date());
+    if (closedDay === today || !inSession()) return;
+    busy = true;
+    try {
+      const cs = await heldCodes();
+      if (!cs.length) return;
+      const r = await fetch(LIVE_URL + '?c=' + encodeURIComponent(cs.join(',')), {cache: 'no-store'});
+      if (!r.ok) return;
+      const j = await r.json();
+      const t = tw(), ymd = String(t.getFullYear()) + p2(t.getMonth() + 1) + p2(t.getDate());
+      if (j.d && j.d !== ymd) { if (t.getHours() * 60 + t.getMinutes() >= 550) closedDay = today; return; }   // 今天沒開盤（假日、颱風）
+      const px = {};
+      Object.keys(j.q || {}).forEach(c => { const v = j.q[c].p; if (v > 0) px[c] = v; });
+      if (!Object.keys(px).length) return;
+      const old = window.ZQ_LIVE;
+      const same = old && old.day === today && JSON.stringify(old.px) === JSON.stringify(Object.assign({}, old.px, px));
+      window.ZQ_LIVE = {day: today, px: Object.assign({}, old && old.day === today ? old.px : {}, px), t: j.t || '', rev: ++rev};
+      if (same && old.t === window.ZQ_LIVE.t) return;
+      await refresh();
+    } catch (e) {
+    } finally { busy = false; }
+  }
+  window.zqLiveTick = tick;
+  setInterval(tick, 10000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+  setTimeout(tick, 1500);
+})();
+
+// ---------- 數字滾動：畫面上的數字只要跟你上次看到的不一樣，變動的位數就像里程表一樣滾動 ----------
+(function () {
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const NUM = /^[\s+\-−±▲▼▴▾$,.\d%萬億股天筆元張／/:()（）–\-]+$/;
+  const isNum = t => /\d/.test(t) && NUM.test(t) && t.length < 40;
+  const val = t => { const m = String(t).replace(/−/g, '-').replace(/,/g, '').match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) * (/▼/.test(t) ? -1 : 1) : NaN; };
+  const SKIP = /^(SCRIPT|STYLE|SVG|svg|INPUT|TEXTAREA|SELECT|OPTION|TITLE|HEAD)$/;
+  const seen = new Map();   // 位置 → 上次在畫面上看到的文字
+  let busy = false;
+  const txt = n => n.nodeType === 3 ? n.data : n.textContent;
+  // 位置：從最近一個有 id 的祖先往下數第幾個子節點
+  function key(n) {
+    const parts = []; let e = n;
+    while (e && e !== document.body) {
+      if (e.nodeType === 1 && e.id) { parts.push('#' + e.id); break; }
+      const p = e.parentNode; if (!p) return null;
+      parts.push(Array.prototype.indexOf.call(p.childNodes, e)); e = p;
+    }
+    return parts.reverse().join('/');
+  }
+  function units(node, out) {
+    if (node.nodeType === 3) { if (isNum(node.data)) out.push(node); return out; }
+    if (node.nodeType !== 1 || SKIP.test(node.tagName) || node.classList.contains('glide-lens')) return out;
+    if (node.classList.contains('zr-n')) { out.push(node); return out; }
+    for (const c of node.childNodes) units(c, out);
+    return out;
+  }
+  function roll(newNode, oldText) {
+    const now = newNode.data, a = oldText.trim(), b = now.trim();
+    if (a === b) return;
+    const lead = now.match(/^\s*/)[0], tail = now.match(/\s*$/)[0];
+    const up = !(val(b) < val(a));
+    const n = Math.max(a.length, b.length), A = a.padStart(n, ' '), B = b.padStart(n, ' ');
+    const wrap = document.createElement('span'); wrap.className = 'zr-n';
+    let html = lead.replace(/ /g, '&nbsp;'), k = 0;
+    for (let i = 0; i < n; i++) {
+      const o = A[i], c = B[i];
+      if (o === c) { if (c !== ' ') html += esc(c); continue; }
+      if (c === ' ') continue;
+      html += '<span class="zr-d"><span class="zr-c' + (up ? '' : ' zr-dn') + '" data-o="' + (o === ' ' ? '&#160;' : esc(o)) + '" style="transition-delay:' + Math.min(k++ * 22, 160) + 'ms">' + esc(c) + '</span></span>';
+    }
+    wrap.innerHTML = html + tail.replace(/ /g, '&nbsp;');
+    newNode.parentNode.replaceChild(wrap, newNode);
+    wrap.querySelectorAll('.zr-c').forEach(r => { r.style.transitionProperty = 'none'; r.style.transform = up ? 'translateY(100%)' : 'translateY(-100%)'; });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      wrap.querySelectorAll('.zr-c').forEach(r => { r.style.transitionProperty = ''; r.style.transform = 'translateY(0)'; });
+    }));
+    setTimeout(() => {
+      if (!wrap.parentNode) return;
+      busy = true; wrap.parentNode.replaceChild(document.createTextNode(now), wrap); mo.takeRecords(); busy = false;
+    }, 900);
+  }
+  const shown = el => el.isConnected && el.getClientRects().length > 0;
+  // 掃一塊畫面：看得到的數字跟上次看到的比，不一樣就滾
+  function scan(root) {
+    if (root.nodeType !== 1) root = root.parentNode;
+    if (!root || !shown(root)) return;
+    const jobs = [];
+    for (const u of units(root, [])) {
+      const el = u.nodeType === 3 ? u.parentNode : u;
+      if (!el || !shown(el)) continue;            // 藏起來的不記，等它出現再比
+      const kk = key(u); if (!kk) continue;
+      const t = txt(u), old = seen.get(kk);
+      seen.set(kk, t);
+      if (u.nodeType === 3 && old != null && old.trim() !== t.trim() && isNum(old)) jobs.push([u, old]);
+    }
+    if (jobs.length > 400) jobs.length = 400;
+    busy = true; jobs.forEach(([n, o]) => { try { roll(n, o); } catch (e) {} }); mo.takeRecords(); busy = false;
+  }
+  let pend = new Set(), raf = 0;
+  function queue(n) {
+    if (!n) return; pend.add(n);
+    if (!raf) raf = requestAnimationFrame(() => {
+      raf = 0; const list = [...pend]; pend = new Set();
+      list.filter(x => !list.some(y => y !== x && y.contains && y.contains(x))).forEach(scan);
+    });
+  }
+  const mo = new MutationObserver(recs => {
+    if (busy) return;
+    recs.forEach(r => {
+      const t = r.target;
+      if (t.nodeType === 1 && (t.closest('.zr-n, .glide-lens') || SKIP.test(t.tagName))) return;
+      if (r.type === 'attributes') { if (t.nodeType === 1 && t.querySelector && /\d/.test(t.textContent)) queue(t); return; }
+      queue(r.type === 'characterData' ? t.parentNode : t);
+    });
+  });
+  mo.observe(document.body, {subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden']});
+  // 開啟時先記下目前畫面上的數字
+  setTimeout(() => scan(document.body), 0);
+})();
 </script>
 </body>
 </html>

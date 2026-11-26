@@ -242,6 +242,17 @@
   async function symList() { const j = await pub('symbols.json'); return (j && j.list) || []; }
   async function symMap() { if (!PUB.symMap || PUB.symMapV !== PUB.meta.updated) { const l = await symList(); PUB.symMap = {}; l.forEach(x => PUB.symMap[String(x[0]).toUpperCase()] = x); PUB.symMapV = PUB.meta.updated; } return PUB.symMap; }
 
+  // 盤中即時價（App 每隔幾秒寫進 window.ZQ_LIVE；只在當天有效）
+  const live = () => {
+    const L = window.ZQ_LIVE;
+    if (!L || L.day !== todayKey() || !L.px) return null;
+    // 今天的收盤資料已經進來（15:40 之後更新過），就以正式收盤價為準
+    const up = PUB.meta && PUB.meta.updated ? new Date(PUB.meta.updated) : null;
+    if (up && localKey(up) === L.day && up.getHours() >= 14) return null;
+    return L;
+  };
+  const livePx = code => { const L = live(); const p = L && L.px[String(code).toUpperCase()]; return p > 0 ? p : 0; };
+
   // ---------- 設定 ----------
   const acctSet = id => { const k = 'acct:' + id; return DB.set[k] || (DB.set[k] = {}); };
   function feesOf(id) {
@@ -293,7 +304,7 @@
       let disc = 10; cfg.fees.forEach(f => { if (f.d < today) disc = f.disc; });
       return C.V.unreal.map(u => {
         const s = syms[String(u.code).toUpperCase()];
-        const F = s && s[3] > 0 ? s[3] : 0, E = u.E, G = F * E, short = u.short;
+        const F = livePx(u.code) || (s && s[3] > 0 ? s[3] : 0), E = u.E, G = F * E, short = u.short;
         const Sr = window.eng_rd_(G * 1.425 * disc / 10 / 1000);
         const T = Sr >= cfg.minFee ? Sr : Sr >= cfg.minOdd ? (E >= 1000 ? cfg.minFee : Sr) : cfg.minOdd;
         const code = String(u.code);
@@ -361,12 +372,15 @@
     if (!trades.length || !B) return {rows: [], status: B ? '' : '公開資料還沒準備好'};
     const start = trades[0].key, today = todayKey();
     const days = B.d.filter(d => d >= start && d <= today);
+    const L = live();
+    if (L && today >= start && (!days.length || days[days.length - 1] < today)) days.push(today);   // 盤中：今天還沒收盤，先用即時價算一天
     const codes = [...new Set(trades.map(t => t.code))];
-    const yms = [...new Set(days.map(d => d.slice(0, 7)))];
+    const yms = [...new Set(days.filter(d => !L || d !== today || B.d.indexOf(d) >= 0).map(d => d.slice(0, 7)))];
     const M = {};
     (await Promise.all(yms.map(month))).forEach((m, i) => M[yms[i]] = m);
     const price = {}; let missing = false;
     yms.forEach(ym => { const m = M[ym]; if (m.failed) missing = true; m.d.forEach((d, i) => codes.forEach(c => { const l = m.c[c]; if (l && l[i] !== null && l[i] !== undefined) (price[c] = price[c] || {})[d] = l[i]; })); });
+    if (L) codes.forEach(c => { const p = livePx(c); if (p) (price[c] = price[c] || {})[today] = p; });
     const out = [], lastPx = {}, hold = {};
     let ti = 0, prevMV = 0, prevPL = 0, nav = 100, cumNet = 0;
     const bi = {}; B.d.forEach((d, i) => bi[d] = i);
@@ -384,7 +398,7 @@
       const base = prevMV + Math.max(0, -flow);
       const r = base > 0 ? dpl / base : 0;
       nav = nav * (1 + r);
-      const i = bi[d];
+      const i = bi[d] !== undefined ? bi[d] : B.d.length - 1;   // 盤中的今天：大盤先沿用最近收盤
       out.push({d: d, mv: Math.round(mv), inv: Math.round(-cumNet), pl: Math.round(pl), dpl: Math.round(dpl), r: r, nav: nav,
         txp: B.tx[i], trx: B.tr ? B.tr[i] : null, e50tr: B.e50 ? B.e50[i] : null});
       prevMV = mv; prevPL = pl;
@@ -392,7 +406,7 @@
     return {rows: out, status: missing ? '部分股價抓不到，市值可能偏低' : '完整'};
   }
   async function daily(acct) {
-    const k = 'd|' + acct + '|' + DB.rev + '|' + (PUB.meta && PUB.meta.updated) + '|' + todayKey();
+    const k = 'd|' + acct + '|' + DB.rev + '|' + (PUB.meta && PUB.meta.updated) + '|' + todayKey() + '|' + (live() ? live().rev : '');
     if (MEMO[k]) return MEMO[k];
     let D;
     if (acct !== '*') D = await dailyOne(acctIds(acct)[0]);
@@ -426,7 +440,8 @@
     const before = rows.filter(x => x.d < from), inR = rows.filter(x => x.d >= from);
     const b = before.length ? before[before.length - 1] : {pl: 0, nav: 100, tx: inR.length ? inR[0].tx : null, e50: inR.length ? inR[0].e50 : null};
     const ratio = (a, c) => (a && c) ? a / c - 1 : null;
-    return {asOf: last.d, updated: D.updated, status: D.status === '完整' ? '' : D.status, mv: last.mv, todayPl: last.dpl, todayR: last.r, benchTx: D.benchTx, benchE50: D.benchE50,
+    const L = live();
+    return {live: L && last.d === L.day ? L.t || '' : '', asOf: last.d, updated: D.updated, status: D.status === '完整' ? '' : D.status, mv: last.mv, todayPl: last.dpl, todayR: last.r, benchTx: D.benchTx, benchE50: D.benchE50,
       rangePl: last.pl - b.pl, rangeR: ratio(last.nav, b.nav), tx: ratio(last.tx, b.tx), e50: ratio(last.e50, b.e50),
       series: inR.map(x => ({d: x.d, mv: x.mv, pl: x.pl - b.pl, r: ratio(x.nav, b.nav), tx: ratio(x.tx, b.tx), e50: ratio(x.e50, b.e50)}))};
   }
