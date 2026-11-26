@@ -372,7 +372,10 @@ window.ZQ_THEMES = [
     window.ZQ_THEME = t.id;
     var link = document.getElementById('theme-css');
     if (link) { if (t.css) link.setAttribute('href', t.css); else link.removeAttribute('href'); }
-    var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', t.bar);
+    // iOS 主畫面 App 只改屬性不會更新頂端顏色，要換一個新的 meta 標籤才會立刻生效
+    var m = document.querySelector('meta[name=theme-color]'), n = document.createElement('meta');
+    n.setAttribute('name', 'theme-color'); n.setAttribute('content', t.bar);
+    if (m && m.parentNode) m.parentNode.replaceChild(n, m); else document.head.appendChild(n);
     if (window.zqOnTheme) window.zqOnTheme(t.id);
   }
   window.zqTheme = {list: T, byId: byId, mode: mode, rotList: rotList, apply: apply,
@@ -751,8 +754,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.13.1';
+const APP_VERSION = '2.13.2';
 const CHANGELOG = [
+  ['2.13.2', '2026-11-26', ['換主題時，螢幕最上方的顏色也會立刻跟著換']],
   ['2.13.1', '2026-11-26', ['螢幕最上方（時間、電量那一條）改成跟主題一樣的顏色，淺色主題不再是一條黑色']],
   ['2.13.0', '2026-11-26', ['新增 6 種主題：深色模式、淺色模式、夜幕畫廊、暮色天空、極光晨霧、經典，預設為夜幕畫廊', '主題可以跟隨系統（深色／淺色模式自動切換）、固定一個，或勾選幾個輪播，每次打開隨機換', '側邊選單整理：「除權息與股利」合在一起，新增「主題」，批次新增改從新增紀錄頁右上角進入', '設定拆成「交易設定」和「App 設定」']],
   ['2.12.0', '2026-11-26', ['新增「當沖試算」（選單裡）：先買後賣、先賣後買都能算，手續費折數和最低手續費帶入設定，當沖稅 0.15%、ETF 0.1%', '顯示損益兩平價和要漲（跌）幾檔，價格表列出上下每一檔的損益，點一下就帶入']],
