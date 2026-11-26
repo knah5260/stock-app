@@ -41,14 +41,16 @@
   const realized = records.filter(r => r.item === '賣出').map(r => {
     const buy = records.filter(x => x.name === r.name && x.item === '買進' && x.d <= r.d && x.batch === r.batch).pop();
     const cost = -buy.net * r.units / buy.units, pl = Math.round(r.net - cost);
-    return {d: r.d, item: '賣出', name: r.name, units: r.units, price: r.price, batch: r.batch, pl: pl, r: pl / cost, cost: Math.round(cost), out: r.net};
+    return {d: r.d, item: '賣出', name: r.name, units: r.units, price: r.price, batch: r.batch, dt: !!r.dayTrade, pl: pl, r: pl / cost, cost: Math.round(cost), out: r.net};
   }).sort((a, b) => a.d < b.d ? 1 : -1);
   const holdings = [
     {name: '元大台灣50（0050）', batch: 1, code: '0050', units: 3500, price: 196.2, avg: 173.9},
     {name: '台積電（2330）', batch: 1, code: '2330', units: 200, price: 1185, avg: 1028.4},
     {name: '鴻海（2317）', batch: 1, code: '2317', units: 1000, price: 221.5, avg: 198.8},
     {name: '景碩（3189）', batch: 1, code: '3189', units: 150, price: 498, avg: 520.4}];
+  const DAY = {'0050': 0.0124, '2330': 0.0215, '2317': -0.0089, '3189': -0.0315};   // 示範：今日漲跌
   holdings.forEach(h => {
+    h.prev = Math.round(h.price / (1 + DAY[h.code]) * 100) / 100; h.dayR = h.price / h.prev - 1; h.dayPl = Math.round((h.price - h.prev) * h.units);
     h.mv = Math.round(h.units * h.price); h.cost = Math.round(h.units * h.avg);
     h.pl = h.mv - h.cost - fee(h.mv) - Math.floor(h.mv * (h.code.startsWith('00') ? 0.001 : 0.003)); h.r = h.pl / h.cost;
     Object.assign(h, {short: false, mt: 0, loan: 0, self: 0, collat: 0, margin: 0, mtDue: ''});
@@ -138,6 +140,25 @@
         {type: 'cash', code: '2330', date: sh('2026-12-15'), shares: 200, item: '現金股利', units: 200, price: 6, est: 1200, key: 'demo1', name: '台積電（2330）'}]};
       case 'appDividends': return records.filter(r => r.item === '現金股利').map(r => ({row: r.row, d: r.d, item: r.item, name: r.name, units: r.units,
         price: r.price, amt: r.net, fee: 0, nhi: 0, net: r.net})).reverse();
+      case 'appStockChart': {
+        // 示範：從最近收盤價往回做一條隨機走勢，經過每筆買賣的成交價
+        const code = a[0], S2 = {}; Object.keys(S).forEach(k => S2[k] = S[k]);
+        const end = (holdings.find(h => h.code === code) || {}).price;
+        const tr = records.filter(r => (r.item === '買進' || r.item === '賣出') && r.name === S2[code]).map(r => ({d: r.d, item: r.item, units: r.units, price: r.price, batch: r.batch, dt: r.dayTrade, side: r.item === '買進' ? 'b' : 's'})).sort((x, y) => x.d < y.d ? -1 : 1);
+        const from = a[3] ? (tr.length ? isoD(new Date(toD(tr[0].d).getTime() - 20 * ms)) : a[1]) : a[1];
+        const last = a[2] && a[2] < sh('2026-11-24') ? a[2] : sh('2026-11-24'), days = [];
+        for (let t = toD(from); isoD(t) <= last; t = new Date(t.getTime() + ms)) { const w = t.getUTCDay(); if (w && w < 6) days.push(isoD(t)); }
+        const anchors = tr.map(x => [x.d, x.price]).concat([[last, end || (tr.length ? tr[tr.length - 1].price : 100)]]).sort((x, y) => x[0] < y[0] ? -1 : 1);
+        let s2 = 0, wv = 0; const n = k => { s2 = (s2 * 9301 + 49297 + k) % 233280; return s2 / 233280 - 0.5; };
+        const p = days.map((dd, i) => {
+          const nx = anchors.find(x => x[0] >= dd) || anchors[anchors.length - 1], pv = [...anchors].reverse().find(x => x[0] <= dd);
+          let base = nx[1];
+          if (pv && pv[0] !== nx[0]) { const f = (toD(dd) - toD(pv[0])) / (toD(nx[0]) - toD(pv[0])); base = pv[1] + (nx[1] - pv[1]) * f; }
+          wv = wv * 0.85 + n(i) * 0.012;
+          return Math.round(base * (1 + (anchors.some(x => x[0] === dd) ? 0 : wv)) * 100) / 100;
+        });
+        return {code: code, from: from, d: days, p: p, trades: tr};
+      }
       case 'appPrices': { const o = {}; (a[1] || []).forEach(d => o[d] = {d: d, p: 196.2}); return o; }
       case 'appAddRecord': {
         const r = a[0], amt = Math.floor(r.units * r.price), f = /買進|賣出/.test(r.item) ? Math.max(20, Math.floor(amt * 0.001425 * 0.28)) : 0;

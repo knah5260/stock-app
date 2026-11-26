@@ -294,9 +294,18 @@
   }
   const byDateDesc = (a, b) => a.d === b.d ? (b.row || 0) - (a.row || 0) : (a.d < b.d ? 1 : -1);
 
+  // 最近兩個收盤價（今天以前）：{代號: [最近一天, 前一天]}，算今日漲跌用
+  async function lastTwo() {
+    const cur = todayKey().slice(0, 7), prev = addDays(cur + '-01', -1).slice(0, 7);
+    const ms = await Promise.all([month(prev), month(cur)]);
+    const out = {};
+    ms.forEach(m => m.d.forEach((d, i) => { if (d > todayKey()) return; Object.keys(m.c).forEach(c => { const v = m.c[c][i]; if (v !== null && v !== undefined) { const o = out[c] || (out[c] = []); o.push(v); if (o.length > 2) o.shift(); } }); }));
+    return out;
+  }
   // 持股（未實現）：股價用最新收盤
   async function holdings(acct) {
     const syms = await symMap();
+    const two = await lastTwo().catch(() => ({}));
     const today = ser(todayKey());
     const one = id => {
       const C = compute(id), cfg = C.cfg;
@@ -311,7 +320,11 @@
           (code.charAt(0) === '0' || (code.charAt(0) === '9' && code.length === 6)) ? window.eng_rd_(G * 0.001) : window.eng_rd_(G * 0.003);
         const W = F === 0 ? 0 : short ? u.N + u.M - G - T + u.V : G - T - U + u.V - u.O;
         const L = F === 0 ? 0 : W - u.J;
-        return {name: u.name, batch: u.batch, code: code, units: E, price: F, mv: G, avg: u.I, cost: u.J, pl: L, r: u.J ? L / u.J : null,
+        // 今日漲跌：盤中（或收盤後正式資料還沒進來）跟最近一個收盤比；否則跟前一個收盤比
+        const t2 = two[code.toUpperCase()] || [];
+        const lp = livePx(code), prev = lp ? t2[t2.length - 1] : t2.length > 1 ? t2[0] : null;
+        const dayR = F && prev ? F / prev - 1 : null, dayPl = F && prev ? Math.round((F - prev) * E * (short ? -1 : 1)) : null;
+        return {name: u.name, batch: u.batch, code: code, units: E, price: F, prev: prev || null, dayR: dayR, dayPl: dayPl, mv: G, avg: u.I, cost: u.J, pl: L, r: u.J ? L / u.J : null,
           short: short, mt: u.R || 0, loan: u.O || 0, self: u.P || 0, collat: u.M || 0, margin: u.N || 0, mtDue: u.mtDue === '' ? '' : keyOf(u.mtDue), _W: W, _uid: u.name + '_' + u.batch};
       });
     };
@@ -323,7 +336,7 @@
   function realized(acct, from, to) {
     const out = each(acct, id => compute(id).V.realized.map(x => {
       const r = x.r;
-      return {d: keyOf(r.d), item: r.item, name: r.name, units: r.units, price: r.price, batch: r.J, pl: x.Q, r: x.P === '' ? null : x.P, cost: x.O, out: r.AD, row: r.row};
+      return {d: keyOf(r.d), item: r.item, name: r.name, units: r.units, price: r.price, batch: r.J, dt: !!r.dt, pl: x.Q, r: x.P === '' ? null : x.P, cost: x.O, out: r.AD, row: r.row};
     }).filter(x => x.d >= from && x.d <= to));
     out.sort(byDateDesc);
     return out;
@@ -589,6 +602,25 @@
     async appCorpActions(acct) { await load(); if (acct === '*') { const items = []; let checked = ''; for (const id of acctIds('*')) { const r = await corpActions(id); if (r.checked > checked) checked = r.checked; r.items.forEach(x => items.push(tag(x, id))); } items.sort((a, b) => a.date < b.date ? -1 : 1); return {items: items, checked: checked}; } return corpActions(acct); },
     async appDividends(acct) { await load(); return dividends(acct); },
     async appPrices(acct, code, dates) { return prices(code, dates); },
+    // 個股走勢＋買賣點：from 起每天收盤（盤中多一天即時價），和這檔的買進、賣出紀錄
+    async appStockChart(acct, code, from, to, all) {
+      await load(); await meta();
+      code = String(code).trim().toUpperCase();
+      const T = ['買進', '賣出', '融資買進', '融資賣出', '融券賣出', '融券買進'];
+      const trades = records(acct, '1900-01-01', '9999-12-31').filter(r => T.indexOf(r.item) >= 0 && codeOf(r.name).toUpperCase() === code)
+        .map(r => ({d: r.d, item: r.item, units: r.units, price: r.price, batch: r.batch, dt: r.dayTrade, side: /買/.test(r.item) ? 'b' : 's'}));
+      trades.sort((a, b) => a.d < b.d ? -1 : 1);
+      if (all) from = trades.length ? addDays(trades[0].d, -20) : addDays(todayKey(), -365);   // 全部：從第一筆交易前 20 天開始
+      if (PUB.meta && PUB.meta.start && from < PUB.meta.start) from = PUB.meta.start;
+      const today = to && to < todayKey() ? to : todayKey(), yms = [];
+      for (let ym = from.slice(0, 7); ym <= today.slice(0, 7); ym = addDays(ym + '-28', 5).slice(0, 7)) yms.push(ym);
+      const ms = await Promise.all(yms.map(month));
+      const d = [], p = [];
+      ms.forEach(m => { const l = m.c[code]; if (!l) return; m.d.forEach((x, i) => { if (x >= from && x <= today && l[i] !== null && l[i] !== undefined) { d.push(x); p.push(l[i]); } }); });
+      const lp = livePx(code);
+      if (lp && today === todayKey() && (!d.length || d[d.length - 1] < today)) { d.push(today); p.push(lp); }
+      return {code: code, from: from, d: d, p: p, trades: trades};
+    },
     async appProfile() {
       await load();
       const u = await userinfo();
