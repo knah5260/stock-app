@@ -173,6 +173,7 @@
         if (id > maxId) maxId = id;
       });
       recs.forEach(x => { if (!x.id) x.id = ++maxId; });   // 在試算表手動加的列，補上編號
+      canonNames(recs);
       set.accounts = Array.isArray(set.accounts) && set.accounts.length ? set.accounts : [{id: 'main', name: '主帳戶'}];
       if (set.accounts[0].id !== 'main') set.accounts.unshift({id: 'main', name: '主帳戶'});
       DB = {rev: N(set.rev), recs: recs, set: set, nextId: maxId + 1, at: Date.now(), loadedRows: recRows.length, loadedSet: setRows.length};
@@ -182,9 +183,19 @@
     try { return await DBP; } finally { DBP = null; }
   }
   // 寫入：先重新讀最新資料、套用變更、整份寫回（含算好的欄位）
+  // 同一個代號統一用同一個名稱（以最早那筆為準），避免「台積電（2330）」「台積（2330）」被當成不同股票分開算
+  function canonNames(recs) {
+    const first = {};
+    recs.slice().sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : a.id - b.id)).forEach(x => {
+      const C = codeOf(x.name).trim().toUpperCase();
+      if (C && !first[C]) first[C] = x.name;
+    });
+    recs.forEach(x => { const C = codeOf(x.name).trim().toUpperCase(); if (C && first[C]) x.name = first[C]; });
+  }
   async function mutate(fn) {
     const db = await load(true);
     const out = fn(db);
+    canonNames(db.recs);
     db.rev = (db.rev || 0) + 1; db.set.rev = db.rev;
     MEMO = {};
     // 依帳戶、日期、編號排好，算好的欄位一起寫回
