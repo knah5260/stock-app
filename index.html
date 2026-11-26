@@ -872,8 +872,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.17.2';
+const APP_VERSION = '2.17.3';
 const CHANGELOG = [
+  ['2.17.3', '2026-11-27 00:11', ['修正：數字還在滾動時畫面又更新（例如盤中每 10 秒），下一次滾動會從錯的數字開始，短暫出現一串亂碼般的數字']],
   ['2.17.2', '2026-11-27 00:04', ['修正：切換到日曆時，數字滾完格子會縮放一下；10 萬以上的金額少一位小數（例如 −10.3萬），格子放得下、不再換行']],
   ['2.17.1', '2026-11-27 00:02', ['修正：總覽的「風險指標」表格排版跑掉（被新功能的樣式名稱蓋掉）']],
   ['2.17.0', '2026-11-26 23:53', ['切換總覽、持股、日曆、交易時，畫面上的數字會用里程表從 0 滾到目前的值', '持股：每檔顯示今日漲跌，另有「今日表現」依今日損益排序', '已實現：總體與當沖的勝率、盈虧比（平均為主，附中位數對照）、各股勝率；沒有當沖就不顯示當沖', '點持股或已實現紀錄，打開個股走勢圖，標出每次買進、賣出和批號，可自訂區間（持有中的會畫出成本均價）', '側邊欄新增「年度報表」：全年損益、和大盤比較、收支明細、月度損益、勝率盈虧比、最賺最賠；可選年份或自訂區間，可存成 PDF（附浮水印）', '動畫升級（採用 UI Motion 的動畫程式碼）：卡片依序浮上來、下拉更新、彈出視窗可往下撥掉、載入中脈動、輸入錯誤搖頭、儲存成功打勾、持股配置圓餅圖畫出來、提示訊息彈性滑入、選單鈕變成 ✕']],
@@ -3389,7 +3390,7 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
   const SKIP = /^(SCRIPT|STYLE|SVG|svg|INPUT|TEXTAREA|SELECT|OPTION|TITLE|HEAD)$/;
   const seen = new Map();   // 位置 → 上次在畫面上看到的文字
   let busy = false;
-  const txt = n => n.nodeType === 3 ? n.data : n.textContent;
+  const txt = n => n.nodeType === 3 ? n.data : (n.dataset && n.dataset.v !== undefined ? n.dataset.v : n.textContent);   // 還在滾的數字：回報最後的值，不是數字帶上所有格子
   // 位置：從最近一個有 id 的祖先往下數第幾個子節點
   function key(n) {
     const parts = []; let e = n;
@@ -3450,7 +3451,7 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
       strips.push(list.length);
     }
     if (!any) return;
-    const wrap = document.createElement('span'); wrap.className = 'zr-n';
+    const wrap = document.createElement('span'); wrap.className = 'zr-n'; wrap.dataset.v = now;
     wrap.innerHTML = html + esc(tail);
     newNode.parentNode.replaceChild(wrap, newNode);
     // 格子的行高＝原本文字的實際高度，字的位置才會跟旁邊的字完全對齊
