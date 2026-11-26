@@ -320,7 +320,8 @@
     const today = ser(todayKey());
     const one = id => {
       const C = compute(id), cfg = C.cfg;
-      let disc = 10; cfg.fees.forEach(f => { if (f.d < today) disc = f.disc; });
+      // 未實現損益的「賣出手續費」照券商庫存頁的算法：用原價 1.425‰ 估算（不打折）
+      const disc = 10;
       return C.V.unreal.map(u => {
         const s = syms[String(u.code).toUpperCase()];
         const F = livePx(u.code) || (s && s[3] > 0 ? s[3] : 0), E = u.E, G = F * E, short = u.short;
