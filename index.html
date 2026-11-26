@@ -384,6 +384,11 @@ body.guide .hi{display:inline-flex}
 .skax{font-size:11px;fill:var(--mut)}.skax.now{fill:var(--tx);font-weight:700}
 .sk-leg{display:flex;gap:14px;font-size:12px;color:var(--mut)}.sk-leg i,.skdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .sk-leg i.b,.skdot.b{background:var(--up)}.sk-leg i.s,.skdot.s{background:var(--dn)}.sk-leg i.avg{width:14px;height:0;border-top:1.5px dashed var(--mut);border-radius:0}
+/* 走勢圖游標 */
+#sk-chart{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.skcl{stroke:var(--mut);stroke-width:1;stroke-dasharray:3 3}.skcd{fill:var(--tx);stroke:var(--card);stroke-width:2}
+.sk-tip{position:absolute;top:-6px;display:none;flex-direction:column;gap:2px;padding:6px 10px;border-radius:10px;background:var(--card2,#1F232B);border:1px solid var(--line);font-size:12px;white-space:nowrap;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:2}
+.sk-tip b{font-size:13px}.sk-tip .b{color:var(--up)}.sk-tip .s{color:var(--dn)}
 /* 勝率 */
 .wbar{display:flex;height:8px;min-height:8px;border-radius:4px;overflow:hidden;background:var(--line);flex:1 1 auto}
 .wsub{font-size:12px;color:var(--mut);white-space:nowrap}
@@ -872,8 +877,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.17.3';
+const APP_VERSION = '2.17.4';
 const CHANGELOG = [
+  ['2.17.4', '2026-11-27 00:21', ['個股走勢圖：手指在圖上左右滑，會顯示那一天的收盤價（盤中為即時價），當天有買賣也會列出批號、股數、成交價']],
   ['2.17.3', '2026-11-27 00:10', ['修正：數字還在滾動時畫面又更新（例如盤中每 10 秒），下一次滾動會從錯的數字開始，短暫出現一串亂碼般的數字']],
   ['2.17.2', '2026-11-27 00:04', ['修正：切換到日曆時，數字滾完格子會縮放一下；10 萬以上的金額少一位小數（例如 −10.3萬），格子放得下、不再換行']],
   ['2.17.1', '2026-11-27 00:02', ['修正：總覽的「風險指標」表格排版跑掉（被新功能的樣式名稱蓋掉）']],
@@ -1683,7 +1689,27 @@ function stockSvg(box, d, p, tr, avg) {
     (Math.abs(Y(p[p.length - 1]) - T) > 16 ? '<text x="' + (W - Rr + 6) + '" y="' + (T + 4) + '" class="skax">' + f(hi - pad) + '</text>' : '') +
     (Math.abs(Y(p[p.length - 1]) - (H - B)) > 16 ? '<text x="' + (W - Rr + 6) + '" y="' + (H - B) + '" class="skax">' + f(lo + pad) + '</text>' : '') +
     '<text x="' + (W - Rr + 6) + '" y="' + (Y(p[p.length - 1]) + 4).toFixed(1) + '" class="skax now">' + f(p[p.length - 1]) + '</text>' +
-    '<text x="' + L + '" y="' + (H - 6) + '" class="skax">' + md(d[0]) + '</text><text x="' + (W - Rr) + '" y="' + (H - 6) + '" text-anchor="end" class="skax">' + md(d[d.length - 1]) + '</text></svg>';
+    '<text x="' + L + '" y="' + (H - 6) + '" class="skax">' + md(d[0]) + '</text><text x="' + (W - Rr) + '" y="' + (H - 6) + '" text-anchor="end" class="skax">' + md(d[d.length - 1]) + '</text>' +
+    '<g id="sk-cur" style="display:none"><line y1="' + T + '" y2="' + (H - B) + '" class="skcl"/><circle r="4.5" class="skcd"/></g></svg><div class="sk-tip" id="sk-tip"></div>';
+  // 手指在圖上左右滑：顯示那一天的收盤價，當天有買賣也一起列出
+  const cur = $('#sk-cur', box), tip = $('#sk-tip', box), byDay = {};
+  tr.forEach(x => (byDay[x.d] = byDay[x.d] || []).push(x));
+  let hideT;
+  const at = ev => {
+    const r = box.getBoundingClientRect(), x = Math.max(L, Math.min(W - Rr, ev.clientX - r.left));
+    const i = Math.round((x - L) / (W - L - Rr) * (d.length - 1)), cx = X(i), cy = Y(p[i]);
+    cur.style.display = ''; $('line', cur).setAttribute('x1', cx); $('line', cur).setAttribute('x2', cx); $('circle', cur).setAttribute('cx', cx); $('circle', cur).setAttribute('cy', cy);
+    const ts = byDay[d[i]] || [];
+    tip.innerHTML = '<b>' + md(d[i]) + (i === d.length - 1 && window.ZQ_LIVE && ZQ_LIVE.day === d[i] ? ' 即時' : ' 收盤') + ' ' + f(p[i]) + '</b>' +
+      ts.map(t => '<span class="' + t.side + '">' + (t.side === 'b' ? '買' : '賣') + esc(t.batch) + ' ' + fmt(t.units) + ' 股 @' + t.price + (t.dt ? ' 當沖' : '') + '</span>').join('');
+    tip.style.display = 'flex';
+    const tw = tip.offsetWidth; tip.style.left = Math.max(0, Math.min(W - tw, cx - tw / 2)) + 'px';
+  };
+  box.style.touchAction = 'pan-y';
+  box.onpointerdown = ev => { clearTimeout(hideT); try { box.setPointerCapture(ev.pointerId); } catch (e) {} at(ev); };
+  box.onpointermove = ev => { if (ev.pointerType === 'mouse' || box.hasPointerCapture && box.hasPointerCapture(ev.pointerId)) at(ev); };
+  const end = () => { clearTimeout(hideT); hideT = setTimeout(() => { cur.style.display = 'none'; tip.style.display = 'none'; }, 2500); };
+  box.onpointerup = end; box.onpointercancel = end; box.onpointerleave = ev => { if (ev.pointerType === 'mouse') end(); };
 }
 // 勝率：只算筆數（每一筆賣出算一次）；盈虧比用中位數（賺的那幾筆的中位數 ÷ 賠的那幾筆的中位數），不受單筆極端值影響
 const medOf = a => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
@@ -2206,7 +2232,7 @@ function closeSheet() {
 // 往下撥就關：在視窗最上面往下拖，超過 110px 或撥得夠快就關掉，不然彈回去
 (function () {
   const p = $('#sheet-panel'); let y0 = 0, t0 = 0, dy = 0, on = false;
-  p.addEventListener('touchstart', e => { if (p.scrollTop > 0 || e.touches.length > 1) return; on = true; y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; p.classList.remove('snap'); }, {passive: true});
+  p.addEventListener('touchstart', e => { if (p.scrollTop > 0 || e.touches.length > 1 || e.target.closest('#sk-chart, svg, input, .chips')) return; on = true; y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; p.classList.remove('snap'); }, {passive: true});
   p.addEventListener('touchmove', e => {
     if (!on) return; dy = e.touches[0].clientY - y0;
     if (dy <= 0) { p.style.transform = ''; return; }
