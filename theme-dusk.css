@@ -1,0 +1,91 @@
+/* ===== 暮色天空（預覽）：鈷藍 → 灰藍霧 → 暖桃，霧面玻璃 =====
+   只在網址加 ?theme=dusk 時載入；?theme=off 關閉 */
+@font-face{font-family:"DM Sans";font-weight:400;font-display:swap;src:url(vendor/fonts/dm-sans-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-weight:500;font-display:swap;src:url(vendor/fonts/dm-sans-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-weight:600;font-display:swap;src:url(vendor/fonts/dm-sans-latin-600-normal.woff2) format("woff2")}
+:root{
+  /* 天空比參考圖略深，讓白字在任何位置都讀得清楚 */
+  --sky:linear-gradient(180deg,#3c5294 0%,#4b6094 18%,#61728f 36%,#717e8a 52%,#7b7c79 66%,#83766a 82%,#866e5c 100%);
+  --bg:#3c5294;--card:rgba(14,18,32,.46);--card2:rgba(255,255,255,.10);--line:rgba(255,255,255,.16);--bd:rgba(255,255,255,.24);
+  --tx:#ffffff;--mut:rgba(255,255,255,.88);--dim:rgba(255,255,255,.70);--acc:#f4f1ec;
+  --up:#ffb0a6;--dn:#9af5c4;--glass:rgba(255,255,255,.12);--blur:blur(18px) saturate(130%);--bar:#a9bbe8;
+  --shd:0 1px 2px rgba(10,14,30,.45)}
+html,body{background:var(--sky) fixed;background-color:#61728f;color:var(--tx);font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif}
+#app{background:var(--sky)}
+.page{background:var(--sky)!important}
+/* 直接放在天空上的字加一點陰影 */
+h1,.sub,.sec,.view > .row,.phead,.note,.legend,.gtog,.dates span.arrow{text-shadow:var(--shd)}
+h1{font-weight:600;letter-spacing:-.02em}
+h2{font-weight:600}
+.big{font-weight:600;letter-spacing:-.03em;font-size:40px}
+.sec{font-weight:600;color:#fff;letter-spacing:.02em}
+.note,.lbl,.sub{color:var(--mut)}
+.card .note,.form .note{text-shadow:none}
+/* 霧面玻璃卡片（加深，提高對比） */
+.card,.item,.form,.brow,.mini{background:var(--card);border:1px solid var(--bd);border-radius:22px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.mini{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.18);border-radius:16px}
+.form label{border-bottom-color:var(--line)}
+.card [style*="color:#D5D8DD"],.item [style*="color:#D5D8DD"],.card [style*="color:#C9CED6"]{color:rgba(255,255,255,.9)!important}
+.card [style*="color:var(--dim)"],.item [style*="color:var(--dim)"]{color:var(--dim)!important}
+/* 分段、晶片 */
+.seg,.inst-tabs{background:rgba(14,18,32,.36);border:1px solid var(--bd);border-radius:9999px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.seg button,.inst-tabs button{border-radius:9999px;color:rgba(255,255,255,.88);font-weight:500}
+.seg button.on,.inst-tabs button.on{background:var(--acc);color:#22252c;font-weight:600}
+.chips button{border-radius:9999px;border:1px solid var(--bd);background:rgba(14,18,32,.32);color:#fff;font-weight:500;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.chips button.on{background:var(--acc);border-color:var(--acc);color:#22252c;font-weight:600}
+/* 主要按鈕：米白膠囊 */
+.primary{border-radius:9999px;background:var(--acc);color:#22252c;font-weight:600}
+.small{border-radius:9999px;border:1px solid var(--bd);background:rgba(14,18,32,.3);font-weight:500}
+.small.pri{background:var(--acc);border-color:var(--acc);color:#22252c}
+.danger{border-radius:9999px;border-color:rgba(255,176,166,.7);background:rgba(14,18,32,.32)}
+.link{color:#fff;font-weight:600;text-decoration:underline;text-decoration-color:rgba(255,255,255,.45);text-underline-offset:3px}
+.iconbtn{border:1px solid var(--bd);background:rgba(14,18,32,.36);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.addbtn{border-color:rgba(255,255,255,.5);color:#fff}
+.xbtn{background:rgba(255,255,255,.16);color:#fff}
+.kinds button{border-radius:9999px;border:1px solid var(--bd);background:rgba(14,18,32,.34);color:#fff;font-weight:500}
+.kinds button.on.buy,.kinds button.on.sell,.kinds button.on.div,.kinds button.on.sp{background:var(--acc);border-color:var(--acc);color:#22252c}
+.kinds button.on::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.kinds button.on.buy::before{background:#d8473a}.kinds button.on.sell::before{background:#1f9a5e}.kinds button.on.div::before{background:#c48a26}.kinds button.on.sp::before{background:#3c5294}
+.pill{border-radius:9999px;border:1px solid var(--bd);background:rgba(14,18,32,.42);color:#fff;font-weight:500;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.badge{border-radius:9999px}
+.b-buy{background:rgba(255,120,105,.32);color:#fff}.b-sell{background:rgba(80,210,140,.3);color:#fff}.b-div{background:rgba(240,180,90,.32);color:#fff}.b-sp{background:rgba(169,187,232,.34);color:#fff}
+.fee input,.inp,.dates label,.search{background:rgba(14,18,32,.36);border:1px solid var(--bd);border-radius:12px;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.search,.dates span.arrow,.dates label span{color:var(--mut)}
+.form input::placeholder,.form textarea::placeholder,.inp::placeholder,.search input::placeholder{color:rgba(255,255,255,.62)}
+.search:focus-within{border-color:#fff}
+.form textarea{background:rgba(255,255,255,.08);border-color:var(--bd)}
+.sw span{background:rgba(255,255,255,.26)}
+.sw input:checked + span{background:#8ea6e6}
+.form input[type=checkbox]{accent-color:#8ea6e6}
+.hi{color:#fff;opacity:.85}
+.gtog svg{stroke:#fff}
+/* 浮動玻璃導覽列 */
+.tabbar{background:rgba(14,18,32,.5)!important;backdrop-filter:blur(22px) saturate(140%)!important;-webkit-backdrop-filter:blur(22px) saturate(140%)!important;border:1px solid var(--bd)!important;box-shadow:0 10px 30px rgba(20,20,50,.25)!important}
+.tabbar .lens,.tabbar .lens.moving{background:rgba(255,255,255,.24)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.32)!important}
+.tabbar .lens .inner{background:transparent!important;box-shadow:none!important}
+.tabbar button{color:rgba(255,255,255,.86)}
+.tabbar button.on{color:#fff;font-weight:600}
+/* 側選單 */
+.drawer .dp{background:rgba(30,40,74,.72);backdrop-filter:blur(26px) saturate(130%);-webkit-backdrop-filter:blur(26px) saturate(130%);border-right:1px solid var(--bd)}
+.dp button.di{border-radius:12px;font-weight:500}
+.dp button.di svg{color:#fff}
+.dp button.di:active{background:rgba(255,255,255,.16)}
+.dp button.di .n,.avatar .dot{background:var(--acc);color:#22252c}
+.avatar{background:rgba(14,18,32,.36);border-color:var(--bd);color:#fff}
+/* 日曆、熱力圖 */
+.cell{background:rgba(14,18,32,.32);color:rgba(255,255,255,.72);border-radius:10px}
+.cell.pos{background:rgba(214,84,70,.62);color:#fff}.cell.neg{background:rgba(32,150,96,.6);color:#fff}
+.cell.sel{border-color:#fff}
+.cell.wk{background:rgba(14,18,32,.46);border-color:var(--bd);color:#fff}
+.hm div{background:rgba(14,18,32,.32)}
+.toast,.tip,.hpop,.hpop .arw{background:rgba(30,40,74,.92);border-color:var(--bd);color:#fff;backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.sheet .panel{background:rgba(40,50,86,.86);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);border-top:1px solid var(--bd)}
+.inst-steps .n{background:var(--acc);color:#22252c}
+.inst-steps li,.helpbox{color:#fff}
+.helpbox .you{background:rgba(255,255,255,.12);border-color:var(--bd);color:#fff}
+.dt-chips button{border-radius:9999px;border-color:var(--bd);background:rgba(255,255,255,.1);color:#fff}
+.dt-row.be{background:rgba(255,255,255,.16)}
+.dt-row.cur{outline-color:#fff}
+.skel{background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.18),rgba(255,255,255,.08));background-size:200% 100%}
+.zero{color:var(--mut)}
+#demo-bar{background:rgba(14,18,32,.6);border-color:var(--bd);color:#fff}

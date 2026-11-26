@@ -318,6 +318,22 @@ body.guide .hi{display:inline-flex}
   .al li .p{min-width:44px}
 }
 </style>
+<script>
+// 外觀預覽：網址加 ?theme=dusk 開啟「暮色天空」，?theme=off 關閉（只記在這台裝置）
+(function () {
+  try {
+    var q = new URLSearchParams(location.search).get('theme');
+    if (q === 'dusk') localStorage.setItem('zqTheme', 'dusk');
+    else if (q === 'off') localStorage.removeItem('zqTheme');
+    if (localStorage.getItem('zqTheme') === 'dusk') {
+      window.ZQ_THEME = 'dusk';
+      document.write('<link rel="stylesheet" href="theme-dusk.css">');
+      var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', '#3c5294');
+    }
+  } catch (e) {}
+})();
+</script>
+
 </head>
 <body>
 <div id="app">
@@ -686,6 +702,8 @@ let ACCT = (() => { try { return localStorage.getItem('zqAcct') || 'main'; } cat
 const MASK = '＊＊＊＊';
 const EYE_ON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const EYE_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.4 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 5.2A9.2 9.2 0 0 1 12 5c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2M1 1l22 22"/></svg>';
+// 圖表配色（暮色天空預覽時換一組）
+const THC = window.ZQ_THEME === 'dusk' ? {a: '#ffffff', b: '#f6c9a6', c: '#a9bbe8', pal: ['#ffffff', '#f6c9a6', '#a9bbe8', '#e39a7a', '#7f95e0', '#d4dbe4', '#8a8f9c']} : {a: '#F59A4A', b: '#5AA7FF', c: '#9AA0A8', pal: ['#F59A4A', '#5AA7FF', '#B48CFF', '#4FD1C5', '#F6C945', '#FF8FB1', '#8FA3BF']};
 const fmt = v => v === null || v === undefined || isNaN(v) ? '—' : PRIV ? MASK : Math.round(Math.abs(v)).toLocaleString('en-US');
 const sgn = v => v === null || v === undefined || isNaN(v) ? '—' : PRIV ? MASK : (v > 0 ? '+' : v < 0 ? M : '') + fmt(v);
 const pct = (v, d) => v === null || v === undefined || isNaN(v) ? '—' : (v > 0 ? '+' : v < 0 ? M : '') + Math.abs(v * 100).toFixed(d === undefined ? 2 : d) + '%';
@@ -1071,12 +1089,12 @@ function renderOvChart() {
   if (!ovData || ovData.empty) return;
   const s = ovData.series, xs = s.map(x => x.d);
   let series, f, zero = false, leg = '';
-  if (ovChart === 'mv') { series = [{v: s.map(x => x.mv), c: '#F59A4A', area: true}]; f = v => v === null ? '—' : PRIV ? MASK : (v / 10000).toFixed(1) + '萬'; }
+  if (ovChart === 'mv') { series = [{v: s.map(x => x.mv), c: THC.a, area: true}]; f = v => v === null ? '—' : PRIV ? MASK : (v / 10000).toFixed(1) + '萬'; }
   else if (ovChart === 'pl') { series = [{v: s.map(x => x.pl), c: '#FF6B6B', area: true}]; f = v => v === null ? '—' : wan(v); zero = true; }
   else {
-    series = [{v: s.map(x => x.r), c: '#F59A4A', w: 2.6}, {v: s.map(x => x.tx), c: '#5AA7FF'}, {v: s.map(x => x.e50), c: '#9AA0A8'}];
+    series = [{v: s.map(x => x.r), c: THC.a, w: 2.6}, {v: s.map(x => x.tx), c: THC.b}, {v: s.map(x => x.e50), c: THC.c}];
     f = v => pct(v, 1); zero = true;
-    leg = '<span><i style="background:#F59A4A"></i>我的</span><span><i style="background:#5AA7FF"></i>' + BL().tx + '</span><span><i style="background:#9AA0A8"></i>' + BL().e50 + '</span><span style="color:var(--dim)">淨值報酬</span>';
+    leg = '<span><i style="background:' + THC.a + '"></i>我的</span><span><i style="background:' + THC.b + '"></i>' + BL().tx + '</span><span><i style="background:' + THC.c + '"></i>' + BL().e50 + '</span><span style="color:var(--dim)">淨值報酬</span>';
   }
   $('#ov-legend').innerHTML = leg;
   drawChart($('#ov-chart'), series, xs, {f, zero});
@@ -1180,7 +1198,7 @@ function allocCard(hs) {
   const g = {}; hs.forEach(x => { const k = x.code || x.name; if (!g[k]) g[k] = {name: shortName(x.name), mv: 0}; g[k].mv += x.mv || 0; });
   let a = Object.values(g).filter(x => x.mv > 0).sort((p, q) => q.mv - p.mv);
   const tot = a.reduce((s, x) => s + x.mv, 0); if (!tot) return '';
-  const C = ['#F59A4A', '#5AA7FF', '#B48CFF', '#4FD1C5', '#F6C945', '#FF8FB1', '#8FA3BF'];
+  const C = THC.pal;
   const lim = innerWidth < 700 ? 6 : 8;
   if (a.length > lim) { const rest = a.slice(lim - 1); a = a.slice(0, lim - 1).concat([{name: '其他 ' + rest.length + ' 檔', mv: rest.reduce((s, x) => s + x.mv, 0), o: 1}]); }
   a.forEach((x, i) => x.c = x.o ? '#4A4F58' : C[i % C.length]);
