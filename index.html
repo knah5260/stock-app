@@ -267,6 +267,14 @@ body.guide .hi{display:inline-flex}
 .yseg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .yseg button{flex:0 0 auto;height:34px;padding:0 14px;border-radius:17px;border:1px solid #2A2E36;background:var(--card);color:#C9CED6;font-size:14px}
 .yseg button.on{background:var(--acc);border-color:var(--acc);color:#1A1208;font-weight:700}
+.dt-chips{display:flex;gap:8px;padding:0 0 12px;border-bottom:1px solid var(--line);justify-content:flex-end}
+.dt-chips button{height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--bd);background:var(--card2);color:var(--tx);font-size:13px}
+.dt-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:9px 4px;font-size:14px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.dt-row:last-child{border-bottom:0}
+.dt-row>span:nth-child(n+2){text-align:right}
+.dt-row.hd{color:var(--mut);font-size:12px;padding-top:6px}
+.dt-row.be{background:rgba(245,154,74,.12);border-radius:8px}
+.dt-row.cur{outline:1px solid var(--acc);border-radius:8px}
 .kv{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
 .kv.tot{font-size:16px;font-weight:700;border-top:1px solid var(--line);padding-top:9px;margin-top:4px}
 @media (min-width:700px) and (min-height:600px){
@@ -469,6 +477,7 @@ body.guide .hi{display:inline-flex}
     <button class="di" data-pg="corp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>除權息與股本變動<span class="n" id="dr-ca" style="display:none"></span></button>
     <button class="di" data-pg="divinc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg>股利與所得</button>
     <button class="di" data-pg="dca"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>定期定額</button>
+    <button class="di" data-pg="dtcalc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h4"/></svg>當沖試算</button>
     <button class="di" data-pg="batch"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>批次新增紀錄</button>
     <button class="di" data-pg="import"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>匯入券商對帳單</button>
     <button class="di" id="dr-export"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>匯出交易紀錄（CSV）</button>
@@ -567,6 +576,25 @@ body.guide .hi{display:inline-flex}
   <span class="note" style="padding:0 4px">設定好扣款日和金額後，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存起來。</span>
 </section>
 
+<section class="page" id="pg-dtcalc" aria-label="當沖試算">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">當沖試算</h1></div>
+  <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))" id="dt-dir">
+    <button class="on" data-k="long">先買後賣</button><button data-k="short">先賣後買</button>
+  </div>
+  <div class="form">
+    <label><span>股票（選填）</span><input type="text" id="dt-name" placeholder="名稱或代號" autocomplete="off"></label>
+    <label><span>股數</span><input type="number" inputmode="numeric" id="dt-units" placeholder="1000" value="1000"></label>
+    <div class="dt-chips" id="dt-uchips"><button data-u="1000">1 張</button><button data-u="2000">2 張</button><button data-u="5000">5 張</button><button data-u="10000">10 張</button></div>
+    <label><span id="dt-p1l">買進價</span><input type="number" inputmode="decimal" step="any" id="dt-p1" placeholder="0"></label>
+    <label><span id="dt-p2l">賣出價</span><input type="number" inputmode="decimal" step="any" id="dt-p2" placeholder="0"></label>
+    <label><span>手續費折數</span><input type="number" inputmode="decimal" step="any" id="dt-disc" placeholder="6"></label>
+  </div>
+  <div class="card col" style="gap:2px" id="dt-res"></div>
+  <span class="sec" id="dt-lsec" style="display:none">價格試算（點一列帶入）</span>
+  <div class="card" style="padding:6px 12px;display:none" id="dt-ladder"></div>
+  <span class="note" style="padding:0 4px">手續費＝成交金額 × 0.1425% × 折數，買賣各收一次，無條件捨去並套用最低手續費（折數和最低手續費預設帶入「設定」的值）。現股當沖的證交稅減半為 0.15%，ETF 為 0.1%，債券 ETF 免徵。當沖需先向券商申請資格；先賣後買若遇平盤以下不得放空或券源不足等情況可能無法成交。試算僅供參考，實際以券商成交為準。</span>
+</section>
+
 <!-- 匯入對帳單（畫面先做，解析規則之後再加）-->
 <section class="page" id="pg-import" aria-label="匯入券商對帳單">
   <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>匯入券商對帳單</h1></div>
@@ -624,8 +652,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.11.2';
+const APP_VERSION = '2.12.0';
 const CHANGELOG = [
+  ['2.12.0', '2026-11-26', ['新增「當沖試算」（選單裡）：先買後賣、先賣後買都能算，手續費折數和最低手續費帶入設定，當沖稅 0.15%、ETF 0.1%', '顯示損益兩平價和要漲（跌）幾檔，價格表列出上下每一檔的損益，點一下就帶入']],
   ['2.11.2', '2026-11-25', ['匯入頁註明截圖辨識還在測試中、失敗率較高，建議優先使用 PDF']],
   ['2.11.1', '2026-11-25', ['月對帳單截圖改成一段一段辨識，iPhone 上不會因為記憶體不足而讀不出來', '辨識進度顯示百分比', '數字前後多讀到的符號會先去掉，讀得更準']],
   ['2.11.0', '2026-11-25', ['新增元大「月對帳單」截圖匯入：在投資先生按「開啟」後直接截圖，不用補寄、不用密碼', '有股票代號和實際手續費、交易稅，每筆都會驗算，截到「合計」那行還會核對總數', '放大截圖、多張重疊、淨收付欄被切掉都可以；讀不清楚的日期或代號會單獨再辨識一次']],
@@ -1678,7 +1707,94 @@ $('#st-savenick').onclick = async () => {
 };
 $('#st-log').onclick = () => { openSheet('<h2>更新內容</h2>' + CHANGELOG.map(([v, d, l]) => '<div class="col" style="gap:4px"><b style="font-size:15px">版本 ' + v + '<span class="lbl" style="font-weight:400"> · ' + ymd(d) + '</span></b><ul style="margin:0;padding-left:1.2em;color:var(--mut);font-size:14px;line-height:1.6">' + l.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>').join('') + '<button class="primary" id="lg-ok">好</button>'); $('#lg-ok').onclick = closeSheet; };
 let pageCur = null;
-const pageLoaders = {import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
+const pageLoaders = {dtcalc: () => loadDtCalc(), import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
+// ===== 當沖試算 =====
+let dtDir = 'long', dtCode = '';
+// 台股升降單位：股票 <10:0.01、<50:0.05、<100:0.1、<500:0.5、<1000:1、≥1000:5；ETF <50:0.01、≥50:0.05
+function tickAt(p, etf) {
+  if (etf) return p < 50 ? 0.01 : 0.05;
+  return p < 10 ? 0.01 : p < 50 ? 0.05 : p < 100 ? 0.1 : p < 500 ? 0.5 : p < 1000 ? 1 : 5;
+}
+const r2 = v => Math.round(v * 100) / 100;
+function tickMove(p, n, etf) {
+  // 往上 n 檔（n 可為負）；先對齊到合法價位
+  let x = r2(p);
+  for (let i = 0; i < Math.abs(n); i++) {
+    if (n > 0) x = r2(x + tickAt(x, etf));
+    else { const t = tickAt(r2(x - 0.001), etf); x = r2(x - t); if (x <= 0) return null; }
+  }
+  return x;
+}
+function dtCalc(o) {
+  const sh = o.units, disc = o.disc / 10, minF = sh >= 1000 ? o.minFee : o.minOdd;
+  const fee = a => a ? Math.max(minF, Math.floor(a * 0.001425 * disc)) : 0;
+  const ba = Math.floor(sh * o.buy), sa = Math.floor(sh * o.sell);
+  const bf = fee(ba), sf = fee(sa), tax = o.bond ? 0 : Math.floor(sa * (o.etf ? 0.001 : 0.0015));
+  const net = sa - sf - tax - ba - bf;
+  return {ba, sa, bf, sf, tax, net, roi: ba ? net / ba : 0};
+}
+function dtOpts() {
+  const etf = /^00/.test(dtCode), bond = /^00\d+B$/.test(dtCode);
+  return {units: +$('#dt-units').value || 0, disc: +$('#dt-disc').value || 10, minFee: meta ? meta.minFee : 20, minOdd: meta ? meta.minOdd : 1, etf, bond};
+}
+function loadDtCalc() {
+  if (!$('#dt-disc').value) $('#dt-disc').value = meta ? discAt(TODAY) : 6;
+  if (!meta) loadMeta().then(() => { if (!$('#dt-disc').dataset.touched) $('#dt-disc').value = discAt(TODAY); dtRender(); }).catch(() => {});
+  dtRender();
+}
+function dtRender() {
+  const o = dtOpts(), p1 = +$('#dt-p1').value || 0, p2 = +$('#dt-p2').value || 0;
+  const long = dtDir === 'long';
+  $('#dt-p1l').textContent = long ? '買進價' : '賣出價（先賣）';
+  $('#dt-p2l').textContent = long ? '賣出價' : '買回價';
+  const f = v => Math.round(v).toLocaleString('en-US'), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f(Math.abs(v));
+  const cls = v => v > 0 ? 'up' : v < 0 ? 'dn' : 'zero';
+  const pc = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v * 100).toFixed(2) + '%';
+  const pf = v => v === null ? '—' : String(r2(v));
+  if (!o.units || !p1) { $('#dt-res').innerHTML = '<span class="lbl">輸入股數和' + (long ? '買進價' : '先賣的價格') + '開始試算</span>'; $('#dt-ladder').innerHTML = ''; $('#dt-ladder').style.display = $('#dt-lsec').style.display = 'none'; return; }
+  const kv = (l, v, c) => '<div class="kv' + (c || '') + '"><span style="color:#D5D8DD">' + l + '</span><span>' + v + '</span></div>';
+  const calc = exit => dtCalc(Object.assign({}, o, long ? {buy: p1, sell: exit} : {buy: exit, sell: p1}));
+  // 損益兩平：往有利方向一檔一檔找，第一個不賠錢的價位
+  let be = null, x = r2(p1);
+  for (let i = 0; i < 400 && x !== null; i++) { if (calc(x).net >= 0) { be = x; break; } x = tickMove(x, long ? 1 : -1, o.etf); }
+  const beTicks = be === null ? null : (() => { let n = 0, y = r2(p1); while (y !== be && n < 400) { y = tickMove(y, long ? 1 : -1, o.etf); n++; } return n; })();
+  let h = '';
+  if (p2) {
+    const c = calc(p2);
+    h += kv('買進金額', f(c.ba)) + kv('買進手續費', f(c.bf)) + kv('賣出金額', f(c.sa)) + kv('賣出手續費', f(c.sf)) +
+      kv('當沖交易稅（' + (o.bond ? '免徵' : o.etf ? '0.1%' : '0.15%') + '）', f(c.tax)) +
+      kv('總成本（手續費＋稅）', f(c.bf + c.sf + c.tax)) +
+      '<div class="kv tot"><span>損益</span><span class="' + cls(c.net) + '">' + sg(c.net) + '　<span style="font-size:13px;font-weight:500">' + pc(c.roi) + '</span></span></div>';
+  } else {
+    const c = calc(p1);
+    h += kv('原價' + (long ? '賣出' : '買回') + '的成本', '<span class="dn">' + sg(c.net) + '</span>');
+  }
+  h += '<span class="note" style="margin-top:8px">損益兩平' + (long ? '賣出' : '買回') + '價：<b style="color:var(--tx)">' + (be === null ? '—' : pf(be)) + '</b>' +
+    (beTicks ? '（要' + (long ? '漲' : '跌') + ' ' + beTicks + ' 檔）' : beTicks === 0 ? '（原價就不賠）' : '') + '・每檔 ' + tickAt(r2(p1), o.etf) + ' 元</span>';
+  $('#dt-res').innerHTML = h;
+  // 價格表：從不利 4 檔到有利 12 檔
+  const rows = [];
+  for (let n = -4; n <= 12; n++) { const p = tickMove(p1, long ? n : -n, o.etf); if (p !== null) rows.push([n, p]); }
+  $('#dt-ladder').style.display = $('#dt-lsec').style.display = '';
+  $('#dt-ladder').innerHTML = '<div class="dt-row hd"><span>' + (long ? '賣出價' : '買回價') + '</span><span>損益</span><span>報酬率</span></div>' +
+    rows.map(([n, p]) => { const c = calc(p); return '<div class="dt-row' + (p === be ? ' be' : '') + (p2 && r2(p2) === p ? ' cur' : '') + '" data-p="' + p + '"><span>' + pf(p) + ' <span class="lbl" style="font-size:11px">' + (n === 0 ? '平' : (n > 0 ? '+' : '') + n + '檔') + '</span></span><span class="' + cls(c.net) + '">' + sg(c.net) + '</span><span class="' + cls(c.net) + '">' + pc(c.roi) + '</span></div>'; }).join('');
+  $$('#dt-ladder .dt-row[data-p]').forEach(r => r.onclick = () => { $('#dt-p2').value = r.dataset.p; dtRender(); });
+}
+$$('#dt-dir button').forEach(b => b.onclick = () => {
+  $$('#dt-dir button').forEach(x => x.classList.toggle('on', x === b)); dtDir = b.dataset.k;
+  dtRender();
+});
+$$('#dt-uchips button').forEach(b => b.onclick = () => { $('#dt-units').value = b.dataset.u; dtRender(); });
+['#dt-units', '#dt-p1', '#dt-p2'].forEach(id => $(id).addEventListener('input', dtRender));
+$('#dt-disc').addEventListener('input', () => { $('#dt-disc').dataset.touched = 1; dtRender(); });
+$('#dt-name').addEventListener('change', async () => {
+  const el = $('#dt-name'), v = await normName(el.value);
+  el.value = v; dtCode = (v.match(/（(.+)）$/) || [])[1] || (/^[0-9A-Z]{4,6}$/i.test(v) ? v.toUpperCase() : '');
+  const sy = dtCode && symOf(dtCode);
+  if (sy && sy[3] && !$('#dt-p1').value) $('#dt-p1').value = sy[3];
+  dtRender();
+});
+
 function openPage(p) {
   $$('.page').forEach(x => x.classList.toggle('on', x.id === 'pg-' + p));
   pageCur = p; $('#pg-' + p).scrollTop = 0;
