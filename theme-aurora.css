@@ -1,0 +1,118 @@
+/* ===== 極光晨霧 ===== */
+@font-face{font-family:"DM Sans";font-weight:400;src:url(vendor/fonts/dm-sans-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-weight:500;src:url(vendor/fonts/dm-sans-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-weight:600;src:url(vendor/fonts/dm-sans-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-weight:700;src:url(vendor/fonts/dm-sans-latin-700-normal.woff2) format("woff2")}
+:root{--bg:#e2e5e9;--card:#ffffff;--card2:#f2f4f7;--line:rgba(165,175,203,.35);--bd:rgba(165,175,203,.5);--tx:#1d2630;--mut:#6b7385;--dim:#9aa1b2;--acc:#2f6fd6;
+  --up:#d6453a;--dn:#1f9a62;--ink:#1d2630;--navy:#3a4766;--mag:#2f6fd6;
+  --shd:0 4px 15px rgba(97,110,124,.114),inset 0 1px 1px rgba(255,255,255,.39),0 1px 1px rgba(34,50,94,.08);
+  --aurora:radial-gradient(140% 119% at 50% 0%,rgba(105,201,102,.4) 14%,rgba(39,187,219,.33) 36%,rgba(90,160,230,.22) 54%,rgba(150,200,235,.1) 70%,rgba(255,255,255,0) 84%,rgba(0,0,0,0) 100%)}
+html,body{background:#e2e5e9;color:var(--ink);font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;letter-spacing:-.011em}
+#app,.page{background:var(--aurora) top/100% 560px no-repeat,#e2e5e9!important}
+h1{font-weight:700;letter-spacing:-.03em;background:linear-gradient(90deg,#2f6fd6,#3d5f8f 55%,#3a4766);-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{font-weight:600;color:var(--ink)}
+.big{font-weight:700;letter-spacing:-.035em;color:var(--ink)}
+.sec{color:#3d5f8f;font-weight:600}
+.note,.lbl,.sub{color:var(--mut)}
+/* 白卡片＋三層陰影，不加邊框 */
+.card,.item,.form,.brow{background:#fff;border:0;border-radius:18px;box-shadow:var(--shd);color:var(--ink)}
+.mini{background:#f2f4f7;border-radius:14px}
+.form label{border-bottom-color:var(--line)}
+.form input[type=text],.form input[type=number],.form input[type=date]{color:var(--ink)}
+.form input::placeholder,.search input::placeholder,.form textarea::placeholder{color:#a5afcb}
+.form textarea{background:#f6f8fa;border:1px solid var(--line);color:var(--ink)}
+[style*="color:#D5D8DD"],[style*="color:#C9CED6"],[style*="color:#E3E3E3"]{color:#3a4766!important}
+[style*="color:#F5C04A"]{color:#a06a00!important}
+[style*="color:#6CB8FF"],[style*="color:#9CC4FF"],[style*="color:#8FB8F0"],[style*="color:#6CA8FF"]{color:var(--mag)!important}
+[style*="background:#2A2110"]{background:#fff6e2!important;color:#8a5a00!important;border-color:#f0d08a!important}
+[style*="background:#2C313B"],[style*="background:#1F232B"],[style*="background:#15181D"],[style*="background:#2A2F38"]{background:#f2f4f7!important;color:var(--ink)!important}
+.card svg text,.chart svg text{fill:#6b7385}
+/* 分段、晶片：選中＝洋紅 10% 底＋洋紅字 */
+.seg,.inst-tabs{background:rgba(255,255,255,.55);border-radius:100px;box-shadow:var(--shd)}
+.seg button,.inst-tabs button{border-radius:100px;color:#6b7385;font-weight:500}
+.seg button.on,.inst-tabs button.on{background:rgba(47,111,214,.12);color:var(--mag);font-weight:600}
+.chips button{border-radius:100px;border:1px solid rgba(154,161,178,.5);background:rgba(255,255,255,.5);color:#3a4766;font-weight:500}
+.chips button.on{background:rgba(47,111,214,.12);border-color:rgba(47,111,214,.35);color:var(--mag);font-weight:600}
+/* 主要按鈕：深藍實心膠囊；次要：外框膠囊 */
+.primary{border-radius:100px;background:var(--navy);color:#fff;font-weight:600}
+.small{border-radius:100px;border:1px solid #9aa1b2;background:transparent;color:var(--ink);font-weight:500}
+.small.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+.danger{border-radius:100px;border-color:rgba(214,69,58,.45)}
+.link{color:var(--mag);font-weight:600}
+.iconbtn{border-radius:100px;border:0;background:#fff;color:var(--navy);box-shadow:var(--shd)}
+.addbtn{border-radius:100px;border-color:#a5afcb;color:var(--mag)}
+.xbtn{background:#eceff3;color:#6b7385}
+.kinds button{border-radius:100px;border:1px solid rgba(154,161,178,.5);background:rgba(255,255,255,.55);color:#3a4766;font-weight:600}
+.kinds button.on.buy,.kinds button.on.sell,.kinds button.on.div,.kinds button.on.sp{background:var(--navy);border-color:var(--navy);color:#fff}
+.kinds button.on::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.kinds button.on.buy::before{background:#ff8a7e}.kinds button.on.sell::before{background:#6fe0a8}.kinds button.on.div::before{background:#f0c060}.kinds button.on.sp::before{background:#9cc0f0}
+.pill{border-radius:100px;border:0;background:rgba(47,111,214,.12);color:var(--mag);font-weight:600}
+.badge{border-radius:100px}
+.b-buy{background:#fde8e6;color:#b3352b}.b-sell{background:#e2f5ea;color:#167a4c}.b-div{background:#fdf1d8;color:#8a5a00}.b-sp{background:rgba(47,111,214,.12);color:var(--mag)}
+.fee input,.inp{border-radius:12px;background:#f6f8fa;border:1px solid var(--line);color:var(--ink)}
+.dates label,.search{background:#fff;border:0;border-radius:14px;box-shadow:var(--shd);color:#6b7385}
+.dates input,.search input{color:var(--ink)}
+.dates label span{color:#6b7385}
+.sw span{background:#d3d8df}
+.sw input:checked + span{background:var(--mag)}
+.form input[type=checkbox]{accent-color:var(--mag)}
+.hi{color:var(--mag)}
+.gtog svg{stroke:var(--mag)}
+/* 導覽列：白色浮動卡 */
+.tabbar{background:rgba(255,255,255,.88)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;border:0!important;box-shadow:var(--shd),0 10px 30px rgba(58,71,102,.12)!important}
+.tabbar .lens,.tabbar .lens.moving{background:rgba(47,111,214,.12)!important;box-shadow:none!important}
+.tabbar .lens .inner{background:transparent!important;box-shadow:none!important}
+.tabbar button{color:#6b7385}
+.tabbar button.on{color:var(--mag);font-weight:600}
+/* 側選單 */
+.drawer .dp{background:#f2f4f7;border-right:0;box-shadow:var(--shd)}
+.dp button.di{color:var(--ink);font-weight:500;border-radius:14px}
+.dp button.di svg{color:var(--mag)}
+.dp button.di:active{background:#fff}
+.dp .who{border-bottom-color:var(--line)}
+.dp button.di .n,.avatar .dot{background:var(--mag);color:#fff}
+.avatar{background:#fff;border:0;color:var(--navy);box-shadow:var(--shd)}
+.drawer .bg{background:rgba(29,38,48,.35)}
+/* 日曆、熱力圖 */
+.cell{background:#fff;color:#9aa1b2;box-shadow:var(--shd)}
+.cell.pos{background:#fde8e6;color:#b3352b}.cell.neg{background:#e2f5ea;color:#167a4c}
+.cell.wk{background:#f2f4f7;border-color:var(--line);color:var(--ink)}
+.cell.sel{border-color:var(--mag)}
+.hm div{background:#f2f4f7}.hm div span{color:var(--ink)}.hm div i{color:#6b7385}
+.toast,.hpop,.hpop .arw{background:#fff;color:var(--ink);border-color:var(--line);box-shadow:var(--shd)}
+.tip{background:var(--navy);color:#fff}
+.sheet .panel{background:#fff;color:var(--ink)}
+.sheet{background:rgba(29,38,48,.35)}
+.inst-steps .n{background:var(--mag);color:#fff}
+.inst-steps li,.helpbox{color:var(--ink)}
+.helpbox .you{background:rgba(47,111,214,.08);border-color:rgba(47,111,214,.25);color:var(--ink)}
+.dt-chips button{border-radius:100px;border-color:var(--line);background:#f6f8fa;color:var(--ink)}
+.dt-chips{border-bottom-color:var(--line)}
+.dt-row{border-bottom-color:var(--line)}
+.dt-row.be{background:rgba(47,111,214,.1)}
+.dt-row.cur{outline-color:var(--mag)}
+.phead .back{color:var(--navy)}
+.zero{color:var(--mut)}
+.skel{background:linear-gradient(90deg,#fff,#f2f4f7,#fff);background-size:200% 100%}
+.cal .mh{color:#3a4766}.cal .h{color:#6b7385}.cell.out{opacity:.5}
+/* v3：保留色調，改成跟暮色天空一樣的霧面玻璃 */
+#app,.page{background:
+  radial-gradient(140% 70% at 50% 0%,rgba(80,190,110,.55) 0%,rgba(30,170,210,.45) 30%,rgba(80,150,225,.30) 52%,rgba(150,195,235,.18) 72%,rgba(255,255,255,0) 100%),
+  linear-gradient(180deg,#bfe3d2 0%,#b7d8ea 35%,#c6d4e8 65%,#dfe3ea 100%)!important;background-attachment:fixed!important}
+/* 標題白色 */
+h1{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:#fff;text-shadow:0 1px 3px rgba(20,60,90,.35),0 0 18px rgba(20,60,90,.18)}
+.phead .back{color:#fff;filter:drop-shadow(0 1px 2px rgba(20,60,90,.35))}
+#v-overview > .row .sub{color:#2f4a5e}
+/* 霧面玻璃：半透明白＋模糊＋白色細邊＋原本的三層陰影 */
+.card,.item,.form,.brow{background:rgba(255,255,255,.52);border:1px solid rgba(255,255,255,.7);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);box-shadow:var(--shd)}
+.mini{background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7)}
+.seg,.inst-tabs,.dates label,.search,.iconbtn,.chips button,.kinds button,.cell,.avatar{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.7);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+.chips button.on{background:rgba(47,111,214,.16);border-color:rgba(47,111,214,.35)}
+.kinds button.on.buy,.kinds button.on.sell,.kinds button.on.div,.kinds button.on.sp{background:var(--navy);border-color:var(--navy)}
+.cell.pos{background:rgba(253,215,210,.78)}.cell.neg{background:rgba(205,240,220,.78)}
+.cell.wk{background:rgba(255,255,255,.62)}
+.tabbar{background:rgba(255,255,255,.5)!important;backdrop-filter:blur(22px) saturate(150%)!important;-webkit-backdrop-filter:blur(22px) saturate(150%)!important;border:1px solid rgba(255,255,255,.75)!important}
+.drawer .dp{background:rgba(240,246,250,.7);backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);border-right:1px solid rgba(255,255,255,.7)}
+.sheet .panel{background:rgba(248,250,252,.82);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px)}
+.fee input,.inp,.form textarea{background:rgba(255,255,255,.6)}
+.mini .lbl,.card .lbl{color:#4a5568}

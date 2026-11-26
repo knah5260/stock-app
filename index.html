@@ -275,6 +275,19 @@ body.guide .hi{display:inline-flex}
 .dt-row.hd{color:var(--mut);font-size:12px;padding-top:6px}
 .dt-row.be{background:rgba(245,154,74,.12);border-radius:8px}
 .dt-row.cur{outline:1px solid var(--acc);border-radius:8px}
+.th-hint{font-size:14px;line-height:1.65;color:var(--tx);padding:14px 16px}
+.th-hint b{font-weight:700}
+.th-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.th-card{position:relative;display:flex;flex-direction:column;gap:8px;padding:8px 8px 12px;border-radius:18px;border:1.5px solid var(--bd);background:var(--card);color:var(--tx);text-align:left;font:inherit}
+.th-card img{width:100%;aspect-ratio:300/369;object-fit:cover;object-position:top;border-radius:12px;display:block;background:#111}
+.th-card b{font-size:16px;font-weight:700;padding:0 4px}
+.th-card span.d{font-size:12px;color:var(--mut);line-height:1.45;padding:0 4px}
+.th-card.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.th-card .tag{position:absolute;top:14px;left:14px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(0,0,0,.72);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.th-card .ck{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:13px;border:2px solid #fff;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff}
+.th-card.on .ck{background:var(--acc);border-color:var(--acc)}
+.th-card.dim{opacity:.45}
+.dp button.di .v{margin-left:auto;font-size:13px;color:var(--mut)}
 .kv{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
 .kv.tot{font-size:16px;font-weight:700;border-top:1px solid var(--line);padding-top:9px;margin-top:4px}
 @media (min-width:700px) and (min-height:600px){
@@ -319,18 +332,62 @@ body.guide .hi{display:inline-flex}
 }
 </style>
 <script>
-// 外觀預覽：網址加 ?theme=dusk 開啟「暮色天空」，?theme=off 關閉（只記在這台裝置）
+// 主題：跟隨系統（深色模式／淺色模式）、固定一個、或輪播（每次打開隨機一個）。記在這台裝置。
+window.ZQ_THEMES = [
+  {id: 'dark', name: '深色模式', css: 'theme-dark.css', bar: '#0b0b0b', desc: '霧黑底、白字，像看盤軟體'},
+  {id: 'light', name: '淺色模式', css: 'theme-light.css', bar: '#f6f5f4', desc: '暖米白底、白卡片，白天好讀'},
+  {id: 'gallery', name: '夜幕畫廊', css: 'theme-gallery.css', bar: '#0f1011', desc: '近黑底、襯線大字、銀灰主卡'},
+  {id: 'dusk', name: '暮色天空', css: 'theme-dusk.css', bar: '#3c5294', desc: '藍到桃的天空漸層、霧面玻璃'},
+  {id: 'aurora', name: '極光晨霧', css: 'theme-aurora.css', bar: '#9fd6cf', desc: '淡綠藍極光、半透明玻璃'},
+  {id: 'classic', name: '經典', css: '', bar: '#000000', desc: '最初的樣子：純黑底、橘色重點'}
+];
 (function () {
+  var T = window.ZQ_THEMES, byId = function (id) { for (var i = 0; i < T.length; i++) if (T[i].id === id) return T[i]; return null; };
+  var ls = {get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }};
+  var dark = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  // 舊的預覽網址：?theme=dusk 等於固定暮色天空；?theme=off 回到跟隨系統
   try {
     var q = new URLSearchParams(location.search).get('theme');
-    if (q === 'dusk') localStorage.setItem('zqTheme', 'dusk');
-    else if (q === 'off') localStorage.removeItem('zqTheme');
-    if (localStorage.getItem('zqTheme') === 'dusk') {
-      window.ZQ_THEME = 'dusk';
-      document.write('<link rel="stylesheet" href="theme-dusk.css">');
-      var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', '#3c5294');
-    }
+    if (q && byId(q)) { ls.set('zqThemeMode', 'fixed'); ls.set('zqTheme', q); }
+    else if (q === 'off') { ls.set('zqThemeMode', null); ls.set('zqTheme', null); }
   } catch (e) {}
+  // 還沒自己選過主題的人（包含舊版使用者）預設用「夜幕畫廊」
+  var DEFAULT = 'gallery';
+  function mode() { var m = ls.get('zqThemeMode'); return m === 'system' || m === 'rotate' ? m : 'fixed'; }
+  function rotList() { var l = []; try { l = JSON.parse(ls.get('zqThemeRotate') || '[]'); } catch (e) {} l = l.filter(byId); return l.length ? l : ['dark', 'light']; }
+  function pick() {
+    var m = mode();
+    if (!ls.get('zqThemeMode')) return DEFAULT;
+    if (m === 'fixed') return byId(ls.get('zqTheme')) ? ls.get('zqTheme') : DEFAULT;
+    if (m === 'rotate') {
+      var l = rotList(), last = ls.get('zqThemeLast');
+      var c = l.length > 1 ? l.filter(function (x) { return x !== last; }) : l;
+      var id = c[Math.floor(Math.random() * c.length)];
+      ls.set('zqThemeLast', id); return id;
+    }
+    return dark && !dark.matches ? 'light' : 'dark';
+  }
+  function apply(id) {
+    var t = byId(id) || byId('classic');
+    window.ZQ_THEME = t.id;
+    var link = document.getElementById('theme-css');
+    if (link) { if (t.css) link.setAttribute('href', t.css); else link.removeAttribute('href'); }
+    var m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', t.bar);
+    if (window.zqOnTheme) window.zqOnTheme(t.id);
+  }
+  window.zqTheme = {list: T, byId: byId, mode: mode, rotList: rotList, apply: apply,
+    set: function (o) {
+      if (o.mode) ls.set('zqThemeMode', o.mode);
+      if (o.theme) ls.set('zqTheme', o.theme);
+      if (o.rotate) ls.set('zqThemeRotate', JSON.stringify(o.rotate));
+      apply(o.theme && mode() === 'fixed' ? o.theme : mode() === 'rotate' ? (rotList().indexOf(window.ZQ_THEME) >= 0 ? window.ZQ_THEME : rotList()[0]) : pick());
+    }};
+  var first = pick(), t0 = byId(first);
+  window.ZQ_THEME = first;
+  document.write('<link rel="stylesheet" id="theme-css"' + (t0 && t0.css ? ' href="' + t0.css + '"' : '') + '>');
+  var m0 = document.querySelector('meta[name=theme-color]'); if (m0 && t0) m0.setAttribute('content', t0.bar);
+  // 跟隨系統時，系統切換深淺就立刻跟著換
+  if (dark && dark.addEventListener) dark.addEventListener('change', function () { if (mode() === 'system') apply(pick()); });
 })();
 </script>
 
@@ -490,21 +547,22 @@ body.guide .hi{display:inline-flex}
     <span class="sec2" id="dr-acctlbl" style="display:none">帳戶</span>
     <div class="col" style="gap:2px" id="dr-accts"></div>
     <span class="sec2">功能</span>
-    <button class="di" data-pg="corp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>除權息與股本變動<span class="n" id="dr-ca" style="display:none"></span></button>
-    <button class="di" data-pg="divinc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h4"/></svg>股利與所得</button>
+    <button class="di" data-pg="corp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>除權息與股利<span class="n" id="dr-ca" style="display:none"></span></button>
     <button class="di" data-pg="dca"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>定期定額</button>
     <button class="di" data-pg="dtcalc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h4"/></svg>當沖試算</button>
-    <button class="di" data-pg="batch"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>批次新增紀錄</button>
     <button class="di" data-pg="import"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>匯入券商對帳單</button>
     <button class="di" id="dr-export"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>匯出交易紀錄（CSV）</button>
-    <button class="di" data-pg="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
+    <span class="sec2">設定</span>
+    <button class="di" data-pg="theme"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.3"/><circle cx="17.5" cy="10.5" r="1.3"/><circle cx="8.5" cy="7.5" r="1.3"/><circle cx="6.5" cy="12.5" r="1.3"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/></svg>主題<span class="v" id="dr-theme"></span></button>
+    <button class="di" data-pg="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>交易設定</button>
+    <button class="di" data-pg="appset"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M10 18h4"/></svg>App 設定</button>
     <div class="foot" id="dr-foot">版本 2.0</div>
   </nav>
 </div>
 
 <!-- 設定 -->
-<section class="page" id="pg-settings" aria-label="設定">
-  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>設定</h1></div>
+<section class="page" id="pg-settings" aria-label="交易設定">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>交易設定</h1></div>
   <span class="sec">帳戶</span>
   <div class="card col" style="gap:4px">
     <div id="st-accts"></div>
@@ -549,13 +607,25 @@ body.guide .hi{display:inline-flex}
   </div>
   <span class="note" style="padding:0 4px">開啟後，每次打開 App 會比對證交所、櫃買中心公告和你的持股，有沒記錄的配息、配股、分割或減資就會在總覽提醒你。</span>
 
-  <span class="sec">帳戶與資料</span>
+  <span class="sec">交易資料</span>
+  <div class="card" style="padding:2px 16px">
+    <div class="srow"><span>交易紀錄</span><button class="small" id="st-wipe" style="color:#FF6B6B">清除交易紀錄</button></div>
+  </div>
+</section>
+
+<!-- 除權息與股本變動 -->
+<section class="page" id="pg-appset" aria-label="App 設定">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>App 設定</h1></div>
+  <span class="sec">外觀</span>
+  <div class="card" style="padding:2px 16px">
+    <button class="srow" id="as-theme" style="width:100%;background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left"><span>主題</span><span class="row" style="gap:6px;color:var(--tx)"><span id="as-theme-v">—</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg></span></button>
+  </div>
+  <span class="sec">帳號與資料</span>
   <div class="card" style="padding:2px 16px">
     <div class="srow g-only" style="gap:10px"><span style="flex-shrink:0">顯示名稱</span><span class="row" style="gap:8px;flex:1;min-width:0;justify-content:flex-end"><input class="inp" id="st-nick" maxlength="20" placeholder="預設用 Google 名稱" style="flex:1;min-width:0;text-align:right"><button class="small" id="st-savenick" style="flex-shrink:0">儲存</button></span></div>
     <div class="srow g-only"><span>Google 帳號</span><span class="row" style="gap:10px;min-width:0"><span class="v" id="st-gmail" style="overflow:hidden;text-overflow:ellipsis">—</span><button class="small" id="st-gout">登出</button></span></div>
     <div class="srow"><span>Google 試算表</span><a class="link" id="st-sheet" href="#" target="_blank" rel="noopener" style="height:auto">開啟</a></div>
     <div class="srow"><span>暫存資料</span><button class="small" id="st-clear">清除並重新讀取</button></div>
-    <div class="srow"><span>交易紀錄</span><button class="small" id="st-wipe" style="color:#FF6B6B">清除交易紀錄</button></div>
   </div>
 
   <span class="sec">關於</span>
@@ -566,10 +636,22 @@ body.guide .hi{display:inline-flex}
   </div>
 </section>
 
-<!-- 除權息與股本變動 -->
+<section class="page" id="pg-theme" aria-label="主題">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>主題</h1></div>
+  <span class="sec">套用方式</span>
+  <div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="th-mode">
+    <button data-m="system">跟隨系統</button><button data-m="fixed">固定主題</button><button data-m="rotate">輪播</button>
+  </div>
+  <div class="card th-hint" id="th-hint"></div>
+  <span class="sec" id="th-sec">選擇主題</span>
+  <div class="th-grid" id="th-list"></div>
+  <span class="note" style="padding:0 4px">主題只記在這台裝置，換手機或瀏覽器要重新選一次。</span>
+</section>
+
 <section class="page" id="pg-corp" aria-label="除權息與股本變動">
-  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">除權息與股本變動</h1>
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">除權息與股利</h1>
     <button class="iconbtn" id="ca-re" aria-label="重新檢查"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg></button></div>
+  <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button class="on">除權息與股本變動</button><button data-go="divinc">股利與所得</button></div>
   <span class="note" id="ca-head">依你的持股，比對證交所、櫃買中心公告的除權息、分割與減資。請由舊到新確認，金額以券商實際入帳為準。</span>
   <div class="row" id="ca-allrow" style="display:none"><span class="lbl" id="ca-count"></span><button class="small pri" id="ca-all">全部記錄</button></div>
   <div id="ca-list" class="list"></div>
@@ -577,7 +659,8 @@ body.guide .hi{display:inline-flex}
 
 <!-- 股利與所得 -->
 <section class="page" id="pg-divinc" aria-label="股利與所得">
-  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>股利與所得</h1></div>
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1>除權息與股利</h1></div>
+  <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-go="corp">除權息與股本變動</button><button class="on">股利與所得</button></div>
   <div class="yseg" id="di-years"></div>
   <div id="di-body" class="col" style="gap:14px"></div>
 </section>
@@ -608,7 +691,7 @@ body.guide .hi{display:inline-flex}
   <div class="card col" style="gap:2px" id="dt-res"></div>
   <span class="sec" id="dt-lsec" style="display:none">價格試算（點一列帶入）</span>
   <div class="card" style="padding:6px 12px;display:none" id="dt-ladder"></div>
-  <span class="note" style="padding:0 4px">手續費＝成交金額 × 0.1425% × 折數，買賣各收一次，無條件捨去並套用最低手續費（折數和最低手續費預設帶入「設定」的值）。現股當沖的證交稅減半為 0.15%，ETF 為 0.1%，債券 ETF 免徵。當沖需先向券商申請資格；先賣後買若遇平盤以下不得放空或券源不足等情況可能無法成交。試算僅供參考，實際以券商成交為準。</span>
+  <span class="note" style="padding:0 4px">手續費＝成交金額 × 0.1425% × 折數，買賣各收一次，無條件捨去並套用最低手續費（折數和最低手續費預設帶入「交易設定」的值）。現股當沖的證交稅減半為 0.15%，ETF 為 0.1%，債券 ETF 免徵。當沖需先向券商申請資格；先賣後買若遇平盤以下不得放空或券源不足等情況可能無法成交。試算僅供參考，實際以券商成交為準。</span>
 </section>
 
 <!-- 匯入對帳單（畫面先做，解析規則之後再加）-->
@@ -668,8 +751,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.12.0';
+const APP_VERSION = '2.13.0';
 const CHANGELOG = [
+  ['2.13.0', '2026-11-26', ['新增 6 種主題：深色模式、淺色模式、夜幕畫廊、暮色天空、極光晨霧、經典，預設為夜幕畫廊', '主題可以跟隨系統（深色／淺色模式自動切換）、固定一個，或勾選幾個輪播，每次打開隨機換', '側邊選單整理：「除權息與股利」合在一起，新增「主題」，批次新增改從新增紀錄頁右上角進入', '設定拆成「交易設定」和「App 設定」']],
   ['2.12.0', '2026-11-26', ['新增「當沖試算」（選單裡）：先買後賣、先賣後買都能算，手續費折數和最低手續費帶入設定，當沖稅 0.15%、ETF 0.1%', '顯示損益兩平價和要漲（跌）幾檔，價格表列出上下每一檔的損益，點一下就帶入']],
   ['2.11.2', '2026-11-25', ['匯入頁註明截圖辨識還在測試中、失敗率較高，建議優先使用 PDF']],
   ['2.11.1', '2026-11-25', ['月對帳單截圖改成一段一段辨識，iPhone 上不會因為記憶體不足而讀不出來', '辨識進度顯示百分比', '數字前後多讀到的符號會先去掉，讀得更準']],
@@ -702,8 +786,16 @@ let ACCT = (() => { try { return localStorage.getItem('zqAcct') || 'main'; } cat
 const MASK = '＊＊＊＊';
 const EYE_ON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const EYE_OFF = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.4 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 5.2A9.2 9.2 0 0 1 12 5c6.4 0 10 7 10 7a18.6 18.6 0 0 1-2.2 3.2M1 1l22 22"/></svg>';
-// 圖表配色（暮色天空預覽時換一組）
-const THC = window.ZQ_THEME === 'dusk' ? {a: '#ffffff', b: '#f6c9a6', c: '#a9bbe8', pal: ['#ffffff', '#f6c9a6', '#a9bbe8', '#e39a7a', '#7f95e0', '#d4dbe4', '#8a8f9c']} : {a: '#F59A4A', b: '#5AA7FF', c: '#9AA0A8', pal: ['#F59A4A', '#5AA7FF', '#B48CFF', '#4FD1C5', '#F6C945', '#FF8FB1', '#8FA3BF']};
+// 圖表配色（跟著主題換）
+const THC_ALL = {
+  classic: {a: '#F59A4A', b: '#5AA7FF', c: '#9AA0A8', pal: ['#F59A4A', '#5AA7FF', '#B48CFF', '#4FD1C5', '#F6C945', '#FF8FB1', '#8FA3BF']},
+  dark: {a: '#ffffff', b: '#479ffa', c: '#868f97', pal: ['#ffffff', '#ffa16c', '#479ffa', '#4ebe96', '#d6fe51', '#868f97', '#525252']},
+  light: {a: '#0075de', b: '#191919', c: '#a19d98', pal: ['#0075de', '#62aef0', '#ffb110', '#f64932', '#02093a', '#a19d98', '#d6d3cf']},
+  gallery: {a: '#00b3dd', b: '#f5f5f7', c: '#6a6b6b', pal: ['#f5f5f7', '#00b3dd', '#90b8f0', '#cacaca', '#5fd1a2', '#6a6b6b', '#3f4041']},
+  dusk: {a: '#ffffff', b: '#f6c9a6', c: '#a9bbe8', pal: ['#ffffff', '#f6c9a6', '#a9bbe8', '#e39a7a', '#7f95e0', '#d4dbe4', '#8a8f9c']},
+  aurora: {a: '#2f6fd6', b: '#3a4766', c: '#a5afcb', pal: ['#3a4766', '#2f6fd6', '#27bbdb', '#8fb6e8', '#d9a35a', '#a5afcb', '#5f6b80']}
+};
+let THC = THC_ALL[window.ZQ_THEME] || THC_ALL.classic;
 const fmt = v => v === null || v === undefined || isNaN(v) ? '—' : PRIV ? MASK : Math.round(Math.abs(v)).toLocaleString('en-US');
 const sgn = v => v === null || v === undefined || isNaN(v) ? '—' : PRIV ? MASK : (v > 0 ? '+' : v < 0 ? M : '') + fmt(v);
 const pct = (v, d) => v === null || v === undefined || isNaN(v) ? '—' : (v > 0 ? '+' : v < 0 ? M : '') + Math.abs(v * 100).toFixed(d === undefined ? 2 : d) + '%';
@@ -1493,7 +1585,7 @@ const HELP = {
   trade: ['新增紀錄', () => '依券商成交單填入日期、股票、股數、價格即可，手續費、交易稅、二代健保都會自動算好。<br><b>買進／賣出</b>：一般買賣，上方可切換現股、融資、融券。<br><b>股利</b>：現金股利或股票股利。<br><b>其他</b>：分割、減資、現金增資、融資現償、保證金追繳。'],
   daytrade: ['當沖', () => '同一天買進又賣出同一檔，打開這個開關。現股當沖賣出時證交稅減半（0.15%），批號也會和一般持股分開，不影響你的庫存成本。'],
   note: ['進出場理由', () => '寫下為什麼買、為什麼賣，例如突破季線、財報優於預期、跌破停損。之後回頭看交易紀錄時，可以檢討自己的判斷是否正確。匯出 CSV 時也會一起匯出。'],
-  est: ['預估金額', () => '依你在設定裡的手續費折數先算出成交金額、手續費、稅和淨金額，儲存後會顯示實際結果。金額和券商對帳單有小差異時，請確認設定的折數是否正確。'],
+  est: ['預估金額', () => '依你在「交易設定」裡的手續費折數先算出成交金額、手續費、稅和淨金額，儲存後會顯示實際結果。金額和券商對帳單有小差異時，請確認設定的折數是否正確。'],
   records: ['交易紀錄', () => '所有輸入過的紀錄，依日期排列。點任一筆可以修改或刪除，下方會顯示你寫的進出場理由。上方可以選期間、篩選買賣或股利、搜尋股票。'],
   corp: ['除權息與股本變動', () => '比對證交所、櫃買中心公告和你的持股，找出你還沒記錄的配息、配股、分割或減資。確認金額後按「記錄」就會自動新增；券商實際入帳不同時可以先修改再記錄。'],
   divinc: ['股利與所得', () => '依年度整理收到的現金股利、股票股利和被扣的二代健保補充保費，報稅時可以對照。'],
@@ -1725,7 +1817,75 @@ $('#st-savenick').onclick = async () => {
 };
 $('#st-log').onclick = () => { openSheet('<h2>更新內容</h2>' + CHANGELOG.map(([v, d, l]) => '<div class="col" style="gap:4px"><b style="font-size:15px">版本 ' + v + '<span class="lbl" style="font-weight:400"> · ' + ymd(d) + '</span></b><ul style="margin:0;padding-left:1.2em;color:var(--mut);font-size:14px;line-height:1.6">' + l.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>').join('') + '<button class="primary" id="lg-ok">好</button>'); $('#lg-ok').onclick = closeSheet; };
 let pageCur = null;
-const pageLoaders = {dtcalc: () => loadDtCalc(), import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
+const pageLoaders = {theme: () => renderTheme(), appset: () => loadAppSet(), dtcalc: () => loadDtCalc(), import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
+// ===== 主題 =====
+let thView = null;   // 頁面上正在看的套用方式（還沒切換前）
+const CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
+window.zqOnTheme = id => {
+  THC = THC_ALL[id] || THC_ALL.classic;
+  Object.keys(loaded).forEach(k => loaded[k] = false);
+  if (!pageCur && typeof show === 'function') show(current);
+  thLabel();
+};
+function thName(id) { const t = zqTheme.byId(id); return t ? t.name : ''; }
+function thLabel() {
+  const m = zqTheme.mode();
+  const v = m === 'system' ? '跟隨系統' : m === 'rotate' ? '輪播' : thName(window.ZQ_THEME);
+  if ($('#dr-theme')) $('#dr-theme').textContent = v;
+  if ($('#as-theme-v')) $('#as-theme-v').textContent = m === 'fixed' ? v : v + '・' + thName(window.ZQ_THEME);
+}
+function renderTheme() {
+  const m = thView || zqTheme.mode(), cur = window.ZQ_THEME, rot = zqTheme.rotList();
+  $$('#th-mode button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  $('#th-hint').innerHTML = m === 'system'
+    ? '跟著裝置的外觀自動切換：深色外觀時用<b>「深色模式」</b>，淺色外觀時用<b>「淺色模式」</b>。<br><span class="lbl" style="font-size:13px">在 iPhone 的「設定 › 螢幕顯示與亮度」選「自動」，白天就是淺色、日落後自動換深色。</span>'
+    : m === 'rotate'
+    ? '勾選喜歡的主題，<b>每次打開 App 隨機換一個</b>，不會連續兩次一樣。<br><span class="lbl" style="font-size:13px">至少勾兩個；目前套用：' + esc(thName(cur)) + '</span>'
+    : '點一下就換成那個主題，之後打開都會用它。';
+  $('#th-sec').textContent = m === 'rotate' ? '勾選要輪播的主題（' + rot.length + '）' : m === 'system' ? '主題一覽（點任一個改成固定使用）' : '選擇主題';
+  $('#th-list').innerHTML = zqTheme.list.map(t => {
+    const on = m === 'rotate' ? rot.includes(t.id) : t.id === cur;
+    const tag = m === 'system' && t.id === 'dark' ? '深色外觀時' : m === 'system' && t.id === 'light' ? '淺色外觀時' : (t.id === cur && m !== 'fixed' ? '目前' : '');
+    const dim = m === 'system' && t.id !== 'dark' && t.id !== 'light';
+    return '<button class="th-card' + (on ? ' on' : '') + (dim ? ' dim' : '') + '" data-id="' + t.id + '">' +
+      '<img src="theme-preview/' + t.id + '.jpg" alt="" loading="lazy">' +
+      (tag ? '<span class="tag">' + tag + '</span>' : '') +
+      (m === 'rotate' || on ? '<span class="ck">' + (on ? CHECK : '') + '</span>' : '') +
+      '<b>' + esc(t.name) + '</b><span class="d">' + esc(t.desc) + '</span></button>';
+  }).join('');
+  $$('#th-list .th-card').forEach(c => c.onclick = () => {
+    const id = c.dataset.id;
+    if (m === 'rotate') {
+      let l = zqTheme.rotList().slice();
+      if (l.includes(id)) { if (l.length <= 2) { toast('輪播至少要留兩個主題'); return; } l = l.filter(x => x !== id); }
+      else l.push(id);
+      l = zqTheme.list.map(t => t.id).filter(x => l.includes(x));
+      zqTheme.set({mode: 'rotate', rotate: l});
+    } else {
+      thView = 'fixed'; zqTheme.set({mode: 'fixed', theme: id});
+      if (m === 'system') toast('已改成固定使用「' + thName(id) + '」');
+    }
+    renderTheme();
+  });
+  thLabel();
+}
+$$('#th-mode button').forEach(b => b.onclick = () => {
+  const m = b.dataset.m; thView = m;
+  if (m === 'system') zqTheme.set({mode: 'system'});
+  else if (m === 'rotate') zqTheme.set({mode: 'rotate', rotate: zqTheme.rotList()});
+  else zqTheme.set({mode: 'fixed', theme: window.ZQ_THEME});
+  renderTheme();
+});
+$$('[data-go]').forEach(b => b.onclick = () => openPage(b.dataset.go));
+$('#as-theme').onclick = () => openPage('theme');
+async function loadAppSet() {
+  thLabel();
+  $$('.g-only').forEach(e => e.style.display = MODE === 'google' ? '' : 'none');
+  if (MODE === 'google') { ZQ.whoami().then(m => { $('#st-gmail').textContent = m || '已登入'; }); call('appProfile').then(p => { ME = p; $('#st-nick').value = p.nick || ''; $('#st-nick').placeholder = p.name ? '預設：' + p.name : '預設用 Google 名稱'; renderMe(); }).catch(() => {}); }
+  try { const d = await callIn(writeAcct(), 'appSettings'); $('#st-sheet').href = d.sheetUrl; } catch (e) {}
+}
+setTimeout(thLabel, 0);
+
 // ===== 當沖試算 =====
 let dtDir = 'long', dtCode = '';
 // 台股升降單位：股票 <10:0.01、<50:0.05、<100:0.1、<500:0.5、<1000:1、≥1000:5；ETF <50:0.01、≥50:0.05

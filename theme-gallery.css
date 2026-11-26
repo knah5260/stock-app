@@ -1,0 +1,93 @@
+/* ===== 夜幕畫廊 ===== */
+@font-face{font-family:"Inter";font-weight:300;src:url(vendor/fonts/inter-latin-300-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:400;src:url(vendor/fonts/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;src:url(vendor/fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"DM Serif Display";font-weight:400;src:url(vendor/fonts/dm-serif-display-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Roboto Mono";font-weight:400;src:url(vendor/fonts/roboto-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Roboto Mono";font-weight:500;src:url(vendor/fonts/roboto-mono-latin-500-normal.woff2) format("woff2")}
+:root{--bg:#0f1011;--card:#1c1d1e;--card2:#2e2e2e;--line:rgba(255,255,255,.07);--bd:rgba(255,255,255,.06);--tx:#f5f5f7;--mut:#9f9fa0;--dim:#6a6b6b;--acc:#00b3dd;
+  --up:#ff8a7e;--dn:#5fd1a2;--cyan:#00b3dd;--peri:#90b8f0;
+  --serif:"DM Serif Display","Songti TC","Noto Serif CJK TC",serif;--mono:"Roboto Mono",ui-monospace,"PingFang TC",monospace}
+html,body{background:#0f1011;font-family:"Inter",-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;font-weight:400}
+#app,.page{background:#0f1011!important}
+/* 襯線大標＋大數字：細、不加粗 */
+h1,.phead h1,#ov-title,.big,.hpop h3{font-family:var(--serif);font-weight:400;letter-spacing:0;color:#f5f5f7}
+h1{font-size:28px}
+.big{font-size:44px;line-height:1}
+/* 等寬大寫小標 */
+.lbl,.sec,.legend{font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase}
+.sec{color:#9f9fa0;font-weight:500;font-size:12px}
+.lbl{color:#9f9fa0}
+.sub,.note{color:#9f9fa0}
+[style*="font-weight:700"]{font-weight:500!important}
+/* 卡片：平面、只靠色階分層 */
+.card,.item,.form,.brow{background:#1c1d1e;border:0;border-radius:16px;box-shadow:none}
+.mini{background:#2e2e2e;border-radius:12px}
+[style*="color:#D5D8DD"],[style*="color:#C9CED6"]{color:#cfcfd1!important}
+/* 總覽主卡＝唯一的反白資料卡（Silver） */
+#v-overview > .row + .card{background:#cacaca;color:#000;border-radius:30px;--tx:#000;--mut:#3f4041;--dim:#55575a;--line:rgba(0,0,0,.12);--up:#b3261e;--dn:#0b7a4b}
+#v-overview > .row + .card .big{color:#000}
+#v-overview > .row + .card .lbl{color:#3f4041}
+#v-overview > .row + .card .mini{background:rgba(255,255,255,.45)}
+#v-overview > .row + .card .grid3{border-top-color:rgba(0,0,0,.12)!important}
+#v-overview > .row + .card .hi{color:#3f4041}
+/* 控制項：8px 圓角；膠囊只給標籤 */
+.seg,.inst-tabs{background:#1c1d1e;border-radius:10px;padding:4px}
+.seg button,.inst-tabs button{border-radius:8px;color:#9f9fa0;font-weight:400}
+.seg button.on,.inst-tabs button.on{background:#2e2e2e;color:#fff;font-weight:500}
+.chips button{border-radius:8px;border:1px solid rgba(255,255,255,.22);background:transparent;color:#f5f5f7;font-weight:400}
+.chips button.on{background:#fff;border-color:#fff;color:#000;font-weight:500}
+.primary{border-radius:8px;background:#fff;color:#000;font-weight:500}
+.primary::after{content:" →"}
+.small{border-radius:8px;border:1px solid rgba(255,255,255,.4);background:transparent;font-weight:400}
+.small.pri{background:#fff;border-color:#fff;color:#000}
+.danger{border-radius:8px}
+.link{color:#fff;font-weight:400;text-decoration:underline;text-decoration-color:rgba(255,255,255,.35);text-underline-offset:3px}
+.iconbtn{border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06)}
+.addbtn{border-radius:8px;border-color:rgba(255,255,255,.25);color:#fff}
+.xbtn{background:#2e2e2e}
+.kinds button{border-radius:8px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#9f9fa0;font-weight:500}
+.kinds button.on.buy,.kinds button.on.sell,.kinds button.on.div,.kinds button.on.sp{background:#fff;border-color:#fff;color:#000}
+.kinds button.on::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.kinds button.on.buy::before{background:#e5484d}.kinds button.on.sell::before{background:#1f9a62}.kinds button.on.div::before{background:#d29a2a}.kinds button.on.sp::before{background:var(--cyan)}
+.pill{border-radius:1440px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.12);color:#fafafa;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.04em}
+.badge{border-radius:1440px;font-family:var(--mono);font-weight:500;font-size:11px}
+.b-buy{background:#3a2222;color:#ffc3bd}.b-sell{background:#163327;color:#b2ecd2}.b-div{background:#382d1c;color:#f0d49a}.b-sp{background:#123744;color:#9fe6f7}
+.fee input,.inp{border-radius:8px;background:#000;border:1px solid rgba(255,255,255,.1)}
+.dates label,.search{background:#000;border:1px solid rgba(255,255,255,.1);border-radius:8px}
+.form textarea{background:#000;border:1px solid rgba(255,255,255,.1);border-radius:8px}
+.sw input:checked + span{background:var(--cyan)}
+.form input[type=checkbox]{accent-color:var(--cyan)}
+.hi{color:#9f9fa0}.gtog svg{stroke:#9f9fa0}
+/* 導覽列：霧面玻璃 */
+.tabbar{background:rgba(15,16,17,.6)!important;backdrop-filter:blur(24px)!important;-webkit-backdrop-filter:blur(24px)!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:16px!important;box-shadow:none!important}
+.tabbar .lens,.tabbar .lens.moving{background:rgba(255,255,255,.1)!important;border-radius:10px!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)!important}
+.tabbar .lens .inner{background:transparent!important;box-shadow:none!important}
+.tabbar button{color:#9f9fa0;font-weight:400}
+.tabbar button.on{color:#fff;font-weight:500}
+.drawer .dp{background:#090a0b;border-right:1px solid rgba(255,255,255,.06)}
+.dp button.di{border-radius:8px;font-weight:400}
+.dp button.di svg{color:#f5f5f7}
+.dp button.di:active{background:#1c1d1e}
+.dp button.di .n,.avatar .dot{background:#fff;color:#000}
+.avatar{background:#2e2e2e;border:0;color:#f5f5f7}
+.cell{background:#1c1d1e;color:#6a6b6b}
+.cell.pos{background:#3a2222;color:#ffc3bd}.cell.neg{background:#163327;color:#b2ecd2}
+.cell.wk{background:#0f1011;border-color:#2e2e2e;color:#f5f5f7}
+.cell.sel{border-color:var(--cyan)}
+.cal .mh{font-family:var(--serif);font-weight:400;font-size:16px;color:#f5f5f7}
+.hm div{background:#1c1d1e}
+.toast,.tip,.hpop,.hpop .arw{background:#2e2e2e;border-color:#3f4041}
+.sheet .panel{background:#1c1d1e}
+.inst-steps .n{background:#fff;color:#000}
+.helpbox .you{background:#123744;border-color:#1d5163;color:#d7f6ff}
+.dt-chips button{border-radius:8px;border-color:rgba(255,255,255,.2);background:transparent}
+.dt-row.be{background:#2e2e2e}
+.dt-row.cur{outline-color:var(--cyan)}
+.skel{background:linear-gradient(90deg,#1c1d1e,#2e2e2e,#1c1d1e);background-size:200% 100%}
+/* 導覽列改成跟 Fey 一樣：炭灰膠囊 Dock、選取＝黑底＋藍色底線 */
+.tabbar{background:#191919!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:1px solid #3a3a3a!important;border-radius:99px!important;box-shadow:0 0 44px rgba(0,0,0,.8)!important}
+.tabbar .lens,.tabbar .lens.moving{background:#0b0b0b!important;border-radius:99px!important;box-shadow:inset 0 -1px 0 #479ffa!important}
+.tabbar .lens .inner{background:transparent!important;box-shadow:none!important;border-radius:99px!important}
+.tabbar button{color:#868f97;font-weight:500}
+.tabbar button.on{color:#fff}

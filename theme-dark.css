@@ -1,0 +1,75 @@
+/* ===== 深色模式 ===== */
+@font-face{font-family:"Inter";font-weight:400;src:url(vendor/fonts/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;src:url(vendor/fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;src:url(vendor/fonts/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:700;src:url(vendor/fonts/inter-latin-700-normal.woff2) format("woff2")}
+:root{--bg:#0b0b0b;--card:#191919;--card2:#131313;--line:rgba(255,255,255,.07);--bd:rgba(255,255,255,.08);--tx:#ffffff;--mut:#868f97;--dim:#5f666d;--acc:#ffa16c;
+  --up:#ff7a6b;--dn:#4ebe96;--sig:#479ffa;--halo:0 0 44px rgba(0,0,0,.8)}
+html,body{background:#0b0b0b;font-family:"Inter",-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC",sans-serif;font-feature-settings:"ss01","tnum";font-weight:400}
+#app,.page{background:#0b0b0b!important}
+h1{font-weight:700;letter-spacing:-.05em}
+.phead h1{letter-spacing:-.04em}
+.big{font-weight:700;letter-spacing:-.06em;font-size:40px}
+[style*="font-weight:700"]{font-weight:600!important}
+h2{font-weight:600}
+.lbl,.sub,.note{color:var(--mut)}
+.sec{color:var(--mut);font-weight:500;letter-spacing:.02em}
+/* 卡片：炭灰＋黑色光暈 */
+.card,.item,.form,.brow{background:#191919;border:0;border-radius:16px;box-shadow:var(--halo)}
+.mini{background:#131313;border-radius:10px}
+[style*="color:#D5D8DD"],[style*="color:#C9CED6"]{color:#cccccc!important}
+/* 膠囊控制項：無填色，選中＝白字＋藍色底線 */
+.seg,.inst-tabs{background:#131313;border-radius:99px;padding:4px}
+.seg button,.inst-tabs button{border-radius:99px;color:#868f97;font-weight:500}
+.seg button.on,.inst-tabs button.on{background:#191919;color:#fff;box-shadow:inset 0 -1px 0 #479ffa,0 1px 0 rgba(0,0,0,.85)}
+.chips button{border-radius:99px;border:1px solid #2a2a2a;background:transparent;color:#868f97;font-weight:500}
+.chips button.on{background:transparent;border-color:#479ffa;color:#fff}
+/* 主要按鈕：幽靈膠囊＋白色光暈，不填色 */
+.primary{border-radius:99px;background:#0b0b0b;color:#fff;border:1px solid #cccccc;font-weight:500;box-shadow:0 1px 0 rgba(0,0,0,.85),0 0 14px rgba(255,255,255,.25)}
+.small{border-radius:99px;border:1px solid #525252;background:transparent;font-weight:500}
+.small.pri{background:#0b0b0b;border-color:#cccccc;color:#fff;box-shadow:0 0 14px rgba(255,255,255,.2)}
+.danger{border-radius:99px}
+.link{color:var(--sig);font-weight:500}
+.iconbtn{border-radius:99px;border:1px solid #333;background:#0b0b0b}
+.addbtn{border-radius:99px;border-color:#525252;color:#fff}
+.xbtn{background:#222}
+.kinds button{border-radius:99px;border:1px solid #2a2a2a;background:transparent;color:#868f97;font-weight:500}
+.kinds button.on.buy{background:rgba(255,122,107,.14);border-color:#ff7a6b;color:#ffb3a9}
+.kinds button.on.sell{background:rgba(78,190,150,.14);border-color:#4ebe96;color:#9fe6cb}
+.kinds button.on.div{background:rgba(255,161,108,.14);border-color:#ffa16c;color:#ffc9a6}
+.kinds button.on.sp{background:rgba(71,159,250,.14);border-color:#479ffa;color:#a9d0ff}
+.pill{border-radius:99px;border:1px solid rgba(255,161,108,.5);background:transparent;color:#ffa16c;font-weight:500}
+.badge{border-radius:99px;font-weight:500;text-transform:uppercase;font-size:11px}
+.b-buy{background:#5a2620;color:#ffd2cc}.b-sell{background:#1d4a3b;color:#c9f3e3}.b-div{background:#4d3220;color:#ffd8c0}.b-sp{background:#1c3350;color:#cfe4ff}
+.fee input,.inp,.dates label,.search{background:#131313;border:1px solid #222;border-radius:10px}
+.form textarea{background:#131313;border-color:#222}
+.sw span{background:#2a2a2a}
+.sw input:checked + span{background:#4ebe96}
+.hi{color:#868f97}
+.gtog svg{stroke:#868f97}
+/* 導覽列：Dock 膠囊 */
+.tabbar{background:#191919!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:1px solid #3a3a3a!important;border-radius:99px!important;box-shadow:var(--halo)!important}
+.tabbar .lens,.tabbar .lens.moving{background:#0b0b0b!important;box-shadow:inset 0 -1px 0 #479ffa!important}
+.tabbar .lens .inner{background:transparent!important;box-shadow:none!important}
+.tabbar button{color:#868f97;font-weight:500}
+.tabbar button.on{color:#fff}
+.drawer .dp{background:#0b0b0b;border-right:1px solid #1e1e1e}
+.dp button.di{border-radius:99px;font-weight:500}
+.dp button.di svg{color:#cccccc}
+.dp button.di:active{background:#191919}
+.dp button.di .n,.avatar .dot{background:#ffa16c;color:#1a0d05}
+.avatar{background:#191919;border-color:#333;color:#cccccc}
+.cell{background:#131313;color:#5f666d;border-radius:10px}
+.cell.pos{background:#3a1c18;color:#ffb3a9}.cell.neg{background:#13312a;color:#9fe6cb}
+.cell.wk{background:#0b0b0b;border-color:#2a2a2a;color:#fff}
+.cell.sel{border-color:#479ffa}
+.hm div{background:#131313}
+.toast,.tip,.hpop,.hpop .arw{background:#191919;border-color:#2a2a2a}
+.sheet .panel{background:#131313;box-shadow:var(--halo)}
+.sheet{background:rgba(0,0,0,.8)}
+.inst-steps .n{background:#ffa16c;color:#1a0d05}
+.helpbox .you{background:#131313;border-color:#2a2a2a;color:#cccccc}
+.dt-chips button{border-radius:99px;border-color:#2a2a2a;background:transparent}
+.dt-row.be{background:#131313;box-shadow:inset 2px 0 0 #ffa16c}
+.dt-row.cur{outline-color:#479ffa}
+.skel{background:linear-gradient(90deg,#131313,#191919,#131313);background-size:200% 100%}

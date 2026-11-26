@@ -13,7 +13,7 @@
 1. 打開 https://knah5260.github.io/stock-app/
 2. 先看看示範資料，或按上方「登入使用」，用 Google 帳號登入
 3. 第一次登入時，App 會在你的雲端硬碟建立「韭菜紀錄（App 資料）」
-4. 到「交易」新增第一筆紀錄，或到「設定」先調整券商的手續費折數
+4. 到「交易」新增第一筆紀錄，或到「交易設定」先調整券商的手續費折數
 
 > **📌 股價更新時間**：App 用的是收盤價，不是盤中即時價。每個交易日 **15:40** 更新當天收盤價，**21:10** 再檢查一次並補齊資料。所以盤中打開時，市值和未實現損益是用**前一個交易日的收盤價**計算的。
 
@@ -87,6 +87,7 @@ https://github.com/user-attachments/assets/f0cde64c-d5d7-4146-9403-ca20b7dc8336
 - 每筆交易可寫進出場理由
 - 批次新增、定期定額自動帶入扣款日收盤價
 - 當沖試算：先買後賣／先賣後買，算出手續費、當沖稅、損益兩平價，並列出每一檔價位的損益
+- 6 種主題：深色模式、淺色模式、夜幕畫廊（預設）、暮色天空、極光晨霧、經典；可跟隨系統深淺色自動切換，或勾選幾個每次打開隨機輪播
 - 匯入券商對帳單：國泰證券 App 匯出的「客戶交易明細表」PDF（含密碼保護）、元大「電子月對帳單」PDF（可一次選多個月，密碼只輸入一次）、元大月對帳單截圖（含合計核對）、元大投資先生 App「明細」截圖（截圖辨識測試中）（在手機上文字辨識，並用價格 × 股數和應收付驗算），自動對應代號、判斷當沖、跳過重複（檔案和截圖只在你的裝置上讀取）
 - 除權息與股本變動提醒：比對證交所、櫃買中心公告，找出還沒記錄的配息配股
 
@@ -176,6 +177,7 @@ https://github.com/user-attachments/assets/f0cde64c-d5d7-4146-9403-ca20b7dc8336
 
 - [PDF.js](https://github.com/mozilla/pdf.js)（Apache License 2.0）：用來在你的裝置上讀取對帳單 PDF，放在 `vendor/pdfjs/`
 - [Tesseract.js](https://github.com/naptha/tesseract.js) 與繁體中文辨識模型（Apache License 2.0）：用來在你的裝置上辨識截圖文字，放在 `vendor/tesseract/`
+- 字型 [Inter](https://github.com/rsms/inter)、[DM Sans](https://github.com/googlefonts/dm-fonts)、[DM Serif Display](https://github.com/googlefonts/dm-fonts)、[Roboto Mono](https://github.com/googlefonts/RobotoMono)（SIL Open Font License 1.1）：主題使用的英文與數字字型，放在 `vendor/fonts/`
 
 ## 版權
 

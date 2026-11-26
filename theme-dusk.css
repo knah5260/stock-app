@@ -1,5 +1,4 @@
-/* ===== 暮色天空（預覽）：鈷藍 → 灰藍霧 → 暖桃，霧面玻璃 =====
-   只在網址加 ?theme=dusk 時載入；?theme=off 關閉 */
+/* ===== 暮色天空：鈷藍 → 灰藍霧 → 暖桃，霧面玻璃 ===== */
 @font-face{font-family:"DM Sans";font-weight:400;font-display:swap;src:url(vendor/fonts/dm-sans-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"DM Sans";font-weight:500;font-display:swap;src:url(vendor/fonts/dm-sans-latin-500-normal.woff2) format("woff2")}
 @font-face{font-family:"DM Sans";font-weight:600;font-display:swap;src:url(vendor/fonts/dm-sans-latin-600-normal.woff2) format("woff2")}
@@ -89,3 +88,24 @@ h2{font-weight:600}
 .skel{background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.18),rgba(255,255,255,.08));background-size:200% 100%}
 .zero{color:var(--mut)}
 #demo-bar{background:rgba(14,18,32,.6);border-color:var(--bd);color:#fff}
+/* v2：文字更實、更清楚（次要文字也改純白、字重加一級） */
+:root{--mut:#ffffff;--dim:rgba(255,255,255,.86);--shd:0 1px 3px rgba(8,12,28,.55)}
+body{font-weight:500}
+.lbl,.sub,.note,.sec,.legend{color:#fff;font-weight:500}
+.card .lbl,.item .lbl,.form label>span:first-child,.mini .lbl{color:#fff;opacity:.92}
+.lbl,.sub,.note,.form label>span:first-child,.kv span,.dt-row span,.cell,.seg button,.chips button,.tabbar button{text-shadow:0 1px 2px rgba(8,12,28,.35)}
+.seg button.on,.chips button.on,.kinds button.on{text-shadow:none}
+[style*="color:var(--dim)"]{color:rgba(255,255,255,.86)!important}
+.form input::placeholder,.form textarea::placeholder,.inp::placeholder,.search input::placeholder{color:rgba(255,255,255,.72)}
+.zero{color:#fff}
+/* 日曆格子：改成跟 Stocketa 一樣的淺色玻璃格 */
+.cell{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.7);color:#7a8494;text-shadow:none;backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+.cell.pos{background:rgba(253,215,210,.78);color:#b3352b;border-color:rgba(255,255,255,.7)}
+.cell.neg{background:rgba(205,240,220,.78);color:#167a4c;border-color:rgba(255,255,255,.7)}
+.cell.wk{background:rgba(255,255,255,.62);border-color:rgba(255,255,255,.75);color:#1d2630}
+.cell.sel{border-color:#2f6fd6}
+.cell.out{opacity:.5}
+.cell{background:rgba(240,246,252,.82)}
+.cell.pos{background:rgba(253,222,217,.95)}
+.cell.neg{background:rgba(214,243,226,.95)}
+.cell.wk{background:rgba(248,250,253,.92)}
