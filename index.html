@@ -288,6 +288,25 @@ body.guide .hi{display:inline-flex}
 .th-card.on .ck{background:var(--acc);border-color:var(--acc)}
 .th-card.dim{opacity:.45}
 .dp button.di .v{margin-left:auto;font-size:13px;color:var(--mut)}
+/* 左上角選單鈕：透明玻璃圓形 */
+.glassbtn{position:relative;flex-shrink:0;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;color:var(--tx);
+  background:rgba(255,255,255,.10);background:color-mix(in srgb,var(--tx) 9%,transparent);
+  border:1px solid rgba(255,255,255,.22);border-color:color-mix(in srgb,var(--tx) 20%,transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.06),0 6px 18px rgba(0,0,0,.18)}
+.glassbtn:active{transform:scale(.94)}
+.glassbtn .dot{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:8px;background:var(--acc);color:#1A1208;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px}
+.glassbtn .dot.on{display:flex}
+/* 滑動切換：手指按住左右拖，放大鏡跟著走 */
+.tabbar,.seg,.chips,.kinds,.inst-tabs{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.seg,.chips,.kinds,.inst-tabs{position:relative}
+.glide-lens{position:absolute;z-index:3;pointer-events:none;left:0;top:0;opacity:0;border-radius:9999px;
+  background:radial-gradient(120% 90% at 50% 20%,rgba(255,255,255,.30),rgba(255,255,255,.06) 60%);
+  -webkit-backdrop-filter:blur(1px) saturate(190%) brightness(1.2);backdrop-filter:blur(1px) saturate(190%) brightness(1.2);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.65),inset 4px 0 7px rgba(255,90,140,.4),inset -4px 0 7px rgba(80,170,255,.45),inset 0 -5px 10px rgba(255,255,255,.2),0 10px 26px rgba(0,0,0,.35);
+  transition:opacity .2s}
+.glide-lens.on{opacity:1}
+.tabbar.dragging .lens{transition:background .35s,box-shadow .35s}
 .kv{display:flex;justify-content:space-between;font-size:14px;padding:3px 0}
 .kv.tot{font-size:16px;font-weight:700;border-top:1px solid var(--line);padding-top:9px;margin-top:4px}
 @media (min-width:700px) and (min-height:600px){
@@ -402,7 +421,7 @@ window.ZQ_THEMES = [
 <section class="view on" id="v-overview" aria-label="總覽">
   <div class="row">
     <div class="row" style="gap:12px;justify-content:flex-start;min-width:0;align-items:flex-start">
-      <button class="avatar" id="ov-avatar" aria-label="開啟選單"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span class="dot" id="ov-dot"></span></button>
+      <button class="glassbtn" id="ov-avatar" aria-label="開啟選單"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="dot" id="ov-dot"></span></button>
       <div class="col" style="gap:2px;min-width:0"><h1 id="ov-title">我的台股總覽</h1><span class="sub" id="ov-sub">載入中…</span><button class="pill" id="ov-ca"></button><button class="pill" id="ov-mt"></button><button class="pill" id="ov-due"></button><button class="pill" id="ov-st"></button></div>
     </div>
     <span class="row" style="gap:8px;align-self:flex-start"><label class="gtog" title="引導模式"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6CA8FF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".9" fill="#6CA8FF" stroke="none"/></svg><span class="sw sm"><input type="checkbox" id="gm-sw" role="switch" aria-label="引導模式"><span></span></span></label><button class="iconbtn" id="btn-priv" aria-label="隱藏金額"></button>
@@ -754,8 +773,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.13.2';
+const APP_VERSION = '2.14.0';
 const CHANGELOG = [
+  ['2.14.0', '2026-11-26', ['底部導覽列、分段按鈕、篩選鈕都能按住左右滑動切換，玻璃放大鏡會跟著手指走', '總覽左上角改成玻璃圓形的選單按鈕']],
   ['2.13.2', '2026-11-26', ['換主題時，螢幕最上方的顏色也會立刻跟著換']],
   ['2.13.1', '2026-11-26', ['螢幕最上方（時間、電量那一條）改成跟主題一樣的顏色，淺色主題不再是一條黑色']],
   ['2.13.0', '2026-11-26', ['新增 6 種主題：深色模式、淺色模式、夜幕畫廊、暮色天空、極光晨霧、經典，預設為夜幕畫廊', '主題可以跟隨系統（深色／淺色模式自動切換）、固定一個，或勾選幾個輪播，每次打開隨機換', '側邊選單整理：「除權息與股利」合在一起，新增「主題」，批次新增改從新增紀錄頁右上角進入', '設定拆成「交易設定」和「App 設定」']],
@@ -1007,10 +1027,10 @@ function moveLens(v) {
   const btns = $$('#tabbar button');
   const i = btns.findIndex(b => b.dataset.v === tabOf(v));
   const lens = $('#lens');
-  lens.style.transform = 'translateX(' + (i * 100) + '%)';
+  if (!tabDrag) lens.style.transform = 'translateX(' + (i * 100) + '%)';
   btns.forEach((b, k) => b.classList.toggle('on', k === i));
 }
-let lensT;
+let lensT, tabDrag = false;
 function show(v, animate) {
   current = v;
   $$('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
@@ -1020,12 +1040,86 @@ function show(v, animate) {
     const btn = $$('#tabbar button').find(b => b.dataset.v === tabOf(v));
     btn.style.transform = 'scale(1.12)';
     clearTimeout(lensT);
-    lensT = setTimeout(() => { lens.classList.remove('moving'); btn.style.transform = ''; }, 480);
+    lensT = setTimeout(() => { if (!tabDrag) lens.classList.remove('moving'); btn.style.transform = ''; }, 480);
   }
   moveLens(v);
   if (loaders[v] && !loaded[v]) loaders[v]();
 }
 $$('#tabbar button').forEach(b => b.onclick = () => { if (tabOf(current) !== b.dataset.v) show(b.dataset.v, true); });
+
+// ---------- 滑動切換：按住導覽列、分段按鈕、篩選鈕左右拖，經過哪個就切到哪個 ----------
+(function () {
+  const SEL = '#tabbar, .seg, .chips, .kinds, .inst-tabs';
+  let st = null, suppress = false;
+  const vis = b => b.offsetParent !== null && !b.disabled && b.style.display !== 'none';
+  const itemsOf = box => [...box.children].filter(b => b.tagName === 'BUTTON' && vis(b));
+  function nearest(items, x) {
+    let k = 0, d = 1e9;
+    items.forEach((b, i) => { const r = b.getBoundingClientRect(), c = (r.left + r.right) / 2, dd = Math.abs(c - x); if (dd < d) { d = dd; k = i; } });
+    return k;
+  }
+  function lensOf(box) { let l = box.querySelector(':scope > .glide-lens'); if (!l) { l = document.createElement('div'); l.className = 'glide-lens'; box.appendChild(l); } return l; }
+  function place(st, x) {
+    const br = st.box.getBoundingClientRect();
+    if (st.tab) {
+      const lw = st.lens.offsetWidth, n = st.items.length;
+      const px = Math.max(0, Math.min((n - 1) * lw, x - br.left - 6 - lw / 2));
+      st.lens.style.transform = 'translateX(' + px + 'px) scale(1.12,1.08)';
+      return;
+    }
+    const r = st.items[st.cur].getBoundingClientRect(), w = r.width + 10, h = r.height + 10;
+    const left = Math.max(-6, Math.min(br.width - w + 6, x - br.left - w / 2)) + st.box.scrollLeft;
+    st.lens.style.width = w + 'px'; st.lens.style.height = h + 'px';
+    st.lens.style.borderRadius = getComputedStyle(st.items[st.cur]).borderRadius;
+    st.lens.style.transform = 'translate(' + left + 'px,' + (r.top - br.top - 5) + 'px)';
+  }
+  document.addEventListener('pointerdown', e => {
+    if (e.button) return;
+    const box = e.target.closest && e.target.closest(SEL);
+    if (!box) return;
+    const items = itemsOf(box);
+    if (items.length < 2) return;
+    st = {box, items, x0: e.clientX, y0: e.clientY, id: e.pointerId, drag: false, tab: box.id === 'tabbar',
+      cur: Math.max(0, items.findIndex(b => b.classList.contains('on')))};
+  }, true);
+  document.addEventListener('pointermove', e => {
+    if (!st || e.pointerId !== st.id) return;
+    const dx = e.clientX - st.x0, dy = e.clientY - st.y0;
+    if (!st.drag) {
+      if (Math.abs(dx) < 8) { if (Math.abs(dy) > 10) st = null; return; }
+      if (Math.abs(dy) > Math.abs(dx)) { st = null; return; }
+      st.drag = true;
+      try { st.box.setPointerCapture(e.pointerId); } catch (x) {}
+      if (st.tab) { tabDrag = true; st.lens = $('#lens'); st.box.classList.add('dragging'); st.lens.classList.add('moving'); }
+      else { st.lens = lensOf(st.box); st.lens.style.transition = 'opacity .2s'; place(st, st.x0); st.lens.classList.add('on'); }
+    }
+    e.preventDefault();
+    const k = nearest(st.items, e.clientX);
+    if (k !== st.cur) { st.cur = k; st.items[k].click(); }
+    place(st, e.clientX);
+  }, {capture: true, passive: false});
+  function end(e) {
+    if (!st || (e && e.pointerId !== st.id)) return;
+    const s0 = st; st = null;
+    if (!s0.drag) return;
+    suppress = true; setTimeout(() => { suppress = false; }, 400);
+    if (s0.tab) {
+      tabDrag = false; s0.box.classList.remove('dragging');
+      moveLens(current);
+      setTimeout(() => s0.lens.classList.remove('moving'), 420);
+    } else {
+      // 放開：鏡片吸附到選中的那一格再淡出
+      const r = s0.items[s0.cur].getBoundingClientRect(), br = s0.box.getBoundingClientRect();
+      s0.lens.style.transition = 'transform .35s cubic-bezier(.34,1.35,.45,1),opacity .25s .25s';
+      s0.lens.style.transform = 'translate(' + (r.left - br.left - 5 + s0.box.scrollLeft) + 'px,' + (r.top - br.top - 5) + 'px)';
+      s0.lens.classList.remove('on');
+    }
+  }
+  document.addEventListener('pointerup', end, true);
+  document.addEventListener('pointercancel', end, true);
+  // 拖完放開時，不要再觸發一次點擊
+  document.addEventListener('click', e => { if (suppress && e.isTrusted) { e.stopPropagation(); e.preventDefault(); suppress = false; } }, true);
+})();
 
 // ---------- 圖表 ----------
 function drawChart(box, series, xs, opts) {
@@ -1807,8 +1901,6 @@ function renderMe() {
   const pic = ME.picture ? '<img src="' + esc(ME.picture) + '" alt="" referrerpolicy="no-referrer">' : '';
   if (pic) {
     $('#dr-av').innerHTML = pic;
-    const a = $('#ov-avatar'), dot = $('#ov-dot');
-    a.innerHTML = pic; a.appendChild(dot);
   }
 }
 async function loadMe() {
