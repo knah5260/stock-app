@@ -53,6 +53,7 @@
     h.prev = Math.round(h.price / (1 + DAY[h.code]) * 100) / 100; h.dayR = h.price / h.prev - 1; h.dayPl = Math.round((h.price - h.prev) * h.units);
     h.mv = Math.round(h.units * h.price); h.cost = Math.round(h.units * h.avg);
     h.pl = h.mv - h.cost - fee(h.mv) - Math.floor(h.mv * (h.code.startsWith('00') ? 0.001 : 0.003)); h.r = h.pl / h.cost;
+    h.div = ({'0050': 6115, '2330': 1990})[h.code] || 0;   // 示範：這批已領的現金股利
     Object.assign(h, {short: false, mt: 0, loan: 0, self: 0, collat: 0, margin: 0, mtDue: ''});
   });
   const MV_END = holdings.reduce((s, h) => s + h.mv, 0);

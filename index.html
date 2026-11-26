@@ -66,6 +66,8 @@ h2{margin:0;font-size:15px;font-weight:600}
 .seg{display:grid;gap:4px;background:var(--card);border-radius:12px;padding:4px}
 .seg button{height:36px;border:0;border-radius:9px;background:transparent;color:var(--mut);font-size:14px;white-space:nowrap;padding:0 2px}
 .seg button.on{background:#2C313B;color:var(--tx);font-weight:700}
+.divtg{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:10px;margin-top:2px}
+.seg.mini{display:inline-grid;grid-template-columns:1fr 1fr;padding:3px;background:var(--bg)}.seg.mini button{height:28px;font-size:13px;padding:0 12px}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chips button{flex:1 0 auto;height:34px;padding:0 12px;border-radius:17px;border:1px solid #2A2E36;background:var(--card);color:#C9CED6;font-size:13px}
@@ -111,6 +113,7 @@ h2{margin:0;font-size:15px;font-weight:600}
 .form input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
 .primary{height:52px;border:0;border-radius:14px;background:var(--acc);color:#1A1208;font-size:17px;font-weight:700;flex-shrink:0}
 .primary:disabled{opacity:.5}
+.ghost{height:48px;border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--tx);font-size:16px;flex-shrink:0}
 .danger{height:48px;border:1px solid #5A2A2E;border-radius:14px;background:transparent;color:var(--up);font-size:16px;font-weight:600}
 .kinds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .kinds button{height:48px;border-radius:12px;border:1px solid #2A2E36;background:var(--card);color:var(--mut);font-size:15px;font-weight:700;padding:0 2px;white-space:nowrap}
@@ -877,8 +880,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.17.6';
+const APP_VERSION = '2.18.0';
 const CHANGELOG = [
+  ['2.18.0', '2026-11-27 01:36', ['持股頁可以切換成本計算「不含息／含息」：含息會把這批已領的現金股利從成本扣掉，和券商庫存頁的含息相同', '問題回報：在總覽連點「我的台股總覽」標題三下，可以匯出問題回報檔（交易紀錄、設定和最近的錯誤訊息，不含登入資訊），傳給作者幫忙查']],
   ['2.17.6', '2026-11-27 01:29', ['持股的未實現損益改成和券商庫存頁一樣：假設現在賣出時的手續費用原價 1.425‰ 估算（不套用折扣），損益數字會跟券商 App 對得上']],
   ['2.17.5', '2026-11-27 01:04', ['修正：同一檔股票的交易如果名稱寫法不同（例如「台積電（2330）」和「台積（2330）」），持股會被拆成好幾張卡、各自只算一部分股數；現在同一個代號一律合併計算']],
   ['2.17.4', '2026-11-27 00:20', ['個股走勢圖：手指在圖上左右滑，會顯示那一天的收盤價（盤中為即時價），當天有買賣也會列出批號、股數、成交價']],
@@ -1089,7 +1093,14 @@ function prefetch() {
   (async () => { for (const j of jobs) { try { await j(); } catch (e) {} } })();
 }
 let toastT;
+const divMode = () => { try { return localStorage.getItem('zqDivMode') === '1'; } catch (e) { return false; } };
+// 問題回報用：記住最近的錯誤和提示訊息
+const DIAG_LOG = [];
+const diagLog = (k, m) => { DIAG_LOG.push([new Date().toISOString(), k, String(m).slice(0, 500)]); if (DIAG_LOG.length > 80) DIAG_LOG.shift(); };
+window.addEventListener('error', e => diagLog('error', (e.message || '') + ' @' + (e.filename || '').split('/').pop() + ':' + (e.lineno || '')));
+window.addEventListener('unhandledrejection', e => diagLog('reject', errMsg(e.reason)));
 function toast(msg, ms) {
+  diagLog('toast', msg);
   const t = $('#toast'); t.textContent = msg; t.classList.remove('hide'); t.classList.add('show');
   clearTimeout(toastT); toastT = setTimeout(() => { t.classList.add('hide'); t.classList.remove('show'); setTimeout(() => t.classList.remove('hide'), 220); }, ms || 2600);
 }
@@ -1498,7 +1509,13 @@ async function loadHoldings() {
     if (hoTab === 'open') {
       const hAll = await call('appHoldings');
       if (!hAll.length) { body.innerHTML = '<div class="empty">目前沒有持股</div>'; return; }
-      const h = hAll.filter(x => qMatch(x.name, qs.ho));
+      const incDiv = divMode();
+      const h = hAll.filter(x => qMatch(x.name, qs.ho)).map(x => {
+        if (!incDiv || !x.div || x.short) return x;
+        // 含息：已領的現金股利從成本扣掉（和券商庫存頁的「含息」相同）
+        const y = Object.assign({}, x); y.cost = x.cost - x.div; y.pl = x.pl + x.div;
+        y.avg = x.avg === null ? null : x.avg - x.div / x.units; y.r = y.cost ? y.pl / y.cost : null; return y;
+      });
       if (!h.length) { body.innerHTML = noHit(qs.ho, '持股'); return; }
       const mv = h.reduce((s, x) => s + (x.mv || 0), 0), pl = h.reduce((s, x) => s + (x.pl || 0), 0), cost = h.reduce((s, x) => s + (x.cost || 0), 0);
       const alloc = qs.ho ? '' : allocCard(hAll);
@@ -1509,7 +1526,9 @@ async function loadHoldings() {
       const mtCard = mts.length ? '<div class="card col" style="gap:8px"><span class="lbl">整戶擔保維持率（融資＋融券）</span>' + mts.map(o => '<div class="row"><span>' + (ACCT === '*' ? esc(acctName(o.acct)) : '目前') + '</span><span style="font-size:20px;font-weight:700;' + maintCls(o.r) + '">' + Math.round(o.r * 100) + '%</span></div>').join('') +
         '<span class="note">＝（融資股票市值＋融券擔保品＋融券保證金）÷（融資金額＋融券股票市值）。低於 130% 券商會追繳，補回 166% 以上才解除。</span></div>' : '';
       body.innerHTML = '<div class="card grid2"><div class="col"><span class="lbl">持股市值</span><span style="font-size:22px;font-weight:700">' + fmt(mv) +
-        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div></div>' + dayCard + pxNote + mtCard + alloc +
+        '</span></div><div class="col"><span class="lbl">未實現損益</span><span style="font-size:22px;font-weight:700" class="' + cls(pl) + '">' + sgn(pl) + '</span><span style="font-size:12px" class="' + cls(pl) + '">庫存報酬 ' + (cost > 0 ? arrowPct(pl / cost) : '—') + '</span></div>' +
+        (hAll.some(x => x.div && !x.short) ? '<div class="divtg" style="grid-column:1/-1"><span class="lbl">成本計算</span><span class="seg mini"><button data-dv="0"' + (incDiv ? '' : ' class="on"') + '>不含息</button><button data-dv="1"' + (incDiv ? ' class="on"' : '') + '>含息</button></span></div>' : '') +
+        '</div>' + dayCard + pxNote + mtCard + alloc +
         h.map(x => '<div class="card col hc" data-sk="' + esc(x.code) + '" data-nm="' + esc(shortName(x.name)) + '" data-avg="' + (x.short ? '' : (x.avg || '')) + '" style="gap:12px"><div class="row" style="align-items:flex-start"><div class="col" style="gap:2px"><span style="font-size:17px;font-weight:700">' + esc(shortName(x.name)) +
           (x.short ? '<span class="tag s">融券</span>' : x.mt > 0 ? '<span class="tag">融資</span>' : '') + (ACCT === '*' && x.acctName ? '<span class="tag a">' + esc(x.acctName) + '</span>' : '') +
           '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股' + (x.mt > 0 && !x.short && x.mt < x.units ? '（融資 ' + fmt(x.mt) + '）' : '') + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
@@ -1520,6 +1539,7 @@ async function loadHoldings() {
           (x.short ? '<div class="grid3" style="padding-top:2px"><div class="col" style="gap:2px"><span class="lbl">擔保品</span><span style="font-weight:600">' + fmt(x.collat) + '</span></div><div class="col" style="gap:2px"><span class="lbl">保證金</span><span style="font-weight:600">' + fmt(x.margin) + '</span></div><div class="col" style="gap:2px"><span class="lbl">個股維持率</span><span style="font-weight:600">' + (x.mv ? Math.round((x.collat + x.margin) / Math.abs(x.price * x.units) * 100) + '%' : '—') + '</span></div></div>' :
            x.mt > 0 ? '<div class="grid3" style="padding-top:2px"><div class="col" style="gap:2px"><span class="lbl">融資金額</span><span style="font-weight:600">' + fmt(x.loan) + '</span></div><div class="col" style="gap:2px"><span class="lbl">自備款</span><span style="font-weight:600">' + fmt(x.self) + '</span></div><div class="col" style="gap:2px"><span class="lbl">個股維持率</span><span style="font-weight:600">' + (x.loan ? Math.round(x.price * x.mt / x.loan * 100) + '%' : '—') + '</span></div></div>' + mtDueLine(x) : '') +
           '</div>').join('');
+      body.querySelectorAll('[data-dv]').forEach(b => b.onclick = () => { try { localStorage.setItem('zqDivMode', b.dataset.dv); } catch (e) {} loadHoldings(); });
     } else if (hoTab === 'closed') {
       const r = (await call('appRealized', hoRange.from, hoRange.to)).filter(x => qMatch(x.name, qs.ho));
       const s = r.reduce((a, x) => a + (x.pl || 0), 0), w = r.filter(x => x.pl > 0).length;
@@ -2273,13 +2293,35 @@ $('#sheet').onclick = e => { if (e.target.id === 'sheet') closeSheet(); };
       ['devicePixelRatio', devicePixelRatio]
     ];
     p.remove();
-    openSheet('<h2>畫面尺寸檢查</h2><span class="sub">請截圖這個畫面傳給 Claude</span><div class="card est col" style="gap:8px">' +
+    openSheet('<h2>問題回報</h2><span class="sub">App 算出來的數字怪怪的？按下面的按鈕匯出回報檔，傳給作者就能幫你查。檔案裡有你的交易紀錄和設定，但不含 Google 登入資訊。</span>' +
+      '<button class="primary" id="sh-diag">匯出問題回報檔</button><div class="card est col" style="gap:8px">' +
       info.map(x => '<div><span style="color:#D5D8DD">' + x[0] + '</span><span>' + esc(x[1]) + '</span></div>').join('') +
-      '</div><button class="primary" id="sh-ok">關閉</button>');
+      '</div><button class="ghost" id="sh-ok">關閉</button>');
     $('#sh-ok').onclick = closeSheet;
+    $('#sh-diag').onclick = () => exportDiag(Object.fromEntries(info.map(x => [x[0], String(x[1])])));
   });
 })();
 
+
+// 問題回報檔：版本、裝置、原始紀錄、計算結果、最近的錯誤訊息（JSON）
+async function exportDiag(screenInfo) {
+  const b = $('#sh-diag'); if (b) { b.disabled = true; b.textContent = '整理中…'; }
+  const out = {app: 'zq', version: APP_VERSION, at: new Date().toISOString(), mode: MODE, acct: ACCT, ua: navigator.userAgent, screen: screenInfo, log: DIAG_LOG.slice()};
+  const grab = async (k, f) => { try { out[k] = await f(); } catch (e) { out[k] = {error: errMsg(e)}; } };
+  await grab('raw', () => rawCall('appDiag', [], ACCT));
+  await grab('rows', () => rawCall('appExportRows', [], '*'));
+  await grab('holdings', () => rawCall('appHoldings', [], '*'));
+  await grab('settings', () => rawCall('appSettings', [], ACCT));
+  if (out.settings && out.settings.sheetUrl) out.settings.sheetUrl = '(略)';
+  if (out.settings && out.settings.accounts) out.settings.accounts.forEach(a => { if (a.url) a.url = '(略)'; });
+  const name = '韭菜紀錄_問題回報_' + TODAY.replace(/-/g, '') + '_' + new Date().toTimeString().slice(0, 5).replace(':', '') + '.json';
+  const file = new File([JSON.stringify(out, null, 1)], name, {type: 'application/json'});
+  try {
+    if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: name}); }
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.appendChild(a); a.click(); a.remove(); toast('已下載 ' + name); }
+  } catch (e) { if (e.name !== 'AbortError') toast('匯出失敗：' + errMsg(e), 4000); }
+  if (b) { b.disabled = false; b.textContent = '匯出問題回報檔'; }
+}
 
 // ---------- 側邊欄與子頁 ----------
 const ymd = s => s ? +s.slice(0, 4) + '/' + +s.slice(5, 7) + '/' + +s.slice(8, 10) : '';

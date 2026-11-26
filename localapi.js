@@ -190,7 +190,7 @@
       const C = codeOf(x.name).trim().toUpperCase();
       if (C && !first[C]) first[C] = x.name;
     });
-    recs.forEach(x => { const C = codeOf(x.name).trim().toUpperCase(); if (C && first[C]) x.name = first[C]; });
+    recs.forEach(x => { const C = codeOf(x.name).trim().toUpperCase(); if (C && first[C] && x.name !== first[C]) { if (!x.nm0) x.nm0 = x.name; x.name = first[C]; } });
   }
   async function mutate(fn) {
     const db = await load(true);
@@ -337,7 +337,7 @@
         const lp = livePx(code), prev = lp ? t2[t2.length - 1] : t2.length > 1 ? t2[0] : null;
         const dayR = F && prev ? F / prev - 1 : null, dayPl = F && prev ? Math.round((F - prev) * E * (short ? -1 : 1)) : null;
         return {name: u.name, batch: u.batch, code: code, units: E, price: F, prev: prev || null, dayR: dayR, dayPl: dayPl, mv: G, avg: u.I, cost: u.J, pl: L, r: u.J ? L / u.J : null,
-          short: short, mt: u.R || 0, loan: u.O || 0, self: u.P || 0, collat: u.M || 0, margin: u.N || 0, mtDue: u.mtDue === '' ? '' : keyOf(u.mtDue), _W: W, _uid: u.name + '_' + u.batch};
+          div: short ? 0 : Math.round((u.p && u.p.H) || 0), short: short, mt: u.R || 0, loan: u.O || 0, self: u.P || 0, collat: u.M || 0, margin: u.N || 0, mtDue: u.mtDue === '' ? '' : keyOf(u.mtDue), _W: W, _uid: u.name + '_' + u.batch};
       });
     };
     const out = each(acct, one);
@@ -662,6 +662,14 @@
     },
     async appRefresh() { await meta(true); PUB.json = {}; await load(true); return (await daily('main')).updated; },
 
+    // 問題回報：原始紀錄（含合併前的名稱 nm0）和設定，不含登入資訊
+    async appDiag() {
+      await load(true);
+      const set = Object.assign({}, DB.set);
+      return {rev: DB.rev, nextId: DB.nextId, loadedRows: DB.loadedRows, loadedSet: DB.loadedSet, lastDay: PUB.meta && PUB.meta.lastDay, metaUpdated: PUB.meta && PUB.meta.updated,
+        live: window.ZQ_LIVE ? {day: window.ZQ_LIVE.day, t: window.ZQ_LIVE.t, n: Object.keys(window.ZQ_LIVE.px || {}).length} : null,
+        recs: DB.recs, set: set};
+    },
     async appAddRecord(acct, rec) {
       const id = writeOnly(rec.acct || acct); check(rec); await load(); await register(rec.name, id);
       let nid;
