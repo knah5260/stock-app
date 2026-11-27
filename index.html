@@ -754,7 +754,7 @@ window.ZQ_THEMES = [
 
   <span class="sec">關於</span>
   <div class="card col" style="gap:6px">
-    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；股價為每個交易日收盤價（15:40、21:10 更新）；盤中（9:00–13:30）App 開著時，每 10 秒以證交所基本市況報導的成交價暫時更新，收盤後到正式資料進來前也先用它的收盤成交價。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
+    <span class="note">資料來源：臺灣證券交易所、證券櫃檯買賣中心公開資料；股價為每個交易日收盤價（15:40、21:10 更新）；盤中（9:00–13:30）App 開著時，每 5 秒以 Yahoo 股市的即時成交價暫時更新（拿不到時改用證交所基本市況報導），收盤後到正式資料進來前也先用它的收盤成交價。<br>本 App 的數字僅供個人記帳參考，不構成任何投資建議；股利、稅額與健保補充保費請以券商及主管機關的通知為準。</span>
     <div class="row" style="justify-content:space-between"><span class="lbl" id="st-ver">版本</span><button class="small" id="st-log">更新內容</button></div>
     <div class="row" style="justify-content:space-between"><span class="lbl">加到手機主畫面，像 App 一樣使用</span><button class="small" id="st-install">加入主畫面</button></div>
   </div>
@@ -880,8 +880,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.18.1';
+const APP_VERSION = '2.18.2';
 const CHANGELOG = [
+  ['2.18.2', '2026-11-27 09:15', ['盤中價格改成每 5 秒更新：報價來源換成 Yahoo 股市的即時成交價（幾秒內就會反映），拿不到時才用證交所（約每分鐘更新一次）', '修正證交所報價沒成交時會拿「最佳買價」當成交價的問題', '盤中更新只重算目前畫面，切到其他頁時再算，比較省電']],
   ['2.18.1', '2026-11-27 01:47', ['含息改成和券商一樣：用現金股利的原始金額扣成本（不先扣 10 元匯費）']],
   ['2.18.0', '2026-11-27 01:36', ['持股頁可以切換成本計算「不含息／含息」：含息會把這批已領的現金股利從成本扣掉，和券商庫存頁的含息相同', '問題回報：在總覽連點「我的台股總覽」標題三下，可以匯出問題回報檔（交易紀錄、設定和最近的錯誤訊息，不含登入資訊），傳給作者幫忙查']],
   ['2.17.6', '2026-11-27 01:29', ['持股的未實現損益改成和券商庫存頁一樣：假設現在賣出時的手續費用原價 1.425‰ 估算（不套用折扣），損益數字會跟券商 App 對得上']],
@@ -1370,7 +1371,7 @@ async function loadOverview() {
       ['#ov-mt', '#ov-due', '#ov-st'].forEach(id => $(id).classList.remove('on'));
       return;
     }
-    $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.live ? (d.live >= '13:30' ? md(d.asOf) + ' 收盤 · 證交所即時報價' : '盤中即時 · ' + d.live) : md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : ''));
+    $('#ov-sub').textContent = (multi() ? acctName(ACCT) + ' · ' : '') + (d.live ? (d.live >= '13:30' ? md(d.asOf) + ' 收盤 · 即時報價' : '盤中即時 · ' + d.live) : md(d.asOf) + ' 收盤' + (d.updated ? ' · ' + String(d.updated).split(' ').pop() + ' 更新' : ''));
     $('#ov-mv').textContent = fmt(d.mv);
     setNum('#ov-today', d.todayPl, true);
     $('#ov-todayr').textContent = arrowPct(d.todayR); $('#ov-todayr').className = cls(d.todayR);
@@ -2057,7 +2058,7 @@ const HI_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stro
 let HSUM = null;   // 最近一次持股合計（給說明帶入你的數字）
 const you = h => h ? '<div class="you">' + (DEMO ? '以示範資料為例：' : '以你的資料為例：') + h + '</div>' : '';
 const HELP = {
-  mv: ['台股總資產', () => '所有持股以<b>最新收盤價</b>計算的市值合計（融資買進的股票也算進去，融券不算）。股價每個交易日 15:40、21:10 各更新一次；盤中 App 開著時，每 10 秒改用即時成交價，上方會顯示「盤中即時」。收盤後如果正式資料還沒進來，會先用證交所的收盤成交價（上方顯示「證交所即時報價」）。' +
+  mv: ['台股總資產', () => '所有持股以<b>最新收盤價</b>計算的市值合計（融資買進的股票也算進去，融券不算）。股價每個交易日 15:40、21:10 各更新一次；盤中 App 開著時，每 5 秒改用即時成交價，上方會顯示「盤中即時」。收盤後如果正式資料還沒進來，會先用即時報價的收盤成交價（上方顯示「即時報價」）。' +
     you(ovData && !ovData.empty ? '目前總資產 ' + fmt(ovData.mv) + ' 元（' + md(ovData.asOf) + ' 收盤）。' : '')],
   today: ['今日損益', () => '最近一個交易日，持股市值的漲跌加上當天已實現的損益。百分比是對前一天總資產的比例。' +
     you(ovData && !ovData.empty ? md(ovData.asOf) + ' 損益 ' + sgn(ovData.todayPl) + ' 元（' + pct(ovData.todayR) + '）。' : '')],
@@ -3394,7 +3395,7 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
   const LIVE_FN = /\|app(Overview|Holdings|Performance|Calendar)\|/;
   let codes = null, codesAt = 0, closedDay = '', rev = 0, busy = false;
   let lastAt = 0;
-  // 盤中 9:00–13:30 每 10 秒；收盤後到正式資料進來前，每 10 分鐘（或按更新時）拿一次收盤成交價
+  // 盤中 9:00–13:30 每 5 秒（證交所每 5 秒更新一次成交價）；收盤後到正式資料進來前，每 10 分鐘（或按更新時）拿一次收盤成交價
   function phase() {
     const t = tw(), wd = t.getDay(), m = t.getHours() * 60 + t.getMinutes();
     if (wd < 1 || wd > 5 || m < 540) return '';
@@ -3410,8 +3411,11 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
   // 用新價格重算畫面用過的資料，放回快取再重畫（不閃爍、不打 Google）
   async function refresh() {
     await Promise.all(Object.values(inflight).map(p => p.catch(() => {})));   // 正在讀的先讀完，免得蓋掉新價格
+    // 只重算目前畫面用到的資料；其他頁的快取標成過期，切過去時再重算（每 5 秒全部重算太耗電）
+    const NOW_FN = {overview: /\|app(Overview|Performance)\|/, holdings: /\|app(Holdings|Performance)\|/, calendar: /\|app(Calendar)\|/}[tabOf(current)];
     const keys = Object.keys(cache).filter(k => LIVE_FN.test(k) && k.indexOf(ACCT + '|') === 0);
-    for (const k of keys) {
+    keys.filter(k => !(NOW_FN && NOW_FN.test(k))).forEach(k => { cache[k].t = 0; });
+    for (const k of keys.filter(k => NOW_FN && NOW_FN.test(k))) {
       const fn = k.split('|')[1], args = JSON.parse(k.slice(k.indexOf('|', k.indexOf('|') + 1) + 1));
       try { cache[k] = {d: await rawCall(fn, args, ACCT), t: Date.now()}; } catch (e) {}
     }
@@ -3447,7 +3451,7 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
     } finally { busy = false; }
   }
   window.zqLiveTick = tick;
-  setInterval(tick, 10000);
+  setInterval(tick, 5000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
   setTimeout(tick, 1500);
 })();
