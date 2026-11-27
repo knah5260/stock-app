@@ -831,6 +831,7 @@ window.ZQ_THEMES = [
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">國泰證券</b>：國泰證券 App 匯出的「客戶交易明細表」PDF（可選一整年）。有密碼的話，App 會請你輸入身分證字號。</span>
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">元大證券</b>：①「電子月對帳單」PDF（最準）：投資先生 App「明細 → 月對帳單」選月份按「補寄」，把信裡的 PDF 附件存到「檔案」再選，可一次選好幾個月；密碼通常是身分證字號。②「月對帳單」按「開啟」後的截圖，不用密碼，可一次選多張、重疊沒關係；放大截圖時最右邊的淨收付欄被切掉也可以，最後一張最好截到「合計」那行，App 會自動核對總數。③投資先生「交易 → 明細」的截圖。</span>
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">中國信託</b>：亮點 App「帳務 → 對帳單」選好日期區間，按右下角的放大鈕打開橫式表格（要看得到淨收付金額、手續費、交易稅），一頁一頁往下截圖，可一次選多張、重疊沒關係。</span>
+    <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">韭菜紀錄匯出的 CSV</b>：換 Google 帳號登入、或要搬到另一個帳戶時，先在舊帳號用選單「匯出交易紀錄（CSV）」存下來，登入新帳號後在這裡選那個 CSV，就能一鍵匯回所有紀錄（含手續費、交易稅、進出場理由）。</span>
     <span style="font-size:13px;color:#F5C04A">⚠️ 截圖辨識還在測試中，失敗率較高，可能讀不出來或讀錯；能用 PDF 的話建議優先用 PDF。</span>
     <span class="lbl" style="font-size:13px">檔案、截圖和密碼只在這台裝置上讀取，不會上傳。其他券商之後陸續加入。</span>
   </div>
@@ -838,8 +839,8 @@ window.ZQ_THEMES = [
   <label class="card col" for="im-file" style="gap:6px;align-items:center;justify-content:center;min-height:110px;border-style:dashed;cursor:pointer;text-align:center">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--acc)"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
     <span style="font-weight:600;word-break:break-all" id="im-fname">選擇對帳單 PDF 或截圖</span>
-    <span class="lbl" id="im-finfo">國泰・元大 PDF 對帳單，或元大、中信截圖（可多選）</span>
-    <input type="file" id="im-file" accept=".pdf,application/pdf,image/*" multiple style="display:none">
+    <span class="lbl" id="im-finfo">國泰・元大 PDF 對帳單、元大・中信截圖，或韭菜紀錄匯出的 CSV</span>
+    <input type="file" id="im-file" accept=".pdf,application/pdf,image/*,.csv,text/csv" multiple style="display:none">
   </label>
   <div id="im-result" style="display:none" class="col">
     <div class="card col" id="im-sum" style="gap:6px;font-size:14px"></div>
@@ -881,8 +882,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.19.0';
+const APP_VERSION = '2.20.0';
 const CHANGELOG = [
+  ['2.20.0', '2026-11-27 13:13', ['「匯入券商對帳單」可以讀韭菜紀錄自己匯出的 CSV：換 Google 帳號登入時，先在舊帳號匯出，登入新帳號後選那個 CSV 就能一鍵匯回', '手續費、交易稅、當沖、金額修正和進出場理由都會照原樣搬過來；CSV 裡有好幾個帳戶時會依帳戶名稱分別寫入，沒有的帳戶自動建立；已經有的紀錄不會重複匯入']],
   ['2.19.0', '2026-11-27 12:55', ['匯入券商對帳單新增中國信託：亮點 App「對帳單」按右下角放大鈕打開橫式表格後截圖，可一次選多張、重疊沒關係', '每筆用「淨收付 = 成交價金 ± 手續費、交易稅」驗算，某一格讀錯時會用其他欄位算回來並標示請核對；手續費和交易稅照對帳單實際金額記錄']],
   ['2.18.5', '2026-11-27 10:53', ['今天買進、還沒沖銷的當沖部位，未實現損益改用當沖試算：假設今天賣出，手續費 1.425‰、交易稅 0.15%（當沖減半）']],
   ['2.18.4', '2026-11-27 10:45', ['持股加入「當沖未沖銷」的部位：盤中剛買、還沒賣掉的當沖股票會列在持股裡，算進市值和未實現損益', '今天才買的股票，今日損益改用買進價計算（不再用昨收）']],
@@ -3223,6 +3225,8 @@ function askPdfPassword(wrong) {
 $('#im-file').onchange = async e => {
   const files = [...e.target.files]; e.target.value = '';
   if (!files.length) return;
+  const csv = files.find(x => /\.csv$/i.test(x.name) || /csv/i.test(x.type));
+  if (csv) return importCsv(csv);
   if (files.every(x => /^image\//.test(x.type) || /\.(png|jpe?g|heic|webp)$/i.test(x.name))) return importShots(files);
   const pdfs = files.filter(x => /pdf/i.test(x.type) || /\.pdf$/i.test(x.name));
   if (!pdfs.length) { $('#im-finfo').textContent = '請選擇 PDF 對帳單，或只選截圖'; return; }
@@ -3278,22 +3282,40 @@ async function imFinish(res) {
   const acct = imAcct();
   const dates = res.rows.map(r => r.date).filter(Boolean).sort();
   let have = [];
-  try { if (dates.length) have = await callIn(acct, 'appRecords', dates[0], dates[dates.length - 1]); } catch (x) {}
+  const byAcct = res.restore && res.accounts && res.accounts.length > 1;   // CSV 裡有好幾個帳戶：依帳戶名稱分別比對、分別寫入
+  try { if (dates.length) have = await callIn(byAcct ? '*' : acct, 'appRecords', dates[0], dates[dates.length - 1]); } catch (x) {}
   // 用股票代號比對：先找完全一樣的；找不到再放寬（日期差 3 天內、價格差 1% 內、股數相同）
   const codeOf = n => (String(n || '').match(/（([^（）]+)）$/) || [])[1] || '';
-  const pool = have.map(h => ({d: h.d, item: h.item, code: codeOf(h.name), u: +h.units, p: +h.price, used: false}));
+  const pool = have.map(h => ({d: h.d, item: h.item, code: codeOf(h.name), u: +h.units, p: +h.price, a: h.acctName || '', used: false}));
   const days = (a, b) => Math.abs((new Date(a) - new Date(b)) / 864e5);
   res.rows.forEach(r => { r.dup = false; r.dupLoose = false; });
   [true, false].forEach(strict => res.rows.forEach(r => {
     if (r.dup || !r.fullName) return;
     const c = r.code || codeOf(r.fullName);
-    const h = pool.find(x => !x.used && x.item === r.item && x.code === c && x.u === +r.shares &&
-      (strict ? x.d === r.date && Math.abs(x.p - r.price) < 1e-6 : days(x.d, r.date) <= 3 && Math.abs(x.p / r.price - 1) <= 0.01));
+    const h = pool.find(x => !x.used && x.item === r.item && x.code === c && x.u === +r.shares && (!byAcct || x.a === r.acctName) &&
+      (strict ? x.d === r.date && Math.abs(x.p - r.price) < 1e-6 : !res.restore && days(x.d, r.date) <= 3 && Math.abs(x.p / r.price - 1) <= 0.01));
     if (h) { h.used = true; r.dup = true; r.dupLoose = !strict; }
   }));
   res.rows.forEach(r => { r.sel = !r.dup && !r.issues.length && !!r.fullName; });
-  IM = {res: res, acct: acct};
+  IM = {res: res, acct: acct, byAcct: byAcct};
+  if ($('#im-acctrow')) $('#im-acctrow').style.display = multi() && !byAcct ? '' : 'none';
   renderImport();
+}
+// 從韭菜紀錄匯出的 CSV 匯回來（換登入帳號、搬到另一個試算表時用）
+async function importCsv(f) {
+  $('#im-fname').textContent = f.name;
+  $('#im-result').style.display = 'none'; $('#im-go').disabled = true; IM = null;
+  const info = $('#im-finfo'); info.textContent = '讀取中…';
+  let res;
+  try {
+    const text = await f.text();
+    if (!ZQImport.isAppCsv(text)) { info.textContent = '看不懂這個 CSV：請用韭菜紀錄「匯出交易紀錄（CSV）」匯出的檔案'; return; }
+    const sym = await loadSymbols().catch(() => SYM);
+    res = ZQImport.parseAppCsv(text, {symbols: sym ? sym.list : []});
+  } catch (x) { info.textContent = '讀取失敗：' + errMsg(x); return; }
+  if (!res.rows.length) { info.textContent = '這個 CSV 裡沒有交易紀錄'; return; }
+  info.textContent = (f.size / 1024).toFixed(0) + ' KB · 韭菜紀錄匯出的 CSV' + (res.accounts.length > 1 ? '（' + res.accounts.length + ' 個帳戶）' : '');
+  await imFinish(res);
 }
 async function importShots(files) {
   $('#im-fname').textContent = files.length + ' 張截圖';
@@ -3325,14 +3347,16 @@ function renderImport() {
     (n(r => r.dup) ? '<span class="lbl">已經記過的 ' + n(r => r.dup) + ' 筆不會重複匯入（預設不勾）</span>' : '') +
     (n(r => r.issues.length || !r.fullName) ? '<span style="color:#F5C04A">有 ' + n(r => r.issues.length || !r.fullName) + ' 筆需要確認，預設不勾</span>' : '') +
     res.warnings.map(w => '<span style="color:#F5C04A">' + esc(w) + '</span>').join('') +
-    '<span class="lbl">' + (res.kind === '投資先生 App 明細截圖' ? '手續費和稅金由截圖的應收付金額推算，不套用折扣設定。' : /明細截圖/.test(res.kind) ? '對帳單的手續費和稅金照實際金額記錄；明細截圖的由應收付金額推算。不套用折扣設定。' : '手續費和稅金照對帳單的實際金額記錄，不套用折扣設定。') + '</span>';
+    (res.restore ? '<span class="lbl">' + (IM.byAcct ? 'CSV 裡有 ' + res.accounts.length + ' 個帳戶（' + esc(res.accounts.join('、')) + '），會依帳戶名稱分別寫入，沒有的帳戶會自動建立。' : '') +
+      '手續費、交易稅照 CSV 裡的金額記錄，進出場理由也會一起搬過來。</span>' : '') +
+    (res.restore ? '' : '<span class="lbl">' + (res.kind === '投資先生 App 明細截圖' ? '手續費和稅金由截圖的應收付金額推算，不套用折扣設定。' : /明細截圖/.test(res.kind) ? '對帳單的手續費和稅金照實際金額記錄；明細截圖的由應收付金額推算。不套用折扣設定。' : '手續費和稅金照對帳單的實際金額記錄，不套用折扣設定。') + '</span>');
   $('#im-list').innerHTML = rows.map((r, i) => {
     const st = r.dup ? '<span class="imst">' + (r.dupLoose ? '可能已記過' : '已記過') + '</span>' : !r.fullName ? '<span class="imst warn">找不到代號</span>' : r.issues.length ? '<span class="imst warn">需確認</span>' : '';
     const buy = /買/.test(r.item);
     return '<label class="imrow"><input type="checkbox" data-i="' + i + '"' + (r.sel ? ' checked' : '') + (r.fullName && r.date ? '' : ' disabled') + '>' +
       '<span class="col" style="gap:2px;min-width:0;flex:1"><span class="row" style="gap:6px;align-items:center"><span class="tag ' + (buy ? 'buy' : 'sell') + '">' + esc(r.item || r.cd) + '</span>' +
       '<b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.fullName || r.name) + '</b>' + (r.dayTrade ? '<span class="lbl">當沖</span>' : '') + st + '</span>' +
-      '<span class="lbl">' + (r.date ? r.date.slice(5).replace('-', '/') : '日期？') + '　' + fmtN(r.shares) + ' 股 @ ' + r.price + '　費 ' + r.fee + (r.tax ? '・稅 ' + r.tax : '') + '</span>' +
+      '<span class="lbl">' + (r.date ? r.date.slice(5).replace('-', '/') : '日期？') + '　' + (r.item && !/^(買進|賣出)$/.test(r.item) ? esc(r.item) + ' ' : '') + fmtN(r.shares) + (/分割/.test(r.item) ? '' : ' 股') + (r.price ? ' @ ' + r.price : '') + '　費 ' + r.fee + (r.tax ? '・稅 ' + r.tax : '') + '</span>' +
       (r.issues.length ? '<span style="color:#F5C04A;font-size:12px">' + esc(r.issues.join('；')) + '</span>' : '') +
       (!r.fullName ? '<span class="row" style="gap:6px"><input class="imcode" data-i="' + i + '" placeholder="輸入代號" inputmode="text" style="width:110px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);padding:0 8px"></span>' : '') +
       '</span><span style="font-weight:700;font-size:14px;color:var(--mut);flex-shrink:0;padding-left:6px">' + (buy ? '−' : '+') + fmtN(r.net) + '</span></label>';
@@ -3359,14 +3383,28 @@ $('#im-go').onclick = async () => {
   if (!IM) return;
   const pick = IM.res.rows.filter(r => r.sel && r.fullName);
   if (!pick.length) return;
-  const list = pick.map(r => ({date: r.date, item: r.item, name: r.fullName, units: r.shares, price: r.price, dayTrade: !!r.dayTrade, fee: r.fee, tax: r.tax + (r.cgt || 0), note: ''}));
+  const list = pick.map(r => ({date: r.date, item: r.item, name: r.fullName, units: r.shares, price: r.price, dayTrade: !!r.dayTrade, fee: r.fee, tax: r.tax + (r.cgt || 0),
+    note: r.note || '', adj: r.adj || 0, cr: r.cr || 0, _a: r.acctName || ''}));
   const acct = multi() ? $('#im-acct').value : IM.acct;
   const b = $('#im-go'); b.disabled = true; b.textContent = '匯入中（' + list.length + ' 筆）…';
   try {
-    await callIn(acct, 'appImportRecords', list);
+    if (IM.byAcct) {
+      // 依 CSV 的帳戶名稱分別寫入；沒有同名帳戶就建立一個
+      let accs = await callIn('main', 'appAccounts');
+      const nms = [...new Set(list.map(x => x._a))];
+      // 新登入的帳號：主帳戶還是空的、名稱也不在 CSV 裡，就把主帳戶改成第一個帳戶的名稱，不另外多建一個
+      let mainFree = !nms.some(n => (accs || []).some(x => x.name === n && x.id === 'main'));
+      if (mainFree) { try { mainFree = !(await callIn('main', 'appRecords', '1900-01-01', '9999-12-31')).length; } catch (x) { mainFree = false; } }
+      for (const nm of nms) {
+        let a = (accs || []).find(x => x.name === nm);
+        if (!a && mainFree) { accs = await callIn('main', 'appRenameAccount', 'main', nm); saveAccts(accs); a = accs.find(x => x.id === 'main'); mainFree = false; }
+        if (!a) { accs = await callIn('main', 'appCreateAccount', nm); saveAccts(accs); a = accs.find(x => x.name === nm); }
+        await callIn(a.id, 'appImportRecords', list.filter(x => x._a === nm).map(x => { const y = Object.assign({}, x); delete y._a; return y; }));
+      }
+    } else await callIn(acct, 'appImportRecords', list.map(x => { const y = Object.assign({}, x); delete y._a; return y; }));
     toast('已匯入 ' + list.length + ' 筆'); afterWrite();
-    if (window.zqTrack) window.zqTrack(/元大/.test(IM.res.broker) ? 'import-yuanta' : /中國信託/.test(IM.res.broker) ? 'import-ctbc' : 'import-cathay', true);
-    IM = null; $('#im-result').style.display = 'none'; $('#im-fname').textContent = '選擇對帳單 PDF 或截圖'; $('#im-finfo').textContent = '國泰・元大 PDF 對帳單，或元大、中信截圖（可多選）';
+    if (window.zqTrack) window.zqTrack(IM.res.restore ? 'import-csv' : /元大/.test(IM.res.broker) ? 'import-yuanta' : /中國信託/.test(IM.res.broker) ? 'import-ctbc' : 'import-cathay', true);
+    IM = null; $('#im-result').style.display = 'none'; $('#im-fname').textContent = '選擇對帳單 PDF 或截圖'; $('#im-finfo').textContent = '國泰・元大 PDF 對帳單、元大・中信截圖，或韭菜紀錄匯出的 CSV';
     closePage();
   } catch (e) { toast('匯入失敗：' + errMsg(e), 5000); imBtn(); }
 };

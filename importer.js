@@ -642,6 +642,57 @@
     return res;
   }
 
+  // ================= 韭菜紀錄自己匯出的 CSV（換登入帳號時搬資料用）=================
+  function csvRows(text) {
+    text = String(text).replace(/^﻿/, '');
+    const out = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === ',') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(v => v !== '')) out.push(row); row = []; }
+      else cur += ch;
+    }
+    row.push(cur); if (row.some(v => v !== '')) out.push(row);
+    return out;
+  }
+  function isAppCsv(text) { const h = csvRows(String(text).slice(0, 2000))[0] || []; return h.indexOf('日期') >= 0 && h.indexOf('項目') >= 0 && (h.indexOf('名稱（代號）') >= 0 || h.indexOf('代號') >= 0); }
+  const NO_PRICE_ITEMS = ['股票股利', '股票分割', '股票反分割', '融資現償'];
+  function parseAppCsv(text, o) {
+    o = o || {};
+    const all = csvRows(text), head = all[0] || [], col = n => head.indexOf(n);
+    const res = {broker: '韭菜紀錄', kind: '匯出的交易紀錄 CSV', rows: [], warnings: [], check: null, restore: true};
+    const iA = col('帳戶'), iD = col('日期'), iI = col('項目'), iN = col('名稱（代號）'), iS = col('股票名稱'), iC = col('代號'),
+      iU = col('股數/單位') >= 0 ? col('股數/單位') : col('股數/比例'), iP = col('單價'), iT = col('當沖'), iF = col('手續費'), iX = col('交易稅'),
+      iNet = col('淨金額'), iAdj = col('金額修正'), iCr = col('資券成數修正'), iNote = col('進出場理由');
+    if (iD < 0 || iI < 0 || iU < 0) { const e = new Error('看不懂這個 CSV：請用韭菜紀錄「匯出交易紀錄（CSV）」匯出的檔案'); e.code = 'FORMAT'; throw e; }
+    const num = v => { const t = String(v || '').replace(/,/g, '').trim(); return t === '' ? 0 : Number(t); };
+    all.slice(1).forEach((r, k) => {
+      const g = i => i >= 0 ? String(r[i] || '').trim() : '';
+      let date = g(iD).replace(/\//g, '-'); const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(date);
+      if (m) date = m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+      let name = g(iN), code = '';
+      if (name) code = (name.match(/（([^（）]+)）$/) || [])[1] || '';
+      else { code = g(iC); name = g(iS) && code ? g(iS) + '（' + code + '）' : ''; }
+      const item = g(iI), units = num(g(iU)), price = num(g(iP)), fee = Math.abs(num(g(iF))), tax = Math.abs(num(g(iX)));
+      const x = {date: m ? date : '', item: item, code: code.toUpperCase(), fullName: '', name: name, shares: units, price: price, fee: fee, tax: tax,
+        net: Math.abs(num(g(iNet))), dayTrade: /^(Y|是|TRUE|1)$/i.test(g(iT)), note: g(iNote), adj: num(g(iAdj)), cr: num(g(iCr)), acctName: g(iA), issues: []};
+      if (!x.date) x.issues.push('日期看不懂：' + g(iD));
+      if (!item) x.issues.push('沒有項目');
+      if (!(units > 0)) x.issues.push('股數看不懂：' + g(iU));
+      if (!x.code) x.issues.push('沒有股票代號');
+      const s = x.code && o.symbols ? o.symbols.find(y => y[0] === x.code) : null;
+      // 名稱照 CSV 原本的寫法（代號表找不到的也保留，例如已下市的股票）
+      if (name && /（.+）$/.test(name)) x.fullName = name; else if (s) x.fullName = s[1] + '（' + s[0] + '）';
+      if (!s && x.code) x.issues.push('代號表裡找不到 ' + x.code + '，可能已下市；匯入時會確認');
+      res.rows.push(x);
+    });
+    const names = [...new Set(res.rows.map(x => x.acctName).filter(Boolean))];
+    res.accounts = names;
+    return res;
+  }
+
   // ================= 中信亮點 App「對帳單」橫式截圖 =================
   // 在對帳單按右下角的放大鈕，會跳出橫式全欄位表格；截圖是直的（內容轉了 90 度），上下有黑邊
   function isCtbcShot(img) {
@@ -888,6 +939,6 @@
       warnings: a.warnings.concat(b.warnings), check: a.check};
   }
 
-  const api = {isCtbcShot, isCtbcPortrait, rotCCW, parseCtbcWords, parseCtbcShots, readPdf, parseCathay, isCathay, parseYuantaStmt, isYuantaStmt, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip, isStmtShot, parseStmtWords, parseStmtShots, stmtNum, stripCuts};
+  const api = {csvRows, isAppCsv, parseAppCsv, isCtbcShot, isCtbcPortrait, rotCCW, parseCtbcWords, parseCtbcShots, readPdf, parseCathay, isCathay, parseYuantaStmt, isYuantaStmt, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip, isStmtShot, parseStmtWords, parseStmtShots, stmtNum, stripCuts};
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ZQImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);
