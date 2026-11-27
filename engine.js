@@ -274,14 +274,16 @@ function eng_views_(res, cfg) {
   realized.forEach(x => realByUid[x.r._u.k] = (realByUid[x.r._u.k] || 0) + x.Q);
   const perf = uids.map(u => {
     const nonDT = u.rows.filter(r => !r.dt);
-    const lastND = nonDT.length ? nonDT.reduce((m, r) => r.row > m.row ? r : m) : null;
+    // 「最後一筆」要照日期先後（同一天才看輸入順序），不能只看編號：補記較早日期的紀錄（例如股利）編號會比較大
+    const later = (r, m) => r.d > m.d || (r.d === m.d && r.row > m.row);
+    const lastND = nonDT.length ? nonDT.reduce((m, r) => later(r, m) ? r : m) : null;
     const hold = !!(lastND && lastND.F > 0);
     const G = -sumNet(u, r => (r._kind === '買進' && r.F > 0) || r._kind === '融券賣出' || r._kind === '融資買進' || r._kind === '融資現償') +
       sumNet(u, r => r._kind === '賣出' && r.F < 0);
     const H = sumNet(u, r => r._kind === '現金股利');
     const I = sumNet(u, r => (r._kind === '賣出' && r.F >= 0) || r._kind === '融券買進' || r._kind === '融資賣出') - sumNet(u, r => r._kind === '買進' && r.F <= 0);
     const K = realByUid[u.k] || 0;
-    const last = u.rows.reduce((m, r) => r.row > m.row ? r : m);
+    const last = u.rows.reduce((m, r) => later(r, m) ? r : m);
     return {u: u, name: u.name, batch: u.batch, code: (u.name.match(/（(.+)）$/) || [])[1], first: u.first.d, hold: hold,
       G: G, H: H, I: I, J: K >= 0 ? I - K : I, K: K, start: Math.min.apply(null, u.rows.map(r => r.d)), end: Math.max.apply(null, u.rows.map(r => r.d)), last: last};
   });
