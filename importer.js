@@ -1,5 +1,5 @@
 // 匯入券商對帳單：在你的裝置上讀檔、解析，不會上傳檔案或密碼
-// 目前支援：國泰證券 App 匯出的「客戶交易明細表」PDF
+// 目前支援：國泰證券 App 匯出的「客戶交易明細表」PDF、元大對帳單 PDF 與截圖、中信亮點 App 對帳單橫式截圖
 (function (root) {
   'use strict';
   const BASE = (typeof document !== 'undefined' && document.currentScript) ? document.currentScript.src.replace(/[^/]*$/, '') : './';
@@ -642,6 +642,129 @@
     return res;
   }
 
+  // ================= 中信亮點 App「對帳單」橫式截圖 =================
+  // 在對帳單按右下角的放大鈕，會跳出橫式全欄位表格；截圖是直的（內容轉了 90 度），上下有黑邊
+  function isCtbcShot(img) {
+    if (img.h <= img.w) return false;
+    const dark = (y0, y1) => { let n = 0, k = 0; for (let y = Math.floor(y0); y < y1; y += 5) for (let x = 0; x < img.w; x += 9) { const i = (y * img.w + x) * 4; k++; if (img.d[i] + img.d[i + 1] + img.d[i + 2] < 40) n++; } return k && n / k > 0.97; };
+    let s = 0, n = 0;
+    for (let y = Math.floor(img.h * 0.3); y < img.h * 0.7; y += 7) for (let x = Math.floor(img.w * 0.1); x < img.w * 0.9; x += 11) { const i = (y * img.w + x) * 4; s += img.d[i] * 0.3 + img.d[i + 1] * 0.59 + img.d[i + 2] * 0.11; n++; }
+    return dark(img.h * 0.005, img.h * 0.06) && dark(img.h * 0.93, img.h * 0.995) && n && s / n > 200;
+  }
+  // 中信對帳單的直式畫面（上方深綠色標題列）：右邊的手續費、交易稅看不到，請改用橫式表格
+  function isCtbcPortrait(img) {
+    let n = 0, k = 0;
+    for (let y = Math.floor(img.h * 0.01); y < img.h * 0.09; y += 6) for (let x = 0; x < img.w; x += 15) { const i = (y * img.w + x) * 4; k++; if (img.d[i] < 25 && Math.abs(img.d[i + 1] - 101) < 18 && Math.abs(img.d[i + 2] - 91) < 18) n++; }
+    return img.h > img.w && k && n / k > 0.6;
+  }
+  // 逆時針轉 90 度，變回正常方向
+  function rotCCW(img) {
+    const W = img.h, H = img.w, d = new Uint8ClampedArray(W * H * 4);
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+      const si = (X * img.w + (img.w - 1 - Y)) * 4, di = (Y * W + X) * 4;
+      d[di] = img.d[si]; d[di + 1] = img.d[si + 1]; d[di + 2] = img.d[si + 2]; d[di + 3] = 255;
+    }
+    return {w: W, h: H, d: d, f: img.f};
+  }
+  // 每筆一列：商品（名稱、下面小字代號）成交日期 交易別 成交價格 成交股數 淨收付金額 成交價金 手續費 交易稅
+  function parseCtbcWords(words) {
+    const reD = /^(20\d\d)\/(\d{1,2})\/(\d{1,2})$/;
+    // 數字前後常黏到雜訊（斜線、引號），逗號也常讀成句點
+    const clean = t => { t = String(t).trim(); const d = (t.match(/\d/g) || []).length; if (d >= 1 && d >= t.replace(/[-.,]/g, '').length * 0.6) t = t.replace(/^[^\d-]+/, '').replace(/[^\d]+$/, ''); return t; };
+    const W = words.map(w => ({s: clean(w.s), x0: w.x0, x1: w.x1, y0: w.y0, y1: w.y1, yc: (w.y0 + w.y1) / 2})).filter(w => w.s);
+    const dates = W.filter(w => reD.test(w.s)).sort((a, b) => a.yc - b.yc);
+    const out = {rows: [], need: []};
+    if (!dates.length) return out;
+    const h = dates.map(d => d.y1 - d.y0).sort((a, b) => a - b)[dates.length >> 1];
+    const gaps = dates.slice(1).map((d, i) => d.yc - dates[i].yc).filter(g => g > 2 * h).sort((a, b) => a - b);
+    const pitch = gaps.length ? gaps[gaps.length >> 1] : 5.5 * h;
+    // 成交價格固定兩位小數；其他欄位都是整數，逗號、句點一律當千分位
+    const num = (t, j) => { const neg = /^-/.test(t), dg = String(t).replace(/\D/g, ''); if (!dg) return null; const v = j === 0 && /[.,]\d\d$/.test(t) ? Number(dg) / 100 : Number(dg); return neg ? -v : v; };
+    const isNum = w => /^-?[\d.,]*\d$/.test(w.s);
+    const lineOf = D => W.filter(w => Math.abs(w.yc - D.yc) < 0.6 * h && w.x0 > D.x1).sort((a, b) => a.x0 - b.x0);
+    // 數字靠右對齊：用讀得完整的列，找出六個欄位的右邊界，讀錯、漏讀的格子就不會讓後面的欄位錯位
+    const full = dates.map(D => lineOf(D).filter(isNum)).filter(ns => ns.length === 6);
+    const med = a => a.slice().sort((p, q) => p - q)[a.length >> 1];
+    const colX = full.length ? [0, 1, 2, 3, 4, 5].map(j => med(full.map(ns => ns[j].x1))) : null;
+    dates.forEach(D => {
+      const m = reD.exec(D.s);
+      const line = lineOf(D);
+      const nw = line.filter(isNum);
+      const r = {date: m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0'), settle: '', issues: [], market: '', credit: false, dayTrade: false, code: '', name: ''};
+      const cell = [null, null, null, null, null, null];
+      if (colX) nw.forEach(w => { let j = 0; colX.forEach((x, k) => { if (Math.abs(w.x1 - x) < Math.abs(w.x1 - colX[j])) j = k; }); if (Math.abs(w.x1 - colX[j]) < 2.5 * h && !cell[j]) cell[j] = w; });
+      else nw.slice(0, 6).forEach((w, j) => cell[j] = w);
+      let [price, shares, net, amt, fee, tax] = cell.map((w, j) => w ? num(w.s, j) : null);
+      const kind = line.filter(w => !isNum(w) && w.x1 < (colX ? colX[0] : 1e9)).map(w => w.s).join('');
+      const buy = /買/.test(kind) ? true : /賣/.test(kind) ? false : net !== null ? net < 0 : null;
+      r.cd = kind;
+      if (/資|券/.test(kind)) { r.credit = true; r.issues.push('融資融券的匯入還在測試，請確認數字'); }
+      if (/沖/.test(kind)) r.dayTrade = true;
+      // 漏讀一格時，用「淨收付 = 成交價金 ± 手續費、交易稅」補回來
+      const miss = [];
+      if (net !== null) net = Math.abs(net);
+      if (buy === true && tax === null && amt !== null && fee !== null && net !== null) tax = 0;
+      if (amt === null && price && shares) { amt = Math.round(price * shares); miss.push('成交價金'); }
+      if (buy !== null && amt !== null) {
+        if (net === null && fee !== null && tax !== null) { net = buy ? amt + fee : amt - fee - tax; miss.push('淨收付'); }
+        else if (fee === null && net !== null && tax !== null) { fee = buy ? net - amt : amt - tax - net; miss.push('手續費'); }
+        else if (tax === null && net !== null && fee !== null) { tax = buy ? 0 : amt - fee - net; miss.push('交易稅'); }
+      }
+      // 三個數字對不起來時，試著把其中一格（手續費、交易稅、淨收付）換成算出來的值，換了能說得通才採用
+      const feeOk = v => v >= 0 && amt > 0 && v <= Math.ceil(amt * 0.001425) + 20;
+      const taxOk = v => buy ? v === 0 : [0, 0.001, 0.0015, 0.003].some(t => Math.floor(amt * t) === v);
+      if (buy !== null && amt > 0 && net !== null && fee !== null && tax !== null && net !== (buy ? amt + fee : amt - fee - tax) && !r.credit) {
+        const tryTax = buy ? null : amt - fee - net, tryFee = buy ? net - amt : amt - tax - net, tryNet = buy ? amt + fee : amt - fee - tax;
+        if (tryTax !== null && taxOk(tryTax) && feeOk(fee) && !taxOk(tax)) { tax = tryTax; miss.push('交易稅'); }
+        else if (feeOk(tryFee) && taxOk(tax) && !feeOk(fee)) { fee = tryFee; miss.push('手續費'); }
+        else if (feeOk(fee) && taxOk(tax)) { net = tryNet; miss.push('淨收付'); }
+      }
+      r.item = r.credit ? (/資/.test(kind) ? (buy ? '融資買進' : '融資賣出') : (buy ? '融券買進' : '融券賣出')) : (buy ? '買進' : '賣出');
+      Object.assign(r, {shares, price, amt, fee, tax: tax || 0, net, pay: !!buy});
+      const bad = [];
+      if (buy === null) bad.push('買賣方向讀不到');
+      if (!(shares > 0 && price > 0 && amt > 0) || Math.abs(Math.round(shares * price) - amt) > 1) bad.push('股數 × 價格和成交價金不一致');
+      else if (net === null || fee === null) bad.push('有欄位讀不到');
+      else if (!r.credit && net !== (buy ? amt + fee : amt - fee - (tax || 0))) bad.push('淨收付對不上');
+      if (fee !== null && amt > 0 && !(fee >= 0 && fee <= Math.ceil(amt * 0.001425) + 20)) bad.push('手續費看起來不對');
+      if (!buy && !r.credit && amt > 0 && tax !== null && ![0.001, 0.0015, 0.003, 0].some(t => Math.floor(amt * t) === tax)) bad.push('交易稅看起來不對');
+      if (bad.length) r.issues.push(bad.join('、') + '，請核對（讀到：' + line.map(w => w.s).join(' ') + '）');
+      else if (miss.length) r.issues.push(miss.join('、') + '讀不清楚，已用其他欄位算回來，請核對');
+      // 代號是商品名稱下面的灰色小字，整張辨識讀不到，另外把那一格放大再讀
+      const dW = D.x1 - D.x0;
+      r._box = [Math.max(0, D.x0 - 1.15 * dW), D.yc + 0.08 * pitch, D.x0 - 0.12 * dW, D.yc + 0.47 * pitch];
+      out.rows.push(r);
+    });
+    return out;
+  }
+  async function parseCtbcShots(imgs, o) {
+    const res = {broker: '中國信託', kind: '亮點 App 對帳單截圖', rows: [], warnings: [], check: null};
+    const seen = new Set();
+    for (let i = 0; i < imgs.length; i++) {
+      if (o.progress) o.progress(i, imgs.length);
+      const img = rotCCW(imgs[i]);
+      const r = parseCtbcWords(await o.ocrPage(img, f => o.progress && o.progress(i, imgs.length, f)));
+      if (!r.rows.length) { res.warnings.push('第 ' + (i + 1) + ' 張沒有讀到交易明細'); continue; }
+      for (const x of r.rows) {
+        const t = o.ocrCode ? String(await o.ocrCode(img, x._box)).replace(/\s/g, '').toUpperCase() : '';
+        const m = /\d{4}[0-9A-Z]{0,2}/.exec(t.replace(/O/g, '0'));
+        if (m) x.code = m[0]; else x.issues.push('股票代號讀不到，請手動確認');
+        delete x._box;
+        const k = [x.date, x.code, x.item, x.shares, x.price, x.net].join('|');
+        if (seen.has(k)) continue; seen.add(k); res.rows.push(x);
+      }
+    }
+    res.rows.sort((a, b) => a.date.localeCompare(b.date));
+    res.rows.forEach(x => {
+      const s = x.code && o.symbols ? o.symbols.find(y => y[0] === x.code) : null;
+      if (s) x.fullName = s[1] + '（' + s[0] + '）';
+      else if (x.code) x.issues.push('代號表裡找不到 ' + x.code + '，可能讀錯或已下市');
+    });
+    if (res.rows.length) res.warnings.push('中信對帳單截圖沒有合計可以核對，請確認每一張都有截到、沒有漏掉的交易');
+    markDayTrade(res.rows);
+    return res;
+  }
+
   // 瀏覽器：用 tesseract.js 在裝置上辨識文字（不上傳），第一次使用會下載辨識模型
   let ocrP = null;
   function browserOcr() {
@@ -706,6 +829,13 @@
     const {data} = await W.wd.recognize(c);
     return data.text || '';
   }
+  // 中信對帳單的股票代號（灰色小字）：只允許數字和大寫英文
+  async function ocrCode(img, box) {
+    const W = await browserOcr();
+    await W.wd.setParameters({tessedit_pageseg_mode: '7', tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'});
+    try { return await ocrCell(img, box); }
+    finally { await W.wd.setParameters({tessedit_pageseg_mode: '6', tessedit_char_whitelist: '0123456789.,-/'}); }
+  }
   const pxCache = {};
   function pricePxOn(date, code) {
     const ym = date.slice(0, 7);
@@ -729,8 +859,12 @@
     const imgs = []; for (const f of files) imgs.push(await fileToImg(f));
     if (opts.progress) opts.progress(-1, files.length);
     const W = await browserOcr();
-    const st = imgs.filter(isStmtShot), ls = imgs.filter(x => !isStmtShot(x));
+    const cp = imgs.filter(isCtbcPortrait);
+    if (cp.length && cp.length === imgs.length) throw new Error('這是中信亮點對帳單的直式畫面，看不到手續費和交易稅。請按對帳單右下角的放大鈕打開橫式表格再截圖');
+    const ct = imgs.filter(isCtbcShot), rest = imgs.filter(x => !isCtbcShot(x) && !isCtbcPortrait(x));
+    const st = rest.filter(isStmtShot), ls = rest.filter(x => !isStmtShot(x));
     const parts = [];
+    if (ct.length) parts.push(await parseCtbcShots(ct, Object.assign({ocrPage: ocrPage, ocrCode: ocrCode}, opts)));
     if (st.length) parts.push(await parseStmtShots(st, Object.assign({ocrPage: ocrPage, ocrCell: ocrCell}, opts)));
     if (ls.length) {
       // 名稱欄只允許股票名稱裡出現過的字，避免讀成不存在的字（例如「合晶」讀成「合唱」）
@@ -740,7 +874,13 @@
       }
       parts.push(await parseYuantaShots(ls, Object.assign({ocr: ocrStrip, priceOn: pricePxOn}, opts)));
     }
+    if (cp.length) parts[0].warnings.push(cp.length + ' 張是中信對帳單的直式畫面（看不到手續費和交易稅），已略過；請改截橫式表格');
     if (parts.length === 1) return parts[0];
+    if (ct.length) {
+      // 中信和元大的截圖混在一起：各自的交易接起來
+      return {broker: [...new Set(parts.map(p => p.broker))].join('、'), kind: parts.map(p => p.kind).join('、'),
+        rows: [].concat(...parts.map(p => p.rows)).sort((x, y) => x.date.localeCompare(y.date)), warnings: [].concat(...parts.map(p => p.warnings)), check: null};
+    }
     // 兩種截圖混在一起：月對帳單比較準，同一筆以對帳單為準
     const a = parts[0], b = parts[1], key = r => [r.date, r.code, r.shares, r.price].join('|');
     const have = new Set(a.rows.map(key));
@@ -748,6 +888,6 @@
       warnings: a.warnings.concat(b.warnings), check: a.check};
   }
 
-  const api = {readPdf, parseCathay, isCathay, parseYuantaStmt, isYuantaStmt, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip, isStmtShot, parseStmtWords, parseStmtShots, stmtNum, stripCuts};
+  const api = {isCtbcShot, isCtbcPortrait, rotCCW, parseCtbcWords, parseCtbcShots, readPdf, parseCathay, isCathay, parseYuantaStmt, isYuantaStmt, resolveCode, markDayTrade, parseFile, parseYuantaShots, parseShots, ytArea, ytStrip, isStmtShot, parseStmtWords, parseStmtShots, stmtNum, stripCuts};
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ZQImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

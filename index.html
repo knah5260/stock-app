@@ -830,6 +830,7 @@ window.ZQ_THEMES = [
     <b>目前支援</b>
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">國泰證券</b>：國泰證券 App 匯出的「客戶交易明細表」PDF（可選一整年）。有密碼的話，App 會請你輸入身分證字號。</span>
     <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">元大證券</b>：①「電子月對帳單」PDF（最準）：投資先生 App「明細 → 月對帳單」選月份按「補寄」，把信裡的 PDF 附件存到「檔案」再選，可一次選好幾個月；密碼通常是身分證字號。②「月對帳單」按「開啟」後的截圖，不用密碼，可一次選多張、重疊沒關係；放大截圖時最右邊的淨收付欄被切掉也可以，最後一張最好截到「合計」那行，App 會自動核對總數。③投資先生「交易 → 明細」的截圖。</span>
+    <span class="lbl" style="font-size:13px"><b style="color:var(--tx)">中國信託</b>：亮點 App「帳務 → 對帳單」選好日期區間，按右下角的放大鈕打開橫式表格（要看得到淨收付金額、手續費、交易稅），一頁一頁往下截圖，可一次選多張、重疊沒關係。</span>
     <span style="font-size:13px;color:#F5C04A">⚠️ 截圖辨識還在測試中，失敗率較高，可能讀不出來或讀錯；能用 PDF 的話建議優先用 PDF。</span>
     <span class="lbl" style="font-size:13px">檔案、截圖和密碼只在這台裝置上讀取，不會上傳。其他券商之後陸續加入。</span>
   </div>
@@ -837,7 +838,7 @@ window.ZQ_THEMES = [
   <label class="card col" for="im-file" style="gap:6px;align-items:center;justify-content:center;min-height:110px;border-style:dashed;cursor:pointer;text-align:center">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--acc)"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
     <span style="font-weight:600;word-break:break-all" id="im-fname">選擇對帳單 PDF 或截圖</span>
-    <span class="lbl" id="im-finfo">國泰・元大 PDF 對帳單，或元大投資先生截圖（可多選）</span>
+    <span class="lbl" id="im-finfo">國泰・元大 PDF 對帳單，或元大、中信截圖（可多選）</span>
     <input type="file" id="im-file" accept=".pdf,application/pdf,image/*" multiple style="display:none">
   </label>
   <div id="im-result" style="display:none" class="col">
@@ -880,8 +881,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.18.5';
+const APP_VERSION = '2.19.0';
 const CHANGELOG = [
+  ['2.19.0', '2026-11-27 12:55', ['匯入券商對帳單新增中國信託：亮點 App「對帳單」按右下角放大鈕打開橫式表格後截圖，可一次選多張、重疊沒關係', '每筆用「淨收付 = 成交價金 ± 手續費、交易稅」驗算，某一格讀錯時會用其他欄位算回來並標示請核對；手續費和交易稅照對帳單實際金額記錄']],
   ['2.18.5', '2026-11-27 10:53', ['今天買進、還沒沖銷的當沖部位，未實現損益改用當沖試算：假設今天賣出，手續費 1.425‰、交易稅 0.15%（當沖減半）']],
   ['2.18.4', '2026-11-27 10:45', ['持股加入「當沖未沖銷」的部位：盤中剛買、還沒賣掉的當沖股票會列在持股裡，算進市值和未實現損益', '今天才買的股票，今日損益改用買進價計算（不再用昨收）']],
   ['2.18.3', '2026-11-27 09:21', ['修正盤中更新時數字滾動被中途打斷（看起來變快、沒有漸慢）：更新後不會再馬上重畫第二次']],
@@ -2093,7 +2095,7 @@ const HELP = {
   divinc: ['股利與所得', () => '依年度整理收到的現金股利、股票股利和被扣的二代健保補充保費，報稅時可以對照。'],
   dca: ['定期定額', () => '設定好扣款日和每次金額，App 會找出還沒記錄的扣款，帶入當天收盤價和預估股數，你核對券商成交明細後一次存起來。'],
   batch: ['批次新增', () => '一次輸入多筆買賣（例如一天內多筆零股），核對後一起儲存，比一筆一筆新增快。'],
-  import: ['匯入券商對帳單', () => '目前支援國泰證券 App 匯出的「客戶交易明細表」PDF，以及元大投資先生 App「交易 → 明細」的截圖（在手機上用文字辨識讀取，並用價格 × 股數和應收付互相驗算）。App 會自動辨識每筆買賣、對應股票代號，並和對帳單上的合計比對；已經記過的交易不會重複匯入。手續費和稅照對帳單的實際金額記錄。檔案和密碼只在這台裝置上讀取，不會上傳。'],
+  import: ['匯入券商對帳單', () => '目前支援國泰證券 App 匯出的「客戶交易明細表」PDF，元大投資先生 App「交易 → 明細」的截圖，以及中信亮點 App「對帳單」的橫式表格截圖（在手機上用文字辨識讀取，並用價格 × 股數和應收付互相驗算）。App 會自動辨識每筆買賣、對應股票代號，並和對帳單上的合計比對；已經記過的交易不會重複匯入。手續費和稅照對帳單的實際金額記錄。檔案和密碼只在這台裝置上讀取，不會上傳。'],
   fees: ['手續費設定', () => '手續費＝成交金額 × 0.1425% × 折數，不足最低手續費以最低計。券商折扣有變動時，新增一段「從某天開始用新折數」，舊紀錄仍用舊折數。'],
   credit: ['信用交易設定', () => '融資成數、融券保證金成數和利率，用來計算融資金額、擔保品、保證金和利息。依你的券商實際條件填寫。'],
   nhi: ['二代健保補充保費', () => '單筆現金股利達 2 萬元時，券商會先扣 2.11%。符合免扣資格或實際沒被扣時可以關閉，所有股利紀錄會重新計算。'],
@@ -3307,7 +3309,7 @@ async function importShots(files) {
       info.textContent = i < 0 ? '載入辨識模型中（第一次約需下載 7 MB，之後會記住）…' : i < n ? '辨識第 ' + (i + 1) + '／' + n + ' 張…' + (f ? Math.round(f * 100) + '%' : '') : '整理中…';
     }});
   } catch (x) { info.textContent = '辨識失敗：' + errMsg(x); return; }
-  if (!res.rows.length) { info.textContent = '沒有辨識到交易。請確認是投資先生「月對帳單」或「交易 → 明細」的畫面'; return; }
+  if (!res.rows.length) { info.textContent = '沒有辨識到交易。請確認是元大投資先生「月對帳單」、「交易 → 明細」，或中信亮點「對帳單」橫式表格的畫面'; return; }
   info.textContent = files.length + ' 張截圖 · ' + res.broker + '「' + res.kind + '」';
   res.warnings.unshift('截圖辨識還在測試中，失敗率較高，匯入前請逐筆核對');
   await imFinish(res);
@@ -3363,8 +3365,8 @@ $('#im-go').onclick = async () => {
   try {
     await callIn(acct, 'appImportRecords', list);
     toast('已匯入 ' + list.length + ' 筆'); afterWrite();
-    if (window.zqTrack) window.zqTrack(/元大/.test(IM.res.broker) ? 'import-yuanta' : 'import-cathay', true);
-    IM = null; $('#im-result').style.display = 'none'; $('#im-fname').textContent = '選擇對帳單 PDF 或截圖'; $('#im-finfo').textContent = '國泰・元大 PDF 對帳單，或元大投資先生截圖（可多選）';
+    if (window.zqTrack) window.zqTrack(/元大/.test(IM.res.broker) ? 'import-yuanta' : /中國信託/.test(IM.res.broker) ? 'import-ctbc' : 'import-cathay', true);
+    IM = null; $('#im-result').style.display = 'none'; $('#im-fname').textContent = '選擇對帳單 PDF 或截圖'; $('#im-finfo').textContent = '國泰・元大 PDF 對帳單，或元大、中信截圖（可多選）';
     closePage();
   } catch (e) { toast('匯入失敗：' + errMsg(e), 5000); imBtn(); }
 };
