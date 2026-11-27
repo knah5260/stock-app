@@ -1,11 +1,12 @@
 // 韭菜紀錄 盤中報價中轉站（Cloudflare Worker）
-// App 送 /q?c=2330,0050,... 進來，這裡去證交所「基本市況報導」拿五秒快照，整理成精簡的 JSON 回傳。
-// 同一組股票 5 秒內只會問證交所一次；只接受韭菜紀錄網站（和本機測試）來的請求。
+// App 送 /q?c=2330,0050,... 進來，這裡去 Yahoo 股市拿即時成交價（幾秒內更新），整理成精簡的 JSON 回傳。
+// Yahoo 拿不到時，改用證交所「基本市況報導」（約每分鐘才更新一次）。
+// 同一組股票 2.5 秒內只會問證交所一次；只接受韭菜紀錄網站（和本機測試）來的請求。
 
 const SITES = ['https://knah5260.github.io'];
 const LOCAL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 const MIS = 'https://mis.twse.com.tw/stock/';
-const TTL = 5000;
+const TTL = 2500;   // App 每 5 秒問一次，快取要比 5 秒短，才不會每隔一次拿到舊的
 
 const memo = new Map();   // 股票組合 → {at, body}
 let cookie = '';
@@ -26,8 +27,39 @@ async function ask(channels) {
 const num = s => { const v = parseFloat(s); return isFinite(v) && v > 0 ? v : null; };
 const first = s => num(String(s || '').split('_')[0]);
 
+const YH = 'https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.stockList;symbols=';
+const twParts = iso => {   // UTC 時間 → 台灣的 YYYYMMDD、HH:MM:SS
+  const t = new Date(new Date(iso).getTime() + 8 * 3600e3).toISOString();
+  return [t.slice(0, 10).replace(/-/g, ''), t.slice(11, 19)];
+};
+async function yahoo(codes) {
+  const out = {d: '', t: '', q: {}, src: 'yahoo'};
+  for (let i = 0; i < codes.length; i += 40) {
+    const part = codes.slice(i, i + 40);
+    const r = await fetch(YH + encodeURIComponent(part.map(c => c + '.TW').join(',')) + '?lang=zh-Hant-TW&region=TW&_=' + Date.now(),
+      {headers: {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Referer': 'https://tw.stock.yahoo.com/'}});
+    if (!r.ok) throw new Error('yahoo ' + r.status);
+    const j = await r.json();
+    (Array.isArray(j) ? j : j.data || []).forEach(x => {
+      const c = String(x.systexId || String(x.symbol || '').split('.')[0]).toUpperCase();
+      const p = x.price && num(x.price.raw);
+      if (!c || !p) return;
+      const [d, t] = x.regularMarketTime ? twParts(x.regularMarketTime) : ['', ''];
+      out.q[c] = {p: p, y: x.regularMarketPreviousClose ? num(x.regularMarketPreviousClose.raw) : null, n: x.symbolName || '', t: t};
+      if (d > out.d) out.d = d;
+      if (d === out.d && t > out.t) out.t = t;
+    });
+  }
+  if (!Object.keys(out.q).length) throw new Error('yahoo empty');
+  return out;
+}
+
 async function quotes(codes) {
-  const out = {d: '', t: '', q: {}};
+  try { return await yahoo(codes); } catch (e) { return mis(codes); }
+}
+
+async function mis(codes) {
+  const out = {d: '', t: '', q: {}, src: 'mis'};
   for (let i = 0; i < codes.length; i += 25) {
     const part = codes.slice(i, i + 25);
     const ch = part.flatMap(c => ['tse_' + c + '.tw', 'otc_' + c + '.tw']).join('|');
@@ -37,8 +69,8 @@ async function quotes(codes) {
     (j.msgArray || []).forEach(m => {
       const c = String(m.c || '').toUpperCase();
       if (!c) return;
-      // 成交價；這 5 秒內沒成交就用最佳買價、再不行用最佳賣價
-      const p = num(m.z) || first(m.b) || first(m.a);
+      // 成交價；z 常常是「-」，這時用 trade 裡最近一筆成交價，再不行用最佳買價、最佳賣價
+      const p = num(m.z) || (m.trade && num(m.trade.z)) || num(m.pz) || first(m.b) || first(m.a);
       out.q[c] = {p: p, y: num(m.y), n: m.n || '', t: m.t || ''};
       if ((m.d || '') > out.d) out.d = m.d || '';
       if ((m.t || '') > out.t) out.t = m.t || '';
