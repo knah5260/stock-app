@@ -323,11 +323,11 @@
       // 未實現損益的「賣出手續費」照券商庫存頁的算法：用原價 1.425‰ 估算（不打折）
       const disc = 10;
       // 估算現在賣掉的手續費、交易稅
-      const sellCost = (code, G, E) => {
+      const sellCost = (code, G, E, dt) => {
         const Sr = window.eng_rd_(G * 1.425 * disc / 10 / 1000);
         const T = Sr >= cfg.minFee ? Sr : Sr >= cfg.minOdd ? (E >= 1000 ? cfg.minFee : Sr) : cfg.minOdd;
         const U = (/^00\d+B$/.test(code) && todayKey() <= '2036-12-31') ? 0 :
-          (code.charAt(0) === '0' || (code.charAt(0) === '9' && code.length === 6)) ? window.eng_rd_(G * 0.001) : window.eng_rd_(G * 0.003);
+          (code.charAt(0) === '0' || (code.charAt(0) === '9' && code.length === 6)) ? window.eng_rd_(G * 0.001) : window.eng_rd_(G * (dt ? 0.0015 : 0.003));   // 當日沖銷：股票交易稅減半 0.15%
         return T + U;
       };
       const pxOf = code => { const s = syms[code.toUpperCase()]; return livePx(code) || (s && s[3] > 0 ? s[3] : 0); };
@@ -340,7 +340,8 @@
       Object.values(grp).forEach(g => {
         const E = g.b - g.s; if (E <= 0) return;
         const F = pxOf(g.code), G = F * E, cost = Math.round(g.bAmt * E / g.b), buyPx = g.bPx / g.b;
-        const W = F ? G - sellCost(g.code, G, E) : 0, L = F ? W - cost : 0;
+        const W = F ? G - sellCost(g.code, G, E, g.d === today) : 0   // 今天的當沖部位：照當沖試算（今天賣掉，交易稅 0.15%）
+       , L = F ? W - cost : 0;
         const t2 = two[g.code.toUpperCase()] || [], lp = livePx(g.code);
         const prev = g.d === today ? buyPx : (lp ? t2[t2.length - 1] : t2.length > 1 ? t2[0] : null);
         dtOpen.push({name: g.name, batch: g.J, code: g.code, units: E, price: F, prev: prev || null, dayR: F && prev ? F / prev - 1 : null,
