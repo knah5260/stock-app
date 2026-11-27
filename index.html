@@ -880,8 +880,9 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.18.3';
+const APP_VERSION = '2.18.4';
 const CHANGELOG = [
+  ['2.18.4', '2026-11-27 10:45', ['持股加入「當沖未沖銷」的部位：盤中剛買、還沒賣掉的當沖股票會列在持股裡，算進市值和未實現損益', '今天才買的股票，今日損益改用買進價計算（不再用昨收）']],
   ['2.18.3', '2026-11-27 09:21', ['修正盤中更新時數字滾動被中途打斷（看起來變快、沒有漸慢）：更新後不會再馬上重畫第二次']],
   ['2.18.2', '2026-11-27 09:15', ['盤中價格改成每 5 秒更新：報價來源換成 Yahoo 股市的即時成交價（幾秒內就會反映），拿不到時才用證交所（約每分鐘更新一次）', '修正證交所報價沒成交時會拿「最佳買價」當成交價的問題', '盤中更新先重算目前畫面，其他頁在背景算好']],
   ['2.18.1', '2026-11-27 01:47', ['含息改成和券商一樣：用現金股利的原始金額扣成本（不先扣 10 元匯費）']],
@@ -1535,7 +1536,7 @@ async function loadHoldings() {
         '</div>' + dayCard + pxNote + mtCard + alloc +
         h.map(x => '<div class="card col hc" data-sk="' + esc(x.code) + '" data-nm="' + esc(shortName(x.name)) + '" data-avg="' + (x.short ? '' : (x.avg || '')) + '" style="gap:12px"><div class="row" style="align-items:flex-start"><div class="col" style="gap:2px"><span style="font-size:17px;font-weight:700">' + esc(shortName(x.name)) +
           (x.short ? '<span class="tag s">融券</span>' : x.mt > 0 ? '<span class="tag">融資</span>' : '') + (ACCT === '*' && x.acctName ? '<span class="tag a">' + esc(x.acctName) + '</span>' : '') +
-          '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股' + (x.mt > 0 && !x.short && x.mt < x.units ? '（融資 ' + fmt(x.mt) + '）' : '') + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
+          '</span><span class="lbl">' + esc(x.code) + ' · 批號 ' + esc(x.batch) + ' · ' + fmt(x.units) + ' 股' + (x.dt ? ' · 當沖未沖銷' : '') + (x.mt > 0 && !x.short && x.mt < x.units ? '（融資 ' + fmt(x.mt) + '）' : '') + '</span></div><div class="col" style="align-items:flex-end;gap:2px"><span style="font-size:17px;font-weight:700" class="' + cls(x.pl) + '">' + sgn(x.pl) +
           '</span><span style="font-size:12px" class="' + cls(x.pl) + '">' + arrowPct(x.r).replace(/(\.\d)\d%/, '$1%') + '</span></div></div><div class="grid3" style="border-top:1px solid var(--line);padding-top:10px">' +
           '<div class="col" style="gap:2px"><span class="lbl">現價</span>' + (x.price ? '<span style="font-weight:600">' + x.price.toLocaleString('en-US') + (x.dayR !== null && x.dayR !== undefined ? '<span class="dchg ' + cls(x.dayR) + '">' + (dayLabel() === '今日' ? '今日 ' : '') + arrowPct(x.dayR).replace(/(\.\d)\d%/, '$1%') + '</span>' : '') + '</span>' : '<span style="font-weight:600;color:#F5C04A">抓不到</span>') + '</div>' +
           '<div class="col" style="gap:2px"><span class="lbl">成本均價</span><span style="font-weight:600">' + (x.avg === null ? '—' : x.avg.toFixed(2)) + '</span></div>' +

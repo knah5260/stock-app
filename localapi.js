@@ -322,6 +322,31 @@
       const C = compute(id), cfg = C.cfg;
       // 未實現損益的「賣出手續費」照券商庫存頁的算法：用原價 1.425‰ 估算（不打折）
       const disc = 10;
+      // 估算現在賣掉的手續費、交易稅
+      const sellCost = (code, G, E) => {
+        const Sr = window.eng_rd_(G * 1.425 * disc / 10 / 1000);
+        const T = Sr >= cfg.minFee ? Sr : Sr >= cfg.minOdd ? (E >= 1000 ? cfg.minFee : Sr) : cfg.minOdd;
+        const U = (/^00\d+B$/.test(code) && todayKey() <= '2036-12-31') ? 0 :
+          (code.charAt(0) === '0' || (code.charAt(0) === '9' && code.length === 6)) ? window.eng_rd_(G * 0.001) : window.eng_rd_(G * 0.003);
+        return T + U;
+      };
+      const pxOf = code => { const s = syms[code.toUpperCase()]; return livePx(code) || (s && s[3] > 0 ? s[3] : 0); };
+      // 當沖買進還沒賣掉的部位（例如盤中剛買、還沒沖掉）：引擎不算庫存，這裡另外列出來
+      const dtOpen = [], grp = {};
+      C.res.ok.filter(r => r.dt && (r._kind === '買進' || r._kind === '賣出') && r.T).forEach(r => {
+        const g = grp[r.name + '|' + r.d] || (grp[r.name + '|' + r.d] = {name: r.name, code: String(r.T), d: r.d, b: 0, bAmt: 0, bPx: 0, s: 0, J: r.J});
+        if (r._kind === '買進') { g.b += r.units; g.bAmt += r.O + (r.S || 0); g.bPx += r.O; } else g.s += r.units;
+      });
+      Object.values(grp).forEach(g => {
+        const E = g.b - g.s; if (E <= 0) return;
+        const F = pxOf(g.code), G = F * E, cost = Math.round(g.bAmt * E / g.b), buyPx = g.bPx / g.b;
+        const W = F ? G - sellCost(g.code, G, E) : 0, L = F ? W - cost : 0;
+        const t2 = two[g.code.toUpperCase()] || [], lp = livePx(g.code);
+        const prev = g.d === today ? buyPx : (lp ? t2[t2.length - 1] : t2.length > 1 ? t2[0] : null);
+        dtOpen.push({name: g.name, batch: g.J, code: g.code, units: E, price: F, prev: prev || null, dayR: F && prev ? F / prev - 1 : null,
+          dayPl: F && prev ? Math.round((F - prev) * E) : null, mv: G, avg: cost / E, cost: cost, pl: L, r: cost ? L / cost : null, div: 0,
+          short: false, dt: true, mt: 0, loan: 0, self: cost, collat: 0, margin: 0, mtDue: '', _W: W, _uid: g.name + '_' + g.J});
+      });
       return C.V.unreal.map(u => {
         const s = syms[String(u.code).toUpperCase()];
         const F = livePx(u.code) || (s && s[3] > 0 ? s[3] : 0), E = u.E, G = F * E, short = u.short;
@@ -335,11 +360,15 @@
         // 今日漲跌：盤中（或收盤後正式資料還沒進來）跟最近一個收盤比；否則跟前一個收盤比
         const t2 = two[code.toUpperCase()] || [];
         const lp = livePx(code), prev = lp ? t2[t2.length - 1] : t2.length > 1 ? t2[0] : null;
-        const dayR = F && prev ? F / prev - 1 : null, dayPl = F && prev ? Math.round((F - prev) * E * (short ? -1 : 1)) : null;
+        // 今天才買的股數：今日損益跟買進價比，不是跟昨收比
+        const tb = short ? [] : ((u.p && u.p.u.rows) || []).filter(r => r._kind === '買進' && !r.dt && r.d === today);
+        const bq = Math.min(E, tb.reduce((a, r) => a + r.units, 0)), bv = tb.length ? tb.reduce((a, r) => a + r.O, 0) * bq / tb.reduce((a, r) => a + r.units, 0) : 0;
+        const dayR = F && prev ? F / prev - 1 : null;
+        const dayPl = F && prev ? Math.round(short ? (prev - F) * E : (F - prev) * (E - bq) + (F * bq - bv)) : null;
         return {name: u.name, batch: u.batch, code: code, units: E, price: F, prev: prev || null, dayR: dayR, dayPl: dayPl, mv: G, avg: u.I, cost: u.J, pl: L, r: u.J ? L / u.J : null,
           div: short ? 0 : Math.round(((u.p && u.p.u.rows) || []).filter(r => r._kind === '現金股利').reduce((a, r) => a + (Number(r.O) || 0), 0)),   // 含息用股利原始金額（不扣匯費），和券商相同
           short: short, mt: u.R || 0, loan: u.O || 0, self: u.P || 0, collat: u.M || 0, margin: u.N || 0, mtDue: u.mtDue === '' ? '' : keyOf(u.mtDue), _W: W, _uid: u.name + '_' + u.batch};
-      });
+      }).concat(dtOpen);
     };
     const out = each(acct, one);
     return out;
