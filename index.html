@@ -880,9 +880,10 @@ if (/[?&]demo=1\b/.test(location.search)) {
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.18.2';
+const APP_VERSION = '2.18.3';
 const CHANGELOG = [
-  ['2.18.2', '2026-11-27 09:15', ['盤中價格改成每 5 秒更新：報價來源換成 Yahoo 股市的即時成交價（幾秒內就會反映），拿不到時才用證交所（約每分鐘更新一次）', '修正證交所報價沒成交時會拿「最佳買價」當成交價的問題', '盤中更新只重算目前畫面，切到其他頁時再算，比較省電']],
+  ['2.18.3', '2026-11-27 09:21', ['修正盤中更新時數字滾動被中途打斷（看起來變快、沒有漸慢）：更新後不會再馬上重畫第二次']],
+  ['2.18.2', '2026-11-27 09:15', ['盤中價格改成每 5 秒更新：報價來源換成 Yahoo 股市的即時成交價（幾秒內就會反映），拿不到時才用證交所（約每分鐘更新一次）', '修正證交所報價沒成交時會拿「最佳買價」當成交價的問題', '盤中更新先重算目前畫面，其他頁在背景算好']],
   ['2.18.1', '2026-11-27 01:47', ['含息改成和券商一樣：用現金股利的原始金額扣成本（不先扣 10 元匯費）']],
   ['2.18.0', '2026-11-27 01:36', ['持股頁可以切換成本計算「不含息／含息」：含息會把這批已領的現金股利從成本扣掉，和券商庫存頁的含息相同', '問題回報：在總覽連點「我的台股總覽」標題三下，可以匯出問題回報檔（交易紀錄、設定和最近的錯誤訊息，不含登入資訊），傳給作者幫忙查']],
   ['2.17.6', '2026-11-27 01:29', ['持股的未實現損益改成和券商庫存頁一樣：假設現在賣出時的手續費用原價 1.425‰ 估算（不套用折扣），損益數字會跟券商 App 對得上']],
@@ -1046,7 +1047,7 @@ async function rawCall(fn, args, acct) {
 // 快取：讀過的資料先立刻顯示，背景再向試算表拿最新的；有變動才重畫。
 // 資料存在手機裡，下次打開 App 也能馬上看到上次的畫面。
 const READS = /^app(Overview|Holdings|Realized|Performance|Records|Calendar|Meta|Lookup|Settings|CorpActions|Dividends|Prices|Accounts|Profile|StockChart)$/;
-const CK = 'zqCache2', inflight = {};
+const CK = 'zqCache2', inflight = {}, USED = {};
 let cache = {};
 if (!DEMO) { try { cache = JSON.parse(localStorage.getItem(CK) || '{}') || {}; } catch (e) { cache = {}; } }
 let saveT;
@@ -1071,6 +1072,7 @@ async function callIn(acct, fn, ...args) {
     return r;
   }
   const key = acct + '|' + fn + '|' + JSON.stringify(args), c = cache[key];
+  USED[key] = tabOf(current);   // 記住這份資料是哪一頁在用（盤中更新時先重算目前這頁的）
   const fetchFresh = () => inflight[key] || (inflight[key] = rawCall(fn, args, acct).then(d => {
     delete inflight[key];
     const changed = !c || JSON.stringify(c.d) !== JSON.stringify(d);
@@ -3411,17 +3413,19 @@ const LIVE_URL = 'https://zq-quote.pages.dev/q';
   // 用新價格重算畫面用過的資料，放回快取再重畫（不閃爍、不打 Google）
   async function refresh() {
     await Promise.all(Object.values(inflight).map(p => p.catch(() => {})));   // 正在讀的先讀完，免得蓋掉新價格
-    // 只重算目前畫面用到的資料；其他頁的快取標成過期，切過去時再重算（每 5 秒全部重算太耗電）
-    const NOW_FN = {overview: /\|app(Overview|Performance)\|/, holdings: /\|app(Holdings|Performance)\|/, calendar: /\|app(Calendar)\|/}[tabOf(current)];
+    // 先重算目前畫面用過的資料並重畫，其他頁的資料之後在背景重算（不重畫，切過去時已經是新價格）
+    const tab = tabOf(current);
     const keys = Object.keys(cache).filter(k => LIVE_FN.test(k) && k.indexOf(ACCT + '|') === 0);
-    keys.filter(k => !(NOW_FN && NOW_FN.test(k))).forEach(k => { cache[k].t = 0; });
-    for (const k of keys.filter(k => NOW_FN && NOW_FN.test(k))) {
+    const now = keys.filter(k => USED[k] === tab), later = keys.filter(k => USED[k] !== tab);
+    const redo = async ks => { for (const k of ks) {
       const fn = k.split('|')[1], args = JSON.parse(k.slice(k.indexOf('|', k.indexOf('|') + 1) + 1));
       try { cache[k] = {d: await rawCall(fn, args, ACCT), t: Date.now()}; } catch (e) {}
-    }
+    } };
+    await redo(now);
     saveCache();
     Object.keys(loaded).forEach(k => { if (k !== tabOf(current) && k !== current) loaded[k] = false; });
     if (/^(overview|holdings|calendar)$/.test(current) && loaders[current]) loaders[current]();
+    await redo(later); saveCache();
   }
   async function tick(force) {
     if (busy || MODE !== 'google' || document.hidden || !(window.ZQ && ZQ.signedIn())) return;
