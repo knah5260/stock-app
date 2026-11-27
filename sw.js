@@ -1,8 +1,8 @@
 // 背景程式：快取 App 本身的檔案和公開股價資料；你的交易紀錄不會經過這裡（直接跟 Google 連線）
-const V = 'zq-shell-2.20.1';
+const V = 'zq-shell-2.20.2';
 const SHELL = ['./', 'index.html', 'manifest.json', 'engine.js', 'localapi.js', 'demo.js', 'importer.js', 'theme-dark.css', 'theme-light.css', 'theme-gallery.css', 'theme-dusk.css', 'theme-aurora.css', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(V).then(c => c.addAll(SHELL.map(u => new Request(u, {cache: 'reload'})))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V && k !== 'zq-data').map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -29,5 +29,5 @@ self.addEventListener('fetch', e => {
     return;
   }
   // 其他檔案：先抓最新，沒網路才用存的（避免新舊版本混用）
-  e.respondWith(fetch(r).then(res => put(V, r, res)).catch(() => caches.match(r, {ignoreSearch: true})));
+  e.respondWith(fetch(r, {cache: 'no-cache'}).then(res => put(V, r, res)).catch(() => caches.match(r, {ignoreSearch: true})));
 });
