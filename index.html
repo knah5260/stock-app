@@ -673,6 +673,7 @@ window.ZQ_THEMES = [
     <button class="di" data-pg="corp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>除權息與股利<span class="n" id="dr-ca" style="display:none"></span></button>
     <button class="di" data-pg="dca"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M12 7v5l3 2"/></svg>定期定額</button>
     <button class="di" data-pg="dtcalc"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h4"/></svg>當沖試算</button>
+    <button class="di" data-pg="watch"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 6l1-4h4l1 4M9 18l1 4h4l1-4M12 10v2l1.5 1"/></svg>Apple Watch 捷徑</button>
     <button class="di" data-pg="year"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 17v-3M12 17v-6M16 17v-4"/></svg>年度報表</button>
     <button class="di" data-pg="import"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>匯入券商對帳單</button>
     <button class="di" id="dr-export"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>匯出交易紀錄（CSV）</button>
@@ -804,6 +805,22 @@ window.ZQ_THEMES = [
   <div class="chips" id="yr-years"></div>
   <div id="yr-body" class="col" style="gap:14px"></div>
 </section>
+<section class="page" id="pg-watch" aria-label="Apple Watch 捷徑">
+  <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">Apple Watch 捷徑</h1></div>
+  <span style="font-size:14px;line-height:1.6;color:var(--mut,#9aa0a6)">用 iPhone 內建的「捷徑」App 做一個捷徑，在 Apple Watch 上點一下（或跟 Siri 說捷徑名稱）就能看到持股市值、今日損益、未實現損益和每檔的即時漲跌。</span>
+  <div class="card col" style="gap:10px" id="wt-box"><span class="lbl">產生中…</span></div>
+  <span class="sec">設定步驟（只要做一次）</span>
+  <div class="card col" style="gap:10px;font-size:14px;line-height:1.6">
+    <div><b>1.</b> 按上面的「複製網址」。</div>
+    <div><b>2.</b> 打開 iPhone 的「捷徑」App，按右上角 <b>＋</b> 新增捷徑。</div>
+    <div><b>3.</b> 按「加入動作」，搜尋 <b>URL</b>，加入「URL」動作，把網址貼上去。</div>
+    <div><b>4.</b> 再搜尋 <b>取得 URL 的內容</b>，加入（它會自動接在 URL 後面）。</div>
+    <div><b>5.</b> 再搜尋 <b>顯示結果</b>，加入。</div>
+    <div><b>6.</b> 按最上面的捷徑名稱，改成「我的持股」；再按下方的 <b>ⓘ</b>，打開「<b>在 Apple Watch 上顯示</b>」。</div>
+    <div><b>7.</b> 在手錶打開「捷徑」App 就看得到「我的持股」，點一下即可。想放到錶面：長按錶面 → 編輯 → 複雜功能 → 選「捷徑」→「我的持股」。</div>
+  </div>
+  <span style="font-size:13px;line-height:1.6;color:var(--mut,#9aa0a6)">・價格是點下去當下的即時報價（盤中幾秒內、收盤後是收盤價），損益算法和 App 持股頁一樣（扣掉預估賣出手續費、交易稅）。<br>・網址裡記著你目前的持股股數和成本，<b>買賣之後要回來重新複製，貼到捷徑的 URL 動作裡</b>。<br>・網址等於你的持股明細，不要分享給別人。</span>
+</section>
 <section class="page" id="pg-dtcalc" aria-label="當沖試算">
   <div class="phead"><button class="back" data-back aria-label="返回"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button><h1 style="flex:1">當沖試算</h1></div>
   <div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))" id="dt-dir">
@@ -876,14 +893,15 @@ if (/[?&]demo=1\b/.test(location.search)) {
 }
 </script>
 <script>window.ZQ_CLIENT_ID = '853599421618-ht8fbomf0te15scdv98kc2rmunv4j0v6.apps.googleusercontent.com';</script>
-<script src="engine.js?v=2.20.2"></script>
-<script src="localapi.js?v=2.20.2"></script>
-<script src="importer.js?v=2.20.2"></script>
+<script src="engine.js?v=2.21.0"></script>
+<script src="localapi.js?v=2.21.0"></script>
+<script src="importer.js?v=2.21.0"></script>
 <script>
 // ---------- 共用 ----------
 // 版本：每次更新都加一號，並在 CHANGELOG 最前面寫上這次改了什麼
-const APP_VERSION = '2.20.2';
+const APP_VERSION = '2.21.0';
 const CHANGELOG = [
+  ['2.21.0', '2026-11-28 23:07', ['新增「Apple Watch 捷徑」（選單）：產生一個專屬網址，用 iPhone「捷徑」App 做成捷徑後，在手錶上點一下就能看到持股市值、今日損益、未實現損益和每檔即時漲跌，也能放到錶面']],
   ['2.20.2', '2026-11-27 13:27', ['App 更新後一定會載入新版的計算程式（之前可能沿用手機快取裡的舊版，修正要等一陣子才生效）']],
   ['2.20.1', '2026-11-27 13:26', ['修正持股股數錯亂：補記日期比較早的紀錄（例如記錄除權息帶入的股利、或先記新的再補記舊的買進）後，持股會用那筆的股數，造成已賣完的股票又出現、股數和均價不對；現在一律照日期先後判斷']],
   ['2.20.0', '2026-11-27 13:13', ['「匯入券商對帳單」可以讀韭菜紀錄自己匯出的 CSV：換 Google 帳號登入時，先在舊帳號匯出，登入新帳號後選那個 CSV 就能一鍵匯回', '手續費、交易稅、當沖、金額修正和進出場理由都會照原樣搬過來；CSV 裡有好幾個帳戶時會依帳戶名稱分別寫入，沒有的帳戶自動建立；已經有的紀錄不會重複匯入']],
@@ -2315,6 +2333,34 @@ $('#sheet').onclick = e => { if (e.target.id === 'sheet') closeSheet(); };
 })();
 
 
+// Apple Watch 捷徑：把持股（代號-股數-成本）放進報價中轉站的網址，捷徑抓這個網址就會回傳文字摘要
+let wtAcct = null;
+async function loadWatch() {
+  const box = $('#wt-box');
+  if (DEMO) { box.innerHTML = '<span class="lbl">示範模式不能產生捷徑，請先登入。</span>'; return; }
+  if (wtAcct === null) wtAcct = multi() ? '*' : ACCT;
+  box.innerHTML = '<span class="lbl">產生中…</span>';
+  let h;
+  try { h = await callIn(wtAcct, 'appHoldings'); } catch (e) { box.innerHTML = '<span class="lbl">讀取持股失敗：' + esc(errMsg(e)) + '</span>'; return; }
+  const by = {};
+  h.filter(x => !x.short && x.units > 0 && x.code).forEach(x => { const k = String(x.code).toUpperCase(); const o = by[k] || (by[k] = {u: 0, c: 0}); o.u += x.units; o.c += x.cost || 0; });
+  const ks = Object.keys(by);
+  const url = LIVE_URL.replace(/\/q$/, '/w') + '?h=' + ks.map(k => k + '-' + by[k].u + '-' + Math.round(by[k].c)).join('_');
+  box.innerHTML = (multi() ? '<label class="col" style="gap:4px"><span class="lbl">要看哪個帳戶</span><select id="wt-acct">' +
+      '<option value="*"' + (wtAcct === '*' ? ' selected' : '') + '>全部帳戶</option>' + ACCTS.map(a => '<option value="' + esc(a.id) + '"' + (a.id === wtAcct ? ' selected' : '') + '>' + esc(a.name) + '</option>').join('') + '</select></label>' : '') +
+    (ks.length ? '<span class="lbl">目前持股 ' + ks.length + ' 檔，網址：</span><div style="font-family:ui-monospace,monospace;font-size:12px;word-break:break-all;background:var(--bg);border-radius:10px;padding:10px">' + esc(url) + '</div>' +
+      '<div class="row" style="gap:8px"><button class="primary" id="wt-copy" style="flex:1">複製網址</button><button class="ghost" id="wt-try" style="flex:1">先試看看</button></div>'
+      : '<span class="lbl">這個帳戶目前沒有持股。</span>');
+  if ($('#wt-acct')) $('#wt-acct').onchange = e => { wtAcct = e.target.value; loadWatch(); };
+  if ($('#wt-copy')) $('#wt-copy').onclick = async () => { try { await navigator.clipboard.writeText(url); toast('已複製網址，接著到「捷徑」App 貼上'); } catch (e) { prompt('複製這個網址', url); } };
+  if ($('#wt-try')) $('#wt-try').onclick = async () => {
+    const b = $('#wt-try'); b.disabled = true; b.textContent = '讀取中…';
+    try { const t = await fetch(url, {cache: 'no-store'}).then(r => r.text()); openSheet('<h2>手錶上會看到</h2><pre style="white-space:pre-wrap;font-size:15px;line-height:1.5;margin:0">' + esc(t) + '</pre><button class="primary" id="sh-ok">關閉</button>'); $('#sh-ok').onclick = closeSheet; }
+    catch (e) { toast('讀取失敗：' + errMsg(e), 4000); }
+    b.disabled = false; b.textContent = '先試看看';
+  };
+}
+
 // 問題回報檔：版本、裝置、原始紀錄、計算結果、最近的錯誤訊息（JSON）
 async function exportDiag(screenInfo) {
   const b = $('#sh-diag'); if (b) { b.disabled = true; b.textContent = '整理中…'; }
@@ -2368,7 +2414,7 @@ $('#st-savenick').onclick = async () => {
 };
 $('#st-log').onclick = () => { openSheet('<h2>更新內容</h2>' + CHANGELOG.map(([v, d, l]) => '<div class="col" style="gap:4px"><b style="font-size:15px">版本 ' + v + '<span class="lbl" style="font-weight:400"> · ' + ymd(d) + (d.length > 10 ? ' ' + d.slice(11, 16) : '') + '</span></b><ul style="margin:0;padding-left:1.2em;color:var(--mut);font-size:14px;line-height:1.6">' + l.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>').join('') + '<button class="primary" id="lg-ok">好</button>'); $('#lg-ok').onclick = closeSheet; };
 let pageCur = null;
-const pageLoaders = {theme: () => renderTheme(), appset: () => loadAppSet(), dtcalc: () => loadDtCalc(), year: () => loadYear(), import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
+const pageLoaders = {watch: () => loadWatch(), theme: () => renderTheme(), appset: () => loadAppSet(), dtcalc: () => loadDtCalc(), year: () => loadYear(), import: () => loadImport(), settings: () => loadSettings(), corp: () => loadCorp(), divinc: () => loadDivinc(), dca: () => loadDca(), batch: () => { if (!btRows.length) openBatch(); }};
 // ===== 主題 =====
 let thView = null;   // 頁面上正在看的套用方式（還沒切換前）
 const CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7"/></svg>';
