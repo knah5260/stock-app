@@ -79,6 +79,38 @@ async function mis(codes) {
   return out;
 }
 
+// ---------- Apple Watch／捷徑用：/w?h=代號-股數-成本_代號-股數-成本… → 純文字摘要 ----------
+// 持股是 App 產生網址時放進去的，這裡不存任何東西，只抓即時價格算市值和損益
+const fmt = n => (n < 0 ? '-' : '') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const sg = n => (n > 0 ? '+' : '') + fmt(n);
+const pc = r => (r > 0 ? '+' : '') + (r * 100).toFixed(2) + '%';
+async function watch(url) {
+  const head = {'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*'};
+  const hold = (url.searchParams.get('h') || '').split('_').map(x => x.split('-')).filter(x => /^[0-9A-Z]{4,7}$/i.test(x[0]) && +x[1] > 0)
+    .map(x => ({c: x[0].toUpperCase(), u: +x[1], cost: +x[2] || 0})).slice(0, 60);
+  if (!hold.length) return new Response('網址裡沒有持股資料，請在韭菜紀錄 App 重新產生捷徑網址', {status: 400, headers: head});
+  let q;
+  try { q = await quotes([...new Set(hold.map(h => h.c))]); } catch (e) { return new Response('暫時抓不到報價，請稍後再試', {status: 502, headers: head}); }
+  let mv = 0, cost = 0, day = 0, prev = 0, pl = 0;
+  const lines = [];
+  hold.forEach(h => {
+    const x = q.q[h.c]; if (!x || !x.p) return;
+    const v = x.p * h.u, fee = Math.max(20, Math.floor(v * 0.001425));
+    const tax = /^00\d+B$/.test(h.c) ? 0 : Math.floor(v * (h.c[0] === '0' ? 0.001 : 0.003));
+    mv += v; cost += h.cost; pl += v - fee - tax - h.cost;
+    if (x.y) { day += (x.p - x.y) * h.u; prev += x.y * h.u; }
+    lines.push({n: x.n || h.c, p: x.p, r: x.y ? x.p / x.y - 1 : 0, v: v});
+  });
+  const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '');
+  const when = q.d === today ? (q.t >= '13:30:00' ? '今日收盤' : '盤中 ' + q.t.slice(0, 5)) : (q.d ? q.d.slice(4, 6) + '/' + q.d.slice(6) + ' 收盤' : '');
+  lines.sort((a, b) => b.v - a.v);
+  const txt = ['持股市值 ' + fmt(mv),
+    '今日 ' + sg(day) + (prev ? '（' + pc(day / prev) + '）' : ''),
+    '未實現 ' + sg(pl) + (cost ? '（' + pc(pl / cost) + '）' : ''),
+    when, ''].concat(lines.map(l => l.n + ' ' + l.p + ' ' + pc(l.r))).join('\n');
+  return new Response(txt, {headers: head});
+}
+
 export default {
   async fetch(req) {
     const origin = req.headers.get('Origin') || '';
@@ -86,6 +118,7 @@ export default {
     const cors = {'Access-Control-Allow-Origin': ok ? origin : SITES[0], 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Vary': 'Origin'};
     if (req.method === 'OPTIONS') return new Response(null, {status: 204, headers: cors});
     const url = new URL(req.url);
+    if (url.pathname === '/w') return watch(url);
     if (url.pathname !== '/q') return new Response('韭菜紀錄 盤中報價', {headers: {...cors, 'Content-Type': 'text/plain; charset=utf-8'}});
     if (!ok) return new Response('forbidden', {status: 403, headers: cors});
 
